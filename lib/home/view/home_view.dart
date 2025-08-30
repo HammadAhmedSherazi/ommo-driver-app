@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/home/view/map_view.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:ommo/utils/utils.dart';
 
@@ -47,11 +50,576 @@ class _HomeMobileViewState extends State<HomeMobileView> {
     "Dealership",
   ];
   final List<PlaceDataModel> places = [
-    PlaceDataModel(title: "Walmart", icon: AppIcons.walmartIcon, address: "210 Riverside Drive, New York, NY 10025", time: "10 pm", shopStatus: "Open", distance: 63, rating: 5.0, reviewCount: 12, storeType: "Store"),
-    PlaceDataModel(title: "Loves travel stop", icon: AppIcons.loveStoreIcon, address: "210 Riverside Drive, New York, NY 10025", time: "10 pm", shopStatus: "Open", distance: 63, rating: 5.0, reviewCount: 12, storeType: "Truck stop"),
-    PlaceDataModel(title: "CityPark", icon: AppIcons.walmartIcon, address: "210 Riverside Drive, New York, NY 10025", time: "12 pm", shopStatus: "Close", distance: 63, rating: 5.0, reviewCount: 12, storeType: "Parking"),
+    PlaceDataModel(
+      title: "Walmart",
+      icon: AppIcons.walmartIcon,
+      address: "210 Riverside Drive, New York, NY 10025",
+      time: "10 pm",
+      shopStatus: "Open",
+      distance: 63,
+      rating: 5.0,
+      reviewCount: 12,
+      storeType: "Store",
+    ),
+    PlaceDataModel(
+      title: "Loves travel stop",
+      icon: AppIcons.loveStoreIcon,
+      address: "210 Riverside Drive, New York, NY 10025",
+      time: "10 pm",
+      shopStatus: "Open",
+      distance: 63,
+      rating: 5.0,
+      reviewCount: 12,
+      storeType: "Truck stop",
+    ),
+    PlaceDataModel(
+      title: "CityPark",
+      icon: AppIcons.walmartIcon,
+      address: "210 Riverside Drive, New York, NY 10025",
+      time: "12 pm",
+      shopStatus: "Close",
+      distance: 63,
+      rating: 5.0,
+      reviewCount: 12,
+      storeType: "Parking",
+    ),
   ];
-  
+bool showMore = false;
+  void openDialog() {
+    Map<String, bool> amenitiesList = {
+      "Parking": false,
+      "Overnight parking": false,
+      "Free spots": false,
+      "Paid spots": false,
+      "Wi-Fi": false,
+      "Showers": false,
+      "Scales": false,
+      "Tire care": false,
+      "Transflo express": false,
+      "Bulk DEF": false,
+      "Oneside GYM": false,
+      "Fax scan": false,
+      "Pool": false,
+    };
+    File? _selectedImage;
+    showMore = false;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          backgroundColor: Colors.white,
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return SizedBox(
+                height: context.screenHeight * 0.8,
+                width: context.screenWidth,
+
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Expanded(
+                      child: ListView(
+                        shrinkWrap: true,
+                        physics: BouncingScrollPhysics(),
+                        padding: EdgeInsets.all(24),
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Add a place",
+                                style: AppTextTheme().headingText,
+                              ),
+                              IconButton(
+                                padding: EdgeInsets.zero,
+                                visualDensity: VisualDensity(
+                                  horizontal: -4.0,
+                                  vertical: -4.0,
+                                ),
+                                onPressed: () {
+                                  context.popPage();
+                                },
+                                icon: Icon(
+                                  Icons.close,
+                                  color: Color(0xff8C93A4),
+                                ),
+                              ),
+                            ],
+                          ),
+                          24.h,
+                          Text(
+                            "Name",
+                            style: AppTextTheme().bodyText.copyWith(
+                              fontSize: 16,
+                            ),
+                          ),
+                          7.h,
+                          CustomTextfieldWidget(hintText: "Enter place name"),
+                          24.h,
+                          Text(
+                            "Address",
+                            style: AppTextTheme().bodyText.copyWith(
+                              fontSize: 16,
+                            ),
+                          ),
+                          7.h,
+                          CustomTextfieldWidget(
+                            hintText: "Enter address",
+                            suffixIcon: SvgPicture.asset(
+                              AppIcons.navigationOutlineIcon,
+                            ),
+                          ),
+                          24.h,
+                          SizedBox(
+                            height: 200,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: MapView(),
+                            ),
+                          ),
+                          if(showMore)...[
+                             24.h,
+                          Text(
+                            "Phone number",
+                            style: AppTextTheme().bodyText.copyWith(
+                              fontSize: 16,
+                            ),
+                          ),
+                          7.h,
+                          CustomTextfieldWidget(
+                            hintText: "Enter number",
+                            keyboardType: TextInputType.phone,
+                          ),
+                          24.h,
+                          Text(
+                            "Website",
+                            style: AppTextTheme().bodyText.copyWith(
+                              fontSize: 16,
+                            ),
+                          ),
+
+                          24.h,
+                          Text(
+                            "Opening hours",
+                            style: AppTextTheme().bodyText.copyWith(
+                              fontSize: 16,
+                            ),
+                          ),
+                          7.h,
+                          CustomTextfieldWidget(
+                            suffixIcon: Icon(Icons.arrow_forward_ios, size: 17),
+                            hintText: "Opening hours ",
+                            onTap: () {
+                              openHourDialog();
+                            },
+                          ),
+                          24.h,
+                          Text(
+                            "Brand logo (optional)",
+                            style: AppTextTheme().bodyText.copyWith(
+                              fontSize: 16,
+                            ),
+                          ),
+                          7.h,
+                          GestureDetector(
+                            onTap: () async {
+                              final picker = ImagePicker();
+
+                              // Show choice dialog
+                              final source =
+                                  await showModalBottomSheet<ImageSource>(
+                                    context: context,
+                                    builder: (context) {
+                                      return SafeArea(
+                                        child: Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            vertical:
+                                                AppTheme.horizontalPadding,
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              ListTile(
+                                                leading: const Icon(
+                                                  Icons.camera_alt,
+                                                ),
+                                                title: const Text(
+                                                  'Take a photo',
+                                                ),
+                                                onTap: () => Navigator.pop(
+                                                  context,
+                                                  ImageSource.camera,
+                                                ),
+                                              ),
+                                              ListTile(
+                                                leading: const Icon(
+                                                  Icons.photo_library,
+                                                ),
+                                                title: const Text(
+                                                  'Choose from gallery',
+                                                ),
+                                                onTap: () => Navigator.pop(
+                                                  context,
+                                                  ImageSource.gallery,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+
+                              // If user canceled dialog
+                              if (source == null) return;
+
+                              // Pick image from selected source
+                              final picked = await picker.pickImage(
+                                source: source,
+                              );
+                              if (picked != null) {
+                                final imageFile = File(picked.path);
+                                setState(() {
+                                  _selectedImage = imageFile;
+                                });
+                              }
+                            },
+                            child: _selectedImage == null
+                                ? Row(
+                                    spacing: 5,
+                                    children: [
+                                      Icon(Icons.add),
+                                      Text(
+                                        "Add Logo",
+                                        style: AppTextTheme().bodyText.copyWith(
+                                          color: AppColorTheme().primary,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Row(
+                                    children: [
+                                      Container(
+                                        width: 56,
+                                        height: 56,
+                                        padding: EdgeInsets.all(3),
+                                        alignment: Alignment.topCenter,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            5,
+                                          ),
+                                          image: DecorationImage(
+                                            image: FileImage(
+                                              File(_selectedImage!.path),
+                                            ),
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
+                                          children: [
+                                            InkWell(
+                                              onTap: () {
+                                                setState(() {
+                                                  _selectedImage = null;
+                                                });
+                                              },
+                                              child: CircleAvatar(
+                                                backgroundColor: Colors.white,
+                                                radius: 8,
+                                                child: Icon(
+                                                  Icons.close,
+                                                  size: 10,
+                                                  color: Colors.black,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
+                          24.h,
+                          Text(
+                            "Amenities",
+                            style: AppTextTheme().bodyText.copyWith(
+                              fontSize: 16,
+                            ),
+                          ),
+                          7.h,
+                          ...List.generate(
+                            amenitiesList.length,
+                            (index) => Row(
+                              children: [
+                                Transform.scale(
+                                  scale: 0.6,
+                                  child: Switch.adaptive(
+                                    padding: EdgeInsets.zero,
+
+                                    value: amenitiesList.entries
+                                        .elementAt(index)
+                                        .value,
+                                    onChanged: (v) {
+                                      setState(() {
+                                        amenitiesList.update(
+                                          amenitiesList.entries
+                                              .elementAt(index)
+                                              .key,
+                                          (bol) => !bol,
+                                        );
+                                      });
+                                    },
+                                  ),
+                                ),
+                                Text(
+                                  amenitiesList.entries.elementAt(index).key,
+                                  style: AppTextTheme().bodyText,
+                                ),
+                              ],
+                            ),
+                          ),
+                          ],
+                          if(!showMore)...[
+                            24.h,
+                            GestureDetector(
+                              onTap: (){
+                                setState((){
+                                  showMore = true;
+                                });
+                              },
+                              child: Row(
+                                      spacing: 5,
+                                      children: [
+                                        
+                                        Text(
+                                          "Add more details",
+                                          style: AppTextTheme().bodyText.copyWith(
+                                            color: AppColorTheme().primary,
+                                          ),
+                                        ),
+                                        Icon(Icons.keyboard_arrow_down, size: 17),
+                                      ],
+                                    ),
+                            )
+                          ],
+                          
+                         
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsetsGeometry.all(
+                        AppTheme.horizontalPadding,
+                      ),
+                      child: CustomButtonWidget(
+                        title: "Add place",
+                        onPressed: () {
+                          context.popPage();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void openHourDialog() {
+    Map<String, bool> days = {
+      "Monday": false,
+      "Tuesday": false,
+      "Wednesday": false,
+      "Thursday": false,
+      "Friday": false,
+      "Saturday": true,
+      "Sunday": true,
+    };
+
+    List<TextEditingController> openTextEditController = List.generate(
+      days.length,
+      (index) => TextEditingController(),
+    );
+
+    List<TextEditingController> closeTextEditController = List.generate(
+      days.length,
+      (index) => TextEditingController(),
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          backgroundColor: Colors.white,
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              return SizedBox(
+                height: context.screenHeight * 0.8,
+                width: context.screenWidth,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: ListView(
+                        padding: EdgeInsets.all(24),
+                        physics: BouncingScrollPhysics(),
+                        children: [
+                          // header row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IconButton(
+                                onPressed: () => context.popPage(),
+                                icon: Icon(
+                                  Icons.arrow_back,
+                                  color: Colors.black,
+                                ),
+                                padding: EdgeInsets.zero,
+                                visualDensity: VisualDensity(
+                                  horizontal: -4.0,
+                                  vertical: -4.0,
+                                ),
+                              ),
+                              Text(
+                                "Opening hours",
+                                style: AppTextTheme().headingText,
+                              ),
+                              IconButton(
+                                onPressed: () => context.popPage(),
+                                icon: Icon(
+                                  Icons.close,
+                                  color: Color(0xff8C93A4),
+                                ),
+                                padding: EdgeInsets.zero,
+                                visualDensity: VisualDensity(
+                                  horizontal: -4.0,
+                                  vertical: -4.0,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          // day rows
+                          ...List.generate(days.length, (index) {
+                            final dayName = days.keys.elementAt(index);
+                            final isOpen = days.values.elementAt(index);
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(height: 24),
+                                Row(
+                                  children: [
+                                    Text(
+                                      dayName,
+                                      style: AppTextTheme().bodyText,
+                                    ),
+                                    Spacer(),
+                                    Text(
+                                      "Closed",
+                                      style: AppTextTheme().lightText,
+                                    ),
+                                    Transform.scale(
+                                      scale: 0.6,
+                                      child: Switch.adaptive(
+                                        value: isOpen,
+                                        onChanged: (v) {
+                                          setState(() {
+                                            days[dayName] = v;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: CustomTextfieldWidget(
+                                        hintText: "--:--",
+
+                                        controller:
+                                            openTextEditController[index],
+                                        onTap: () async {
+                                          final TimeOfDay? picked =
+                                              await showTimePicker(
+                                                context: context,
+                                                initialTime: TimeOfDay.now(),
+                                              );
+                                          if (!context.mounted) return;
+                                          if (picked != null) {
+                                            openTextEditController[index].text =
+                                                picked.format(context);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                    SizedBox(width: 5),
+                                    Expanded(
+                                      child: CustomTextfieldWidget(
+                                        hintText: "--:--",
+
+                                        controller:
+                                            closeTextEditController[index],
+                                        onTap: () async {
+                                          final TimeOfDay? picked =
+                                              await showTimePicker(
+                                                context: context,
+                                                initialTime: TimeOfDay.now(),
+                                              );
+                                          if (!context.mounted) return;
+                                          if (picked != null) {
+                                            closeTextEditController[index]
+                                                .text = picked.format(
+                                              context,
+                                            );
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(AppTheme.horizontalPadding),
+                      child: CustomButtonWidget(
+                        title: "Save",
+                        onPressed: () {
+                          // here you can collect open/close times per day
+                          for (int i = 0; i < days.length; i++) {
+                            print(
+                              "${days.keys.elementAt(i)}: ${openTextEditController[i].text} - ${closeTextEditController[i].text}, open=${days.values.elementAt(i)}",
+                            );
+                          }
+                          context.popPage();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,8 +633,8 @@ class _HomeMobileViewState extends State<HomeMobileView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               20.w,
-             Image.asset(AppIcons.logo, width: 126,height: 22,)
-               ],
+              Image.asset(AppIcons.logo, width: 126, height: 22),
+            ],
           ),
           actions: [
             Container(
@@ -88,7 +656,7 @@ class _HomeMobileViewState extends State<HomeMobileView> {
                   ),
                 ],
               ),
-              child: SvgPicture.asset(AppIcons.menuIcon, width: 20, height: 20,),
+              child: SvgPicture.asset(AppIcons.menuIcon, width: 20, height: 20),
             ),
             20.w,
           ],
@@ -101,7 +669,7 @@ class _HomeMobileViewState extends State<HomeMobileView> {
       body: Stack(
         children: [
           // Background content
-         MapView(),
+          MapView(),
           Container(
             margin: EdgeInsets.only(top: 10),
             height: 40,
@@ -205,22 +773,9 @@ class _HomeMobileViewState extends State<HomeMobileView> {
                           controller: scrollController,
                           shrinkWrap: true,
                           children: [
-                            TextField(
-                              decoration: InputDecoration(
-                                prefixIcon: const Icon(Icons.search),
-                                hintText: "Find a destination...",
-                                filled: true,
-                                fillColor: const Color.fromRGBO(
-                                  244,
-                                  246,
-                                  248,
-                                  1,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                              ),
+                            CustomTextfieldWidget(
+                              prefixIcon: SvgPicture.asset(AppIcons.searchIcon),
+                              hintText: "Find a destination...",
                             ),
                             15.h,
                             CustomButtonWidget(
@@ -232,7 +787,14 @@ class _HomeMobileViewState extends State<HomeMobileView> {
                             DashedLine(color: Color(0xffEBEEF2)),
                             ListTile(
                               contentPadding: EdgeInsets.zero,
-                              leading: CircleAvatar(radius: 25, backgroundColor: AppColorTheme().primary.withValues(alpha: 0.2), child: SvgPicture.asset(AppIcons.navigationIconGreen),),
+                              leading: CircleAvatar(
+                                radius: 25,
+                                backgroundColor: AppColorTheme().primary
+                                    .withValues(alpha: 0.2),
+                                child: SvgPicture.asset(
+                                  AppIcons.navigationIconGreen,
+                                ),
+                              ),
                               title: Text(
                                 "210 Riverside Drive",
                                 style: AppTextTheme().bodyText.copyWith(
@@ -252,7 +814,9 @@ class _HomeMobileViewState extends State<HomeMobileView> {
                               contentPadding: EdgeInsets.zero,
                               leading: CircleAvatar(
                                 backgroundColor: Colors.transparent,
-                                radius: 25, child: SvgPicture.asset(AppIcons.weatherIcon),),
+                                radius: 25,
+                                child: SvgPicture.asset(AppIcons.weatherIcon),
+                              ),
                               title: Text(
                                 "24°C",
                                 style: AppTextTheme().bodyText.copyWith(
@@ -276,7 +840,12 @@ class _HomeMobileViewState extends State<HomeMobileView> {
                                   ),
                                 ],
                               ),
-                              trailing: Icon(Icons.arrow_forward_ios, color: Colors.black, size: 15, weight: 30,),
+                              trailing: Icon(
+                                Icons.arrow_forward_ios,
+                                color: Colors.black,
+                                size: 15,
+                                weight: 30,
+                              ),
                             ),
                             15.h,
                             DashedLine(color: Color(0xffEBEEF2)),
@@ -284,12 +853,32 @@ class _HomeMobileViewState extends State<HomeMobileView> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                  Text("Nearby places", style: AppTextTheme().headingText.copyWith(
-                                    fontSize: 16
-                                  ),),
-                                  Text("More", style: AppTextTheme().bodyText.copyWith(
-                                    color: AppColorTheme().primary
-                                  ),)
+                                Text(
+                                  "Nearby places",
+                                  style: AppTextTheme().headingText.copyWith(
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                TextButton(
+                                  style: ButtonStyle(
+                                    visualDensity: VisualDensity(
+                                      vertical: -4.0,
+                                      horizontal: -4.0,
+                                    ),
+                                    padding: WidgetStatePropertyAll(
+                                      EdgeInsets.zero,
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    openDialog();
+                                  },
+                                  child: Text(
+                                    "More",
+                                    style: AppTextTheme().bodyText.copyWith(
+                                      color: AppColorTheme().primary,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                             15.h,
@@ -298,117 +887,179 @@ class _HomeMobileViewState extends State<HomeMobileView> {
                               return Row(
                                 spacing: 10,
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                CircleAvatar(radius: 25,backgroundColor: Color(0xffF4F6F8), child: CircleAvatar(
-                                  radius: 13,
-                                  backgroundImage: AssetImage(place.icon),
-                                  
-                                ),),
-                                Expanded(child: Column(
-                                 
-                                  spacing: 5,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 25,
+                                    backgroundColor: Color(0xffF4F6F8),
+                                    child: CircleAvatar(
+                                      radius: 13,
+                                      backgroundImage: AssetImage(place.icon),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Column(
+                                      spacing: 5,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Expanded(
-                                          child: Text(place.title, style: AppTextTheme().headingText.copyWith(
-                                            fontSize: 16
-                                          ),),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                place.title,
+                                                style: AppTextTheme()
+                                                    .headingText
+                                                    .copyWith(fontSize: 16),
+                                              ),
+                                            ),
+                                            Container(
+                                              width: 28,
+                                              height: 28,
+                                              // padding: EdgeInsets.all(5),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                border: Border.all(
+                                                  color: Color(0xFFEBEEF2),
+                                                  width: 1,
+                                                ), // rgba(235, 238, 242, 1)
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      8,
+                                                    ), // Optional
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Color.fromRGBO(
+                                                      0,
+                                                      0,
+                                                      0,
+                                                      0.04,
+                                                    ), // rgba(0, 0, 0, 0.04)
+                                                    blurRadius:
+                                                        6, // Spread of the blur
+                                                    offset: Offset(
+                                                      0,
+                                                      2,
+                                                    ), // X=0, Y=2
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Icon(
+                                                Icons.bookmark_border,
+                                                size: 17,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        Container(
-                                          width: 28,
-                                          height: 28,
-                                          // padding: EdgeInsets.all(5),
-                                          decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(
-                  color: Color(0xFFEBEEF2),
-                  width: 1,
-                ), // rgba(235, 238, 242, 1)
-                borderRadius: BorderRadius.circular(8), // Optional
-                boxShadow: [
-                  BoxShadow(
-                    color: Color.fromRGBO(0, 0, 0, 0.04), // rgba(0, 0, 0, 0.04)
-                    blurRadius: 6, // Spread of the blur
-                    offset: Offset(0, 2), // X=0, Y=2
-                  ),
-                ],
-              ),
-              child: Icon(Icons.bookmark_border, size: 17, color: Colors.black,),
-                                        )
+                                        Row(
+                                          spacing: 3,
+                                          children: [
+                                            // Icon(Icons.star, color: Color(0xffFF8800), size: 15,),
+                                            SvgPicture.asset(
+                                              AppIcons.ratingIcon,
+                                            ),
+                                            Text(
+                                              place.rating.toString(),
+                                              style: AppTextTheme().bodyText
+                                                  .copyWith(
+                                                    color: Color(0xffFF8800),
+                                                  ),
+                                            ),
+                                            Text(
+                                              "(${place.reviewCount})",
+                                              style: AppTextTheme().bodyText
+                                                  .copyWith(
+                                                    color: Color(0xff888BA1),
+                                                  ),
+                                            ),
+                                            Text(
+                                              "  • ${place.storeType} • ${place.distance} mi",
+                                              style: AppTextTheme().bodyText
+                                                  .copyWith(
+                                                    color: Color(0xff888BA1),
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                        Text(
+                                          place.address,
+                                          style: AppTextTheme().bodyText,
+                                        ),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              place.shopStatus == "Open"
+                                                  ? "Opened"
+                                                  : "Closed",
+                                              style: AppTextTheme().bodyText
+                                                  .copyWith(
+                                                    color:
+                                                        place.shopStatus ==
+                                                            "Open"
+                                                        ? AppColorTheme()
+                                                              .primary
+                                                        : Colors.redAccent,
+                                                  ),
+                                            ),
+                                            Text(
+                                              "  • ${place.shopStatus == "Open" ? "Closes" : "Opens"} at ${place.time} ",
+                                              style: AppTextTheme().bodyText
+                                                  .copyWith(
+                                                    color: Color(0xff888BA1),
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                        10.h,
                                       ],
                                     ),
-                                    Row(
-                                      spacing: 3,
-                                      children: [
-                                        // Icon(Icons.star, color: Color(0xffFF8800), size: 15,),
-                                        SvgPicture.asset(AppIcons.ratingIcon),
-                                        Text(place.rating.toString(), style: AppTextTheme().bodyText.copyWith(
-                                           color: Color(0xffFF8800)
-                                        ),),
-                                        Text("(${place.reviewCount})", style: AppTextTheme().bodyText.copyWith(
-                                        
-                                          color: Color(0xff888BA1)
-                                        ),),
-                                        Text("  • ${place.storeType} • ${place.distance} mi",style: AppTextTheme().bodyText.copyWith(
-                                        
-                                          color: Color(0xff888BA1)
-                                        ))
-                                      ],
-                                    ),
-                                    Text(place.address, style: AppTextTheme().bodyText,),
-                                    Row(
-                                      children: [
-                                        Text(place.shopStatus == "Open" ? "Opened" : "Closed", style: AppTextTheme().bodyText.copyWith(
-                                          color: place.shopStatus == "Open" ? AppColorTheme().primary : Colors.redAccent
-
-                                        ),),
-                                         Text("  • ${place.shopStatus == "Open" ? "Closes" : "Opens" } at ${place.time} ",style: AppTextTheme().bodyText.copyWith(
-                                       
-                                          color: Color(0xff888BA1)
-                                        ))
-                                      ],
-                                    ),
-                                    10.h
-                                  ],
-                                )
-                                )
-                              ],
-                            );
+                                  ),
+                                ],
+                              );
                             }),
-                             DashedLine(color: Color(0xffEBEEF2)), 
-                             15.h,
-                              Text("Quick Actions", style: AppTextTheme().headingText.copyWith(
-                                    fontSize: 16
-                                  ),),
-                                15.h,
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: 7,
-                                    horizontal: 10
-                                  ),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                     border: Border.all(
-                  color: Color(0xFFEBEEF2),
-                  width: 1
-                ), 
-                                  ),
-                                  child: Row(
-                                    spacing: 5,
-                                    children: [
-                                      Icon(Icons.bookmark_sharp),
-                                      Expanded(
-                                        child: Text("Saved & recent places", style: AppTextTheme().bodyText.copyWith(
-                                          fontSize: 16
-                                        ),),
-                                      ),
-                                      Icon(Icons.arrow_forward_ios, color: Colors.black, size: 15, weight: 30,)
-                                    ],
-                                  ),
+                            DashedLine(color: Color(0xffEBEEF2)),
+                            15.h,
+                            Text(
+                              "Quick Actions",
+                              style: AppTextTheme().headingText.copyWith(
+                                fontSize: 16,
+                              ),
+                            ),
+                            15.h,
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                vertical: 7,
+                                horizontal: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: Color(0xFFEBEEF2),
+                                  width: 1,
                                 ),
-                                20.h,
+                              ),
+                              child: Row(
+                                spacing: 5,
+                                children: [
+                                  Icon(Icons.bookmark_sharp),
+                                  Expanded(
+                                    child: Text(
+                                      "Saved & recent places",
+                                      style: AppTextTheme().bodyText.copyWith(
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.arrow_forward_ios,
+                                    color: Colors.black,
+                                    size: 15,
+                                    weight: 30,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            20.h,
                           ],
                         ),
                       ),

@@ -50,10 +50,12 @@ class _AppView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      
       debugShowCheckedModeBanner: false,
       title: "OMMO",
       navigatorKey: navigatorKey,
       theme: AppTheme().themeData,
+      
       builder: (context, child) => ResponsiveBreakpoints.builder(
         child: MediaQuery(
             data: MediaQuery.of(context).copyWith(

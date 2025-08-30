@@ -1,0 +1,62 @@
+part of 'custom_widget.dart';
+
+class CustomTextfieldWidget extends StatelessWidget {
+  final TextEditingController? controller;
+  final String hintText;
+  final Widget? prefixIcon;
+  final Widget ? suffixIcon;
+  final TextInputType ? keyboardType;
+  final String? Function(String?)? validator;
+  final List<TextInputFormatter>? inputFormatters;
+
+  final VoidCallback ? onTap;
+  const CustomTextfieldWidget({super.key, this.controller, required this.hintText, this.prefixIcon, this.suffixIcon,  this.onTap, this.keyboardType, this.validator, this.inputFormatters});
+
+  @override
+  Widget build(BuildContext context) {
+    return  TextFormField(
+      onTap: onTap,
+      controller: controller,
+      validator: validator,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      readOnly: onTap != null,
+                              decoration: InputDecoration(
+                                
+                                prefixIcon:prefixIcon != null ? Row(
+                                  children: [
+                                    10.w,
+                                    prefixIcon!,
+                                  ],
+                                ) : null,
+                                prefixIconConstraints: BoxConstraints(
+                                  maxWidth: 40,
+                                  maxHeight: 24
+                                ),
+                                suffixIconConstraints: BoxConstraints(
+                                  maxWidth: 40,
+                                  maxHeight: 24
+                                ),
+                                suffixIcon: suffixIcon != null ? Row(
+                                  children: [
+                                    suffixIcon!,
+                                    10.w
+                                  ],
+                                ) : null,
+                                hintText: hintText,
+                                filled: true,
+                                fillColor: const Color.fromRGBO(
+                                  244,
+                                  246,
+                                  248,
+                                  1,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                            )
+                           ;
+  }
+}

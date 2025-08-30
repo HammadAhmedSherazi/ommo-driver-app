@@ -13,6 +13,8 @@ class AppIcons {
   static const String ratingIcon = '${iconPath}rating_icon.svg';
   static const String walmartIcon = '${iconPath}walmart_icon.png';
   static const String loveStoreIcon = '${iconPath}love_store_icon.png';
+  static const String navigationOutlineIcon = '${iconPath}navigation_outline_icon.svg';
+  static const String searchIcon = '${iconPath}search_icon.svg';
   
   
   

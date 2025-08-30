@@ -44,6 +44,7 @@ dependencies:
   here_sdk:
     path: plugins/here_sdk
   intl: ^0.20.2
+  image_picker: ^1.2.0
 
 dev_dependencies:
   flutter_test:
