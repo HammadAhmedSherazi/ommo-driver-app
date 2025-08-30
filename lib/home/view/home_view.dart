@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
+import 'package:ommo/home/view/map_view.dart';
 
 import 'package:ommo/utils/utils.dart';
 
@@ -24,7 +26,7 @@ class HomeTabletView extends StatelessWidget {
   Widget build(BuildContext context) {
     return context.isLandscape
         ? Scaffold(backgroundColor: Color(0xffF4F6F8))
-        : Center(child: Text("Portrait"));
+        : Scaffold(body: Center(child: Text("Portrait")));
   }
 }
 
@@ -45,10 +47,11 @@ class _HomeMobileViewState extends State<HomeMobileView> {
     "Dealership",
   ];
   final List<PlaceDataModel> places = [
-    PlaceDataModel(title: "Walmart", icon: "icon", address: "210 Riverside Drive, New York, NY 10025ss", time: "10 pm", shopStatus: "Open", distance: 63, rating: 5.0, reviewCount: 12, storeType: "Store"),
-    PlaceDataModel(title: "Loves travel stop", icon: "icon", address: "210 Riverside Drive, New York, NY 10025ss", time: "10 pm", shopStatus: "Open", distance: 63, rating: 5.0, reviewCount: 12, storeType: "Truck stop"),
-    PlaceDataModel(title: "CityPark", icon: "icon", address: "210 Riverside Drive, New York, NY 10025ss", time: "12 pm", shopStatus: "Close", distance: 63, rating: 5.0, reviewCount: 12, storeType: "Parking"),
+    PlaceDataModel(title: "Walmart", icon: AppIcons.walmartIcon, address: "210 Riverside Drive, New York, NY 10025", time: "10 pm", shopStatus: "Open", distance: 63, rating: 5.0, reviewCount: 12, storeType: "Store"),
+    PlaceDataModel(title: "Loves travel stop", icon: AppIcons.loveStoreIcon, address: "210 Riverside Drive, New York, NY 10025", time: "10 pm", shopStatus: "Open", distance: 63, rating: 5.0, reviewCount: 12, storeType: "Truck stop"),
+    PlaceDataModel(title: "CityPark", icon: AppIcons.walmartIcon, address: "210 Riverside Drive, New York, NY 10025", time: "12 pm", shopStatus: "Close", distance: 63, rating: 5.0, reviewCount: 12, storeType: "Parking"),
   ];
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,15 +65,14 @@ class _HomeMobileViewState extends State<HomeMobileView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               20.w,
-              // Placeholder(child: SizedBox(width: 126, height: 22)),
-              Image.network("https://images.squarespace-cdn.com/content/v1/6362dd86408ed95ce50b1512/33ceebc5-2280-43d3-9c79-285d107459ef/Ommo_Logo_h_high+%281%29.png?format=1500w", )
-            ],
+             Image.asset(AppIcons.logo, width: 126,height: 22,)
+               ],
           ),
           actions: [
             Container(
               height: 44,
               width: 44,
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border.all(
@@ -86,6 +88,7 @@ class _HomeMobileViewState extends State<HomeMobileView> {
                   ),
                 ],
               ),
+              child: SvgPicture.asset(AppIcons.menuIcon, width: 20, height: 20,),
             ),
             20.w,
           ],
@@ -98,12 +101,7 @@ class _HomeMobileViewState extends State<HomeMobileView> {
       body: Stack(
         children: [
           // Background content
-          Image.network(
-            width: double.infinity,
-            height: double.infinity,
-            'https://img.freepik.com/free-vector/colored-city-map-with-information_23-2148318251.jpg?semt=ais_hybrid&w=740&q=80',
-            fit: BoxFit.cover,
-          ),
+         MapView(),
           Container(
             margin: EdgeInsets.only(top: 10),
             height: 40,
@@ -204,6 +202,8 @@ class _HomeMobileViewState extends State<HomeMobileView> {
                           padding: EdgeInsets.symmetric(
                             horizontal: AppTheme.horizontalPadding,
                           ),
+                          controller: scrollController,
+                          shrinkWrap: true,
                           children: [
                             TextField(
                               decoration: InputDecoration(
@@ -232,7 +232,7 @@ class _HomeMobileViewState extends State<HomeMobileView> {
                             DashedLine(color: Color(0xffEBEEF2)),
                             ListTile(
                               contentPadding: EdgeInsets.zero,
-                              leading: CircleAvatar(radius: 25, backgroundColor: AppColorTheme().primary.withValues(alpha: 0.2),),
+                              leading: CircleAvatar(radius: 25, backgroundColor: AppColorTheme().primary.withValues(alpha: 0.2), child: SvgPicture.asset(AppIcons.navigationIconGreen),),
                               title: Text(
                                 "210 Riverside Drive",
                                 style: AppTextTheme().bodyText.copyWith(
@@ -252,7 +252,7 @@ class _HomeMobileViewState extends State<HomeMobileView> {
                               contentPadding: EdgeInsets.zero,
                               leading: CircleAvatar(
                                 backgroundColor: Colors.transparent,
-                                radius: 25, child: Icon(Icons.cloud_queue, color: Colors.grey.shade200, size: 40,),),
+                                radius: 25, child: SvgPicture.asset(AppIcons.weatherIcon),),
                               title: Text(
                                 "24°C",
                                 style: AppTextTheme().bodyText.copyWith(
@@ -299,7 +299,11 @@ class _HomeMobileViewState extends State<HomeMobileView> {
                                 spacing: 10,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                CircleAvatar(radius: 25,backgroundColor: Color(0xffF4F6F8),),
+                                CircleAvatar(radius: 25,backgroundColor: Color(0xffF4F6F8), child: CircleAvatar(
+                                  radius: 13,
+                                  backgroundImage: AssetImage(place.icon),
+                                  
+                                ),),
                                 Expanded(child: Column(
                                  
                                   spacing: 5,
@@ -338,7 +342,8 @@ class _HomeMobileViewState extends State<HomeMobileView> {
                                     Row(
                                       spacing: 3,
                                       children: [
-                                        Icon(Icons.star, color: Color(0xffFF8800), size: 15,),
+                                        // Icon(Icons.star, color: Color(0xffFF8800), size: 15,),
+                                        SvgPicture.asset(AppIcons.ratingIcon),
                                         Text(place.rating.toString(), style: AppTextTheme().bodyText.copyWith(
                                            color: Color(0xffFF8800)
                                         ),),
