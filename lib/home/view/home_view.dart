@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:here_sdk/mapview.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/home/view/map_view.dart';
 import 'package:image_picker/image_picker.dart';
@@ -17,7 +18,7 @@ class HomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ResponsiveLayout(
       mobileTemplate: HomeMobileView(),
-      tabletTemplate: HomeTabletView(),
+      tabletTemplate: HomeMobileView(),
     );
   }
 }
@@ -177,7 +178,25 @@ bool showMore = false;
                             height: 200,
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(16),
-                              child: MapView(),
+                              // child: MapView(),
+                              child: HereMap(
+
+                                onMapCreated: (mapController) {
+                                  
+    // Load the map scene using a map scheme to render the map with.
+    mapController.mapScene.loadSceneForMapScheme(MapScheme.normalDay,
+        (MapError? error) {
+      if (error == null) {
+        mapController.mapScene.enableFeatures(
+            {MapFeatures.lowSpeedZones: MapFeatureModes.lowSpeedZonesAll});
+        // _truckGuidanceExample =
+        //     TruckGuidanceExample(_showDialog, hereMapController);
+        // _truckGuidanceExample!.setUICallback(this);
+      } else {
+      }
+    });
+                                },
+                              ),
                             ),
                           ),
                           if(showMore)...[

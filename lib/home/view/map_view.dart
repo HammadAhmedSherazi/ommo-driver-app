@@ -71,37 +71,37 @@ class MapViewState extends State<MapView> implements UICallback {
   // UICallback implementations.
   @override
   void onCarSpeedLimit(String speedLimit) {
-    setState(() {
+    // setState(() {
       // _carSpeedLimit = speedLimit;
-    });
+    // });
   }
 
   @override
   void onDrivingSpeed(String drivingSpeed) {
-    setState(() {
+    // setState(() {
       // _drivingSpeed = drivingSpeed;
-    });
+    // });
   }
 
   @override
   void onTruckRestrictionWarning(String description) {
-    setState(() {
+    // setState(() {
       // _truckRestrictionDescription = description;
-    });
+    // });
   }
 
   @override
   void onTruckSpeedLimit(String speedLimit) {
-    setState(() {
+    // setState(() {
       // _truckSpeedLimit = speedLimit;
-    });
+    // });
   }
 
   @override
   void onHideTruckRestrictionWarning() {
-    setState(() {
+    // setState(() {
       // _truckRestrictionDescription = "";
-    });
+    // });
   }
 
   @override
