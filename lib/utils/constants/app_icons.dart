@@ -15,6 +15,9 @@ class AppIcons {
   static const String loveStoreIcon = '${iconPath}love_store_icon.png';
   static const String navigationOutlineIcon = '${iconPath}navigation_outline_icon.svg';
   static const String searchIcon = '${iconPath}search_icon.svg';
+  static const String layerBoxIcon = '${iconPath}layer_box_icon.svg';
+  static const String zoomInIcon = '${iconPath}zoom_in_icon.svg';
+  static const String zoomOutIcon = '${iconPath}zoom_out_icon.svg';
   
   
   

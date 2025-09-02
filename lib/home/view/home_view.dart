@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:here_sdk/core.dart';
 import 'package:here_sdk/mapview.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/home/view/map_view.dart';
@@ -9,9 +10,11 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:ommo/utils/utils.dart';
 
+import '../../map_sdk/truck_guidance_example.dart';
 import '../home.dart';
 
 class HomeView extends StatelessWidget {
+  
   const HomeView({super.key});
 
   @override
@@ -22,6 +25,7 @@ class HomeView extends StatelessWidget {
     );
   }
 }
+
 
 class HomeTabletView extends StatelessWidget {
   const HomeTabletView({super.key});
@@ -39,9 +43,14 @@ class HomeMobileView extends StatefulWidget {
 
   @override
   State<HomeMobileView> createState() => _HomeMobileViewState();
+  
+  
 }
 
+
 class _HomeMobileViewState extends State<HomeMobileView> {
+  
+  HereMapController? _hereMapController;
   final List<String> stationList = [
     "Truck stops",
     "Weight stations",
@@ -85,7 +94,14 @@ class _HomeMobileViewState extends State<HomeMobileView> {
       storeType: "Parking",
     ),
   ];
-bool showMore = false;
+bool showMore = false, changeMapScheme = false;
+int selectIndexMapView = 0;
+TruckGuidanceExample? _truckGuidanceExample;
+final List<MapViewModel> mapSchemes = [
+  MapViewModel(label: "Default", icon: AppImages.defaultMapImg, scheme: MapScheme.normalDay),
+  MapViewModel(label: "Satellite", icon: AppImages.satelliteMapImg, scheme: MapScheme.satellite),
+  MapViewModel(label: "Hybrid", icon: AppImages.satelliteMapImg, scheme: MapScheme.hybridDay),
+];
   void openDialog() {
     Map<String, bool> amenitiesList = {
       "Parking": false,
@@ -638,7 +654,52 @@ bool showMore = false;
       },
     );
   }
+  void _onMapCreated(HereMapController hereMapController) {
+    _hereMapController = hereMapController;
 
+    // Load the map scene using a map scheme to render the map with.
+    _hereMapController?.mapScene.loadSceneForMapScheme(MapScheme.logisticsDay,
+        (MapError? error) {
+      if (error == null) {
+    //     hereMapController.camera.lookAtPoint(
+    //   GeoCoordinates(40.7128, -74.0060), // New York
+      
+    // );
+        // _hereMapController?.mapScene.enableFeatures(
+        //     {MapFeatures.lowSpeedZones: MapFeatureModes.lowSpeedZonesAll});
+        // _truckGuidanceExample =
+        //     TruckGuidanceExample(_showDialog, hereMapController);
+        // _truckGuidanceExample!.setUICallback(this);
+      } else {
+      }
+    });
+  }
+Future<void> _showDialog(String title, String message) async {
+    // return showDialog<void>(
+    //   context: context,
+    //   barrierDismissible: false,
+    //   builder: (BuildContext context) {
+    //     return AlertDialog(
+    //       title: Text(title),
+    //       content: SingleChildScrollView(
+    //         child: ListBody(
+    //           children: <Widget>[
+    //             Text(message),
+    //           ],
+    //         ),
+    //       ),
+    //       actions: <Widget>[
+    //         TextButton(
+    //           child: const Text('OK'),
+    //           onPressed: () {
+    //             Navigator.of(context).pop();
+    //           },
+    //         ),
+    //       ],
+    //     );
+    //   },
+    // );
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -688,7 +749,9 @@ bool showMore = false;
       body: Stack(
         children: [
           // Background content
-          MapView(),
+          
+          MapView(onMapCreated: _onMapCreated,),
+         
           Container(
             margin: EdgeInsets.only(top: 10),
             height: 40,
@@ -699,49 +762,60 @@ bool showMore = false;
                 horizontal: AppTheme.horizontalPadding,
               ),
               separatorBuilder: (context, index) => 5.w,
-              itemBuilder: (context, index) => Container(
-                // width: 100,
-                padding: EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(
-                    color: const Color.fromRGBO(
-                      235,
-                      238,
-                      242,
-                      1,
-                    ), // border color
-                    width: 1, // border width
-                  ),
-                  borderRadius: BorderRadius.circular(
-                    50,
-                  ), // optional rounded corners
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color.fromRGBO(0, 0, 0, 0.04), // shadow color
-                      offset: Offset(0, 2), // x=0, y=2 (downwards)
-                      blurRadius: 6, // soft shadow
-                      spreadRadius: 0,
+              itemBuilder: (context, index) => GestureDetector(
+                onTap: (){
+ _hereMapController?.mapScene.enableFeatures(
+            {MapFeatures.lowSpeedZones: MapFeatureModes.lowSpeedZonesAll});
+        _truckGuidanceExample =
+            TruckGuidanceExample(_showDialog, _hereMapController!);
+      
+          
+        
+                },
+                child: Container(
+                  // width: 100,
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(
+                      color: const Color.fromRGBO(
+                        235,
+                        238,
+                        242,
+                        1,
+                      ), // border color
+                      width: 1, // border width
                     ),
-                  ],
-                ),
-                child: Row(
-                  spacing: 10,
-                  children: [
-                    CircleAvatar(
-                      radius: 14,
-                      backgroundColor: index % 2 == 0
-                          ? Color(0xff4676F6)
-                          : Color(0xffFFC300),
-                      child: Text(
-                        stationList[index].splitMapJoin('')[0],
-                        style: AppTextTheme().headingText.copyWith(
-                          fontSize: 16,
+                    borderRadius: BorderRadius.circular(
+                      50,
+                    ), // optional rounded corners
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color.fromRGBO(0, 0, 0, 0.04), // shadow color
+                        offset: Offset(0, 2), // x=0, y=2 (downwards)
+                        blurRadius: 6, // soft shadow
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    spacing: 10,
+                    children: [
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: index % 2 == 0
+                            ? Color(0xff4676F6)
+                            : Color(0xffFFC300),
+                        child: Text(
+                          stationList[index].splitMapJoin('')[0],
+                          style: AppTextTheme().headingText.copyWith(
+                            fontSize: 16,
+                          ),
                         ),
                       ),
-                    ),
-                    Text(stationList[index], style: AppTextTheme().bodyText),
-                  ],
+                      Text(stationList[index], style: AppTextTheme().bodyText),
+                    ],
+                  ),
                 ),
               ),
               scrollDirection: Axis.horizontal,
@@ -1088,11 +1162,180 @@ bool showMore = false;
               );
             },
           ),
+         if(changeMapScheme)
+         Align(
+            
+            child: Container(
+              padding: EdgeInsets.symmetric(
+                vertical: 10,
+                horizontal: 16
+              ),
+             width: 271,
+              
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14)
+              ),
+              child: Row(
+                spacing: 20,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: List.generate(mapSchemes.length, (index) {
+                  final item = mapSchemes[index];
+                  return _styleButton(item.label, item.scheme, item.icon,  index);
+                }),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 10,
+            bottom: 200,
+            child: Column(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 10,
+            children: [
+              GestureDetector(
+                onTap: (){
+                  setState(() {
+                    changeMapScheme = !changeMapScheme;
+                  });
+                },
+                child: Container(
+                  width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+
+                      color: Colors.white,
+                      shape: BoxShape.circle
+                    ),
+                  
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    padding: EdgeInsets.all(13),
+                    decoration: BoxDecoration(
+                       boxShadow: [
+                        BoxShadow(
+                          color: Color(0x0A000000), // same as #0000000A
+                          offset: Offset(0, 2), // x=0, y=2
+                          blurRadius: 6,        // blur radius
+                          spreadRadius: 0,      // spread
+                        ),
+                      ],
+                      shape: BoxShape.circle,
+                      color: changeMapScheme ? AppColorTheme().primary.withValues(alpha: 0.2) : Colors.white
+                    ),
+                    child: SvgPicture.asset(AppIcons.layerBoxIcon, colorFilter: changeMapScheme ? ColorFilter.mode(AppColorTheme().primary, BlendMode.srcIn) : null,),
+                  ),
+                ),
+              ),
+              Container(
+                 width: 48,
+                  // height: 200,
+                  // padding: EdgeInsets.all(13),
+                  decoration: BoxDecoration(
+                   borderRadius: BorderRadius.vertical(top: Radius.circular(50), bottom: Radius.circular(50) ),
+                     boxShadow: [
+                      BoxShadow(
+                        color: Color(0x0A000000), // same as #0000000A
+                        offset: Offset(0, 2), // x=0, y=2
+                        blurRadius: 6,        // blur radius
+                        spreadRadius: 0,      // spread
+                      ),
+                    ],
+                    
+                    color: Colors.white
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(onPressed: (){
+                         
+    Point2D center = Point2D(context.screenWidth / 2, context.screenHeight / 2);
+                        _hereMapController?.camera.zoomBy(2.0, center);
+                      }, icon: SvgPicture.asset(AppIcons.zoomInIcon)),
+                      IconButton(onPressed: (){
+                        Point2D center = Point2D(context.screenWidth / 2, context.screenHeight / 2);
+                        _hereMapController?.camera.zoomBy(0.5, center);
+                      }, icon: SvgPicture.asset(AppIcons.zoomOutIcon))
+                    ],
+                  ),
+              ),
+              Container(
+                  width: 48,
+                  height: 48,
+                  padding: EdgeInsets.all(13),
+                  decoration: BoxDecoration(
+                     boxShadow: [
+                      BoxShadow(
+                        color: Color(0x0A000000), // same as #0000000A
+                        offset: Offset(0, 2), // x=0, y=2
+                        blurRadius: 6,        // blur radius
+                        spreadRadius: 0,      // spread
+                      ),
+                    ],
+                    shape: BoxShape.circle,
+                    color:  Colors.white
+                  ),
+                  child: SvgPicture.asset(AppIcons.navigationIconGreen, colorFilter: ColorFilter.mode(Colors.black, BlendMode.srcIn), ),
+                )
+            ],
+          ))
         ],
       ),
     );
   }
+  Widget _styleButton(String label, MapScheme scheme, String icon, int index ) {
+    bool isSelect = selectIndexMapView == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: (){
+           _hereMapController?.mapScene.loadSceneForMapScheme(scheme,
+            (MapError? error) {
+          if (error != null) {
+            print("Error loading scheme: $error");
+          }
+        });
+          setState(() {
+            selectIndexMapView = index;
+          });
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          spacing: 5,
+          children: [
+            Container(
+              width: double.infinity,
+              height: 69,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(6),
+                border: isSelect ? Border.all(
+                  color:AppColorTheme().primary
+                ) : null,
+                image: DecorationImage(image: AssetImage(icon,), fit: BoxFit.cover)
+              ),
+            ),
+            Text(label, style: AppTextTheme().bodyText.copyWith(
+              color:isSelect ? AppColorTheme().primary : Color(0xff888BA1)
+            )
+            ,)
+          ],
+      ),
+      ),
+    );
+    // return TextButton(
+      // onPressed: () {
+      //   _hereMapController?.mapScene.loadSceneForMapScheme(scheme,
+      //       (MapError? error) {
+      //     if (error != null) {
+      //       print("Error loading scheme: $error");
+      //     }
+      //   });
+      // },
+    //   child: Text(label),
+    // );
+  }
 }
+
 
 class DashedLine extends StatelessWidget {
   final double height;

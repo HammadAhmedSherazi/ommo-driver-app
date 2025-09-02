@@ -7,7 +7,8 @@ import 'package:here_sdk/search.dart';
 import '../../map_sdk/truck_guidance_example.dart';
 
 class MapView extends StatefulWidget {
-  const MapView({super.key});
+  final void Function(HereMapController)? onMapCreated;
+  const MapView({super.key, required this.onMapCreated});
 
   @override
   MapViewState createState() => MapViewState();
@@ -47,26 +48,13 @@ class MapViewState extends State<MapView> implements UICallback {
   @override
   Widget build(BuildContext context) {
     return  HereMap(
-            onMapCreated: _onMapCreated,
+            onMapCreated: widget.onMapCreated,   mode: NativeViewMode.hybridComposition,
+           
           );
       }
 
-  void _onMapCreated(HereMapController hereMapController) {
-    _hereMapController = hereMapController;
-
-    // Load the map scene using a map scheme to render the map with.
-    _hereMapController?.mapScene.loadSceneForMapScheme(MapScheme.normalDay,
-        (MapError? error) {
-      if (error == null) {
-        _hereMapController?.mapScene.enableFeatures(
-            {MapFeatures.lowSpeedZones: MapFeatureModes.lowSpeedZonesAll});
-        _truckGuidanceExample =
-            TruckGuidanceExample(_showDialog, hereMapController);
-        _truckGuidanceExample!.setUICallback(this);
-      } else {
-      }
-    });
-  }
+  
+  
 
   // UICallback implementations.
   @override
@@ -147,30 +135,30 @@ class MapViewState extends State<MapView> implements UICallback {
 
   // A helper method to show a dialog.
   Future<void> _showDialog(String title, String message) async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text(message),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
+    // return showDialog<void>(
+    //   context: context,
+    //   barrierDismissible: false,
+    //   builder: (BuildContext context) {
+    //     return AlertDialog(
+    //       title: Text(title),
+    //       content: SingleChildScrollView(
+    //         child: ListBody(
+    //           children: <Widget>[
+    //             Text(message),
+    //           ],
+    //         ),
+    //       ),
+    //       actions: <Widget>[
+    //         TextButton(
+    //           child: const Text('OK'),
+    //           onPressed: () {
+    //             Navigator.of(context).pop();
+    //           },
+    //         ),
+    //       ],
+    //     );
+    //   },
+    // );
   }
 
 }

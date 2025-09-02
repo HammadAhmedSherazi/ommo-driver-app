@@ -82,7 +82,7 @@ class _AppView extends StatelessWidget {
       home: Container(
         color: Colors.white,
         child: SafeArea(
-           top: false,
+          //  top: false,
             // bottom: false,
             // maintainBottomViewPadding: true,
             minimum: EdgeInsets.only(
