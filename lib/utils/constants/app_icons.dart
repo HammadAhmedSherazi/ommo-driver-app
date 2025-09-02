@@ -18,6 +18,9 @@ class AppIcons {
   static const String layerBoxIcon = '${iconPath}layer_box_icon.svg';
   static const String zoomInIcon = '${iconPath}zoom_in_icon.svg';
   static const String zoomOutIcon = '${iconPath}zoom_out_icon.svg';
+  static const String mapSearchIcon = '${iconPath}map_search_icon.svg';
+  static const String frameIcon = '${iconPath}frame_icon.svg';
+  static const String orderBoxIcon = '${iconPath}order_box_icon.png';
   
   
   

@@ -48,7 +48,7 @@ class MapViewState extends State<MapView> implements UICallback {
   @override
   Widget build(BuildContext context) {
     return  HereMap(
-            onMapCreated: widget.onMapCreated,   mode: NativeViewMode.hybridComposition,
+            onMapCreated: widget.onMapCreated,   
            
           );
       }

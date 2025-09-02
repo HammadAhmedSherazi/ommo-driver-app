@@ -103,7 +103,7 @@ class AppTheme {
       ),
       borderSide: BorderSide(
         
-        color: Colors.transparent,
+        color: AppColorTheme().primary,
         
       )
     ),
