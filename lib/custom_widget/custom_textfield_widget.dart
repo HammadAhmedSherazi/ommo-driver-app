@@ -49,7 +49,7 @@ class CustomTextfieldWidget extends StatelessWidget {
                                 suffixIcon: suffixIcon != null ? Row(
                                   children: [
                                     suffixIcon!,
-                                    10.w
+                                    // 10.w
                                   ],
                                 ) : null,
                                 hintText: hintText,
