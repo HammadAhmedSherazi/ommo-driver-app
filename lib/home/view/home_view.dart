@@ -3,11 +3,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:here_sdk/core.dart';
+import 'package:here_sdk/core.dart' hide Location;
 import 'package:here_sdk/mapview.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/home/view/map_view.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:location/location.dart';
 
 import 'package:ommo/utils/utils.dart';
 
@@ -56,6 +57,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
     "Truck washes",
     "Dealership",
   ];
+  late MapMarker _userMarker;
+late MapPolygon _accuracyCircle;
+
   final List<PlaceDataModel> places = [
     PlaceDataModel(
       title: "Walmart",
@@ -177,7 +181,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
       "Fax scan": false,
       "Pool": false,
     };
-    File? _selectedImage;
+    File? selectedImage;
     showMore = false;
     showDialog(
       context: context,
@@ -381,11 +385,11 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                 if (picked != null) {
                                   final imageFile = File(picked.path);
                                   setState(() {
-                                    _selectedImage = imageFile;
+                                    selectedImage = imageFile;
                                   });
                                 }
                               },
-                              child: _selectedImage == null
+                              child: selectedImage == null
                                   ? Row(
                                       spacing: 5,
                                       children: [
@@ -412,7 +416,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                             ),
                                             image: DecorationImage(
                                               image: FileImage(
-                                                File(_selectedImage!.path),
+                                                File(selectedImage!.path),
                                               ),
                                               fit: BoxFit.cover,
                                             ),
@@ -424,7 +428,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                               InkWell(
                                                 onTap: () {
                                                   setState(() {
-                                                    _selectedImage = null;
+                                                    selectedImage = null;
                                                   });
                                                 },
                                                 child: CircleAvatar(
@@ -715,27 +719,69 @@ class _HomeMobileViewState extends State<HomeMobileView>
       },
     );
   }
+  void _showUserLocation(HereMapController controller, GeoCoordinates coords) {
+  // Create marker (blue dot)
+  MapImage userImage = MapImage.withFilePathAndWidthAndHeight(AppIcons.myLocIcon, 40, 40); // add your own icon
+  _userMarker = MapMarker(coords, userImage);
+  controller.mapScene.addMapMarker(_userMarker);
 
+  // Create accuracy circle
+  // GeoCircle geoCircle = GeoCircle(coords, accuracy); // accuracy in meters
+  // GeoCircleStyle circleStyle = GeoCircleStyle()
+  //   ..fillColor = Color.fromARGB(80, 0, 0, 255)  // semi-transparent blue
+  //   ..strokeColor = Color.fromARGB(120, 0, 0, 200)
+  //   ..strokeWidth = 2;
+
+  // _accuracyCircle = MapPolygon(geoCircle., circleStyle);
+  // controller.mapScene.addMapPolygon(_accuracyCircle);
+
+  // Center camera
+  controller.camera.lookAtPoint(coords);
+}
   void _onMapCreated(HereMapController hereMapController) {
-    _hereMapController = hereMapController;
+  _hereMapController = hereMapController;
 
-    // Load the map scene using a map scheme to render the map with.
-    _hereMapController?.mapScene.loadSceneForMapScheme(MapScheme.logisticsDay, (
-      MapError? error,
-    ) {
-      if (error == null) {
-        //     hereMapController.camera.lookAtPoint(
-        //   GeoCoordinates(40.7128, -74.0060), // New York
 
-        // );
-        // _hereMapController?.mapScene.enableFeatures(
-        //     {MapFeatures.lowSpeedZones: MapFeatureModes.lowSpeedZonesAll});
-        // _truckGuidanceExample =
-        //     TruckGuidanceExample(_showDialog, hereMapController);
-        // _truckGuidanceExample!.setUICallback(this);
-      } else {}
-    });
+  // Load the map scene with the chosen map scheme.
+  _hereMapController?.mapScene.loadSceneForMapScheme(
+    MapScheme.normalDay,
+    (MapError? error) {
+      if (error != null) {
+        print("Map scene not loaded. Error: ${error.toString()}");
+        return;
+      }
+
+      // Enable safety cameras after the scene loads successfully.
+      // _enableSafetyCameras(_hereMapController!);
+
+    },
+  );
+
+}
+
+void _enableSafetyCameras(HereMapController controller) {
+  controller.mapScene.enableFeatures({
+    MapFeatures.safetyCameras: MapFeatureModes.safetyCamerasAll
+  });
+}
+final Location _location = Location();
+
+Future<GeoCoordinates?> _getCurrentLocation() async {
+  bool serviceEnabled = await _location.serviceEnabled();
+  if (!serviceEnabled) {
+    serviceEnabled = await _location.requestService();
+    if (!serviceEnabled) return null;
   }
+
+  PermissionStatus permissionGranted = await _location.hasPermission();
+  if (permissionGranted == PermissionStatus.denied) {
+    permissionGranted = await _location.requestPermission();
+    if (permissionGranted != PermissionStatus.granted) return null;
+  }
+
+  LocationData locationData = await _location.getLocation();
+  return GeoCoordinates(locationData.latitude!, locationData.longitude!);
+}
 
   Future<void> _showDialog(String title, String message) async {
     // return showDialog<void>(
@@ -769,11 +815,17 @@ class _HomeMobileViewState extends State<HomeMobileView>
   @override
   void initState() {
     super.initState();
+    Future.microtask(()async{
+      final loc = await _getCurrentLocation();
+      _showUserLocation(_hereMapController!, loc!);
+    });
     _tabController = TabController(length: locationOpt.length, vsync: this);
     searchFieldFocusNode.addListener(() {
       setState(() {}); // Rebuild widget when focus changes
     });
   }
+
+  bool isSetDirection = false;
 
   @override
   Widget build(BuildContext context) {
@@ -1046,6 +1098,74 @@ class _HomeMobileViewState extends State<HomeMobileView>
             // width: double.infinity,
           ),
           // Draggable Bottom Sheet (always visible)
+          if(isSetDirection)
+           DraggableScrollableSheet(
+             initialChildSize: 0.26,
+            minChildSize: 0.24,
+            maxChildSize: 0.95,
+            builder: (context, scrollController) {
+              return Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2)],
+                ),
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(
+                      context,
+                    ).viewInsets.bottom, // 👈 safe for keyboard
+                  ),
+                  child: Column(
+                    spacing: 10,
+                    children: [
+                      // Handle (fixed)
+                      Container(
+                        margin: const EdgeInsets.symmetric(vertical: 12),
+                        height: 5,
+                        width: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      Expanded(child: ListView(
+                        controller: scrollController,
+                        shrinkWrap: true,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppTheme.horizontalPadding
+                        ),
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                            Text("Create a trip", style: AppTextTheme().subHeadingText.copyWith(
+                              fontWeight: AppFontWeight.semiBold,
+                              fontSize: 20
+                            ),),
+                            IconButton(
+                              padding: EdgeInsets.zero,
+                              visualDensity: VisualDensity(
+                                horizontal: -4.0,
+                                vertical: -4.0
+                              ),
+                              onPressed: (){
+                                setState(() {
+                                  isSetDirection = false;
+                                });
+                              }, icon: Icon(Icons.close, color: Colors.black,))
+
+
+                          ],)
+                        ],
+                      ))
+                      ])
+                      )
+                      
+                      );}
+
+           ),
+          if(!isSetDirection)
           DraggableScrollableSheet(
             initialChildSize: 0.26,
             minChildSize: 0.24,
@@ -1113,7 +1233,13 @@ class _HomeMobileViewState extends State<HomeMobileView>
                             15.h,
                             CustomButtonWidget(
                               title: "Get Direction",
-                              onPressed: () {},
+                              onPressed: () {
+                                if(searchTextEditController.text.isNotEmpty){
+                                  setState(() {
+                                    isSetDirection = true;
+                                  });
+                                }
+                              },
                               icon: Icon(Icons.directions, color: Colors.white),
                             ),
                             15.h,
@@ -1754,6 +1880,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
             if (error != null) {
               print("Error loading scheme: $error");
             }
+            _enableSafetyCameras(_hereMapController!);
           });
           setState(() {
             selectIndexMapView = index;

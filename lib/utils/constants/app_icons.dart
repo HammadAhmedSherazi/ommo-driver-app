@@ -21,6 +21,7 @@ class AppIcons {
   static const String mapSearchIcon = '${iconPath}map_search_icon.svg';
   static const String frameIcon = '${iconPath}frame_icon.svg';
   static const String orderBoxIcon = '${iconPath}order_box_icon.png';
+  static const String myLocIcon = '${iconPath}test.png';
   
   
   
