@@ -48,6 +48,10 @@ class HomeMobileView extends StatefulWidget {
 class _HomeMobileViewState extends State<HomeMobileView>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+
+  final List<TextEditingController>  textController = [
+    TextEditingController(text: "Start My Current Location")
+  ];
   HereMapController? _hereMapController;
   final List<String> stationList = [
     "Truck stops",
@@ -820,6 +824,7 @@ Future<GeoCoordinates?> _getCurrentLocation() async {
       _showUserLocation(_hereMapController!, loc!);
     });
     _tabController = TabController(length: locationOpt.length, vsync: this);
+    textController.addAll([searchTextEditController ]);
     searchFieldFocusNode.addListener(() {
       setState(() {}); // Rebuild widget when focus changes
     });
@@ -1156,7 +1161,9 @@ Future<GeoCoordinates?> _getCurrentLocation() async {
                               }, icon: Icon(Icons.close, color: Colors.black,))
 
 
-                          ],)
+                          ],),
+                          20.h,
+                          VerticalStepWithTextField(textControllers: textController,)
                         ],
                       ))
                       ])

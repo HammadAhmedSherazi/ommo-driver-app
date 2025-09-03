@@ -14,3 +14,4 @@ part 'custom_button_widget.dart';
 part 'custom_textfield_widget.dart';
 part 'custom_tab_bar_widget.dart';
 part 'custom_rating_bar_indicator_widget.dart';
+part 'vertical_step_with_textfield.dart';
