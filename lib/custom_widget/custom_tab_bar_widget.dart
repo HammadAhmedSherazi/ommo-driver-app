@@ -46,7 +46,7 @@ class _CustomTabBarWidgetState extends State<CustomTabBarWidget>
             dividerColor: Colors.transparent,
             indicatorSize: TabBarIndicatorSize.tab,
             labelColor: AppColorTheme().primary, // active color
-            unselectedLabelColor: const Color(0xff888BA1), // inactive color
+            unselectedLabelColor:  AppColorTheme().secondary, // inactive color
             tabs: widget.options.map((label) {
               return Tab(
                 child: Text(

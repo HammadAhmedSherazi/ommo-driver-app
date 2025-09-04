@@ -14,7 +14,7 @@ class AppColorTheme {
 
   // Color definitions
   Color get primary => const Color(0xFF30B87A);
-  Color get secondary => const Color(0xFFE1243D);
+  Color get secondary => const Color(0xFF888BA1);
   Color get white => const Color(0xFFFFFFFF);
   Color get black => const Color(0xFF000000);
   Color get green => const Color(0xFF34C759);

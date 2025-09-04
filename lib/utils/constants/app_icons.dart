@@ -22,6 +22,8 @@ class AppIcons {
   static const String frameIcon = '${iconPath}frame_icon.svg';
   static const String orderBoxIcon = '${iconPath}order_box_icon.png';
   static const String myLocIcon = '${iconPath}test.png';
+  static const String truckIcon = '${iconPath}truck_icon.svg';
+  static const String settingIcon = '${iconPath}setting_icon.svg';
   
   
   

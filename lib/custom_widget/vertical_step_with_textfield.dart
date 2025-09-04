@@ -1,10 +1,18 @@
 part of 'custom_widget.dart';
 
-class VerticalStepWithTextField extends StatelessWidget {
+
+
+class VerticalStepWithTextField extends StatefulWidget {
   final List<TextEditingController> textControllers;
+  final List<FocusNode> focusNode;
+  final VoidCallback removeFieldTap;
+  const VerticalStepWithTextField({super.key, required this.textControllers, required this.removeFieldTap, required this.focusNode});
 
-  const VerticalStepWithTextField({super.key, required this.textControllers});
+  @override
+  State<VerticalStepWithTextField> createState() => _VerticalStepWithTextFieldState();
+}
 
+class _VerticalStepWithTextFieldState extends State<VerticalStepWithTextField> {
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -14,9 +22,9 @@ class VerticalStepWithTextField extends StatelessWidget {
         /// Left side (steps)
         Column(
           
-          children: List.generate(textControllers.length, (index) {
+          children: List.generate(widget.textControllers.length, (index) {
             final isFirst = index == 0;
-            final isLast = index == textControllers.length - 1;
+            final isLast = index == widget.textControllers.length - 1;
 
             return Column(
               children: [
@@ -51,10 +59,23 @@ class VerticalStepWithTextField extends StatelessWidget {
         Expanded(
           child: Column(
             spacing: 10,
-            children: List.generate(textControllers.length, (index) {
-              return CustomTextfieldWidget(
-                controller: textControllers[index],
-                hintText: "sds",
+            children: List.generate(widget.textControllers.length, (index) {
+              return   CustomTextfieldWidget(
+                focusNode: widget.focusNode[index],
+                controller: widget.textControllers[index],
+                // onTap: (){
+                //   setState(() {
+                    
+                //   });
+                // },
+                hintText: "Enter a location",
+                suffixIcon: widget.focusNode[index].hasFocus ? IconButton(onPressed: widget.removeFieldTap, icon: Icon(Icons.cancel), style: ButtonStyle(
+                  padding: WidgetStatePropertyAll(EdgeInsets.zero),
+                  visualDensity: VisualDensity(
+                    horizontal: -4.0,
+                    vertical: -4.0
+                  )
+                ),) : null,
                
               );
             }),

@@ -52,6 +52,10 @@ class _HomeMobileViewState extends State<HomeMobileView>
   final List<TextEditingController>  textController = [
     TextEditingController(text: "Start My Current Location")
   ];
+  final List<FocusNode> focusNode = [
+    FocusNode()
+  ];
+
   HereMapController? _hereMapController;
   final List<String> stationList = [
     "Truck stops",
@@ -147,6 +151,7 @@ late MapPolygon _accuracyCircle;
   ];
   bool showMore = false, changeMapScheme = false;
   int selectIndexMapView = 0;
+  final List<String> settingChipsList =  ["Avoid unpaved roads", "Avoid tunnels", "Avoid ferries", "Avoid restriction Areas"];
   TruckGuidanceExample? _truckGuidanceExample;
   PlaceDataModel? place;
 
@@ -824,7 +829,8 @@ Future<GeoCoordinates?> _getCurrentLocation() async {
       _showUserLocation(_hereMapController!, loc!);
     });
     _tabController = TabController(length: locationOpt.length, vsync: this);
-    textController.addAll([searchTextEditController ]);
+    textController.add(searchTextEditController);
+    focusNode.add(FocusNode());
     searchFieldFocusNode.addListener(() {
       setState(() {}); // Rebuild widget when focus changes
     });
@@ -1148,6 +1154,7 @@ Future<GeoCoordinates?> _getCurrentLocation() async {
                               fontWeight: AppFontWeight.semiBold,
                               fontSize: 20
                             ),),
+                           
                             IconButton(
                               padding: EdgeInsets.zero,
                               visualDensity: VisualDensity(
@@ -1163,7 +1170,136 @@ Future<GeoCoordinates?> _getCurrentLocation() async {
 
                           ],),
                           20.h,
-                          VerticalStepWithTextField(textControllers: textController,)
+                          VerticalStepWithTextField(
+                            focusNode: focusNode,
+                            textControllers: textController, removeFieldTap: (){
+                            setState(() {
+                              textController.removeLast();
+                            });
+                          },),
+                           5.h,
+                          TextButton(
+                            style: ButtonStyle(
+                              padding: WidgetStatePropertyAll(EdgeInsets.zero),
+                              visualDensity: VisualDensity(
+                                horizontal: -4.0,
+                                vertical: -4.0
+                              )
+                            ),
+                            onPressed: (){
+                             setState(() {
+                                textController.add(TextEditingController());
+                                focusNode.add(FocusNode());
+                             });
+                            }, child: Row(
+                              spacing: 5,
+                            children: [
+                              Icon(Icons.add, size:25 ,),
+                              Text("Add a stop", style: AppTextTheme().bodyText.copyWith(
+                                color: AppColorTheme().primary,
+                                fontSize: 16
+
+                              ),)
+                            ],
+                          ))
+
+                          ,
+                          20.h,
+                          DashedLine(),
+                          20.h,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text("Settings", style: AppTextTheme().subHeadingText.copyWith(
+                                fontSize: 16
+                              ),),
+                              IconButton(onPressed: (){}, icon: SvgPicture.asset(AppIcons.settingIcon), style: ButtonStyle(
+                                padding: WidgetStatePropertyAll(EdgeInsets.zero),
+                                visualDensity: VisualDensity(
+                                  horizontal: -4.0,
+                                  vertical: -4.0
+                                )
+                              ),)
+                            ],
+                          ),
+                          Wrap(
+                            spacing: 5,
+                            
+                            children:List.generate(settingChipsList.length, (index)=> Chip(
+                              deleteIconColor:  AppColorTheme().secondary,
+                              onDeleted: () {
+                                setState(() {
+                                  settingChipsList.removeAt(index);
+                                });
+                              },
+                              deleteIconBoxConstraints: BoxConstraints(
+                                maxHeight: 24,
+                                maxWidth: 24
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                vertical: 0,
+                                horizontal: 3
+                              ),
+                              backgroundColor: Color(0xffF4F6F8),
+                              deleteIcon: Icon(Icons.cancel, ),
+                              
+                              label:Text(settingChipsList[index]), shape: RoundedRectangleBorder(
+                              
+                              borderRadius: BorderRadius.circular(50),
+                              side: BorderSide(
+                                color: Colors.transparent
+                              )
+                              
+                            ),)),
+                          ),
+                          20.h,
+                          DashedLine(),
+                          20.h,
+                          Text("Availables routes", style: AppTextTheme().subHeadingText.copyWith(
+                                fontSize: 16
+                              ),),
+                          ...List.generate(3, (index)=> ListTile(
+                            // minLeadingWidth: 20,
+                            contentPadding: EdgeInsets.symmetric(
+                              vertical: 5
+                            ),
+                            leading: CircleAvatar(
+                              radius: 25,
+                              backgroundColor: Color(0xffF4F6F8),
+                              child: SvgPicture.asset(AppIcons.truckIcon),
+                            ),
+                            title: Text("Via I-20E", style: AppTextTheme().bodyText.copyWith(
+                              fontSize: 16
+
+                            ),),
+                            subtitle: index == 0? Row(
+                              spacing: 4,
+                              children: [
+                                Icon(Icons.warning_rounded, size: 16, color: Color(0xffFF4F5B) ,),
+                                Text("This route requires tolls", style: AppTextTheme().lightText.copyWith(
+                                  color: AppColorTheme().secondary
+                                ),)
+                              ],
+                            ) : null,
+                            trailing: Row(
+                              spacing: 5,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text("2h 11m", style: AppTextTheme().lightText.copyWith(
+                                      color: AppColorTheme().primary
+                                    ),),
+                                    Text("145 mi", style: AppTextTheme().lightText.copyWith(
+                                      color: AppColorTheme().secondary
+                                    ),)
+                                  ],
+                                ),
+                                Icon(Icons.directions, color: Colors.black, size: 20,)
+                              ],
+                            ),
+                          ))
                         ],
                       ))
                       ])
@@ -1272,7 +1408,7 @@ Future<GeoCoordinates?> _getCurrentLocation() async {
                                 subtitle: Text(
                                   "New York, NY 10025",
                                   style: AppTextTheme().lightText.copyWith(
-                                    color: Color(0xff888BA1),
+                                    color: AppColorTheme().secondary,
                                   ),
                                 ),
                               ),
@@ -1302,7 +1438,7 @@ Future<GeoCoordinates?> _getCurrentLocation() async {
                                     Text(
                                       "The light rain next 2 hours",
                                       style: AppTextTheme().lightText.copyWith(
-                                        color: Color(0xff888BA1),
+                                        color: AppColorTheme().secondary,
                                       ),
                                     ),
                                   ],
@@ -1456,7 +1592,7 @@ Future<GeoCoordinates?> _getCurrentLocation() async {
                                               "Manhattan, New York, NY, USA",
                                               style: AppTextTheme().lightText
                                                   .copyWith(
-                                                    color: Color(0xff888BA1),
+                                                    color: AppColorTheme().secondary,
                                                   ),
                                             ),
                                           ),
@@ -1535,7 +1671,7 @@ Future<GeoCoordinates?> _getCurrentLocation() async {
                                     Text(
                                       "(${place!.reviewCount})  • ${place!.storeType} • ${place!.distance} mi",
                                       style: AppTextTheme().lightText.copyWith(
-                                        color: Color(0xff888BA1),
+                                        color: AppColorTheme().secondary,
                                       ),
                                     ),
                                   ],
@@ -1651,7 +1787,7 @@ Future<GeoCoordinates?> _getCurrentLocation() async {
                                         style: AppTextTheme().lightText
                                             .copyWith(
                                               fontSize: 16,
-                                              color: Color(0xff888BA1),
+                                              color: AppColorTheme().secondary,
                                             ),
                                       ),
                                       TextSpan(
@@ -1793,7 +1929,7 @@ Future<GeoCoordinates?> _getCurrentLocation() async {
                                               "Some locations do, but always check with the store first.",
                                               style: AppTextTheme().lightText
                                                   .copyWith(
-                                                    color: Color(0xff888BA1),
+                                                    color: AppColorTheme().secondary,
                                                   ),
                                             ),
                                             Row(
@@ -1914,7 +2050,7 @@ Future<GeoCoordinates?> _getCurrentLocation() async {
             Text(
               label,
               style: AppTextTheme().bodyText.copyWith(
-                color: isSelect ? AppColorTheme().primary : Color(0xff888BA1),
+                color: isSelect ? AppColorTheme().primary : AppColorTheme().secondary,
               ),
             ),
           ],
@@ -2018,13 +2154,13 @@ class PlaceDisplayWidget extends StatelessWidget {
                   Text(
                     "(${place.reviewCount})",
                     style: AppTextTheme().bodyText.copyWith(
-                      color: Color(0xff888BA1),
+                      color: AppColorTheme().secondary,
                     ),
                   ),
                   Text(
                     "  • ${place.storeType} • ${place.distance} mi",
                     style: AppTextTheme().bodyText.copyWith(
-                      color: Color(0xff888BA1),
+                      color: AppColorTheme().secondary,
                     ),
                   ),
                 ],
@@ -2043,7 +2179,7 @@ class PlaceDisplayWidget extends StatelessWidget {
                   Text(
                     "  • ${place.shopStatus == "Open" ? "Closes" : "Opens"} at ${place.time} ",
                     style: AppTextTheme().bodyText.copyWith(
-                      color: Color(0xff888BA1),
+                      color: AppColorTheme().secondary,
                     ),
                   ),
                 ],
