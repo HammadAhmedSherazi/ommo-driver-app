@@ -25,7 +25,7 @@ class AppColorTheme {
   Color get lightestGrey => const Color(0xFFEAEAEA);
   Color get red => const Color(0xFFFF3333);
   Color get whiteRed => const Color(0xFFFFF0F0);
-  Color get whiteShade => const Color(0xFFF3F3F3);
+  Color get whiteShade => const Color(0xFFF4F6F8);
   Color get whiteShade1 => const Color(0xFFF8F8F8);
   Color get shimmerBaseColor => Colors.grey[300]!;
   Color get shimmerHighlightColor => Colors.grey[100]!;

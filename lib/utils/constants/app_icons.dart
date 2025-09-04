@@ -24,6 +24,12 @@ class AppIcons {
   static const String myLocIcon = '${iconPath}test.png';
   static const String truckIcon = '${iconPath}truck_icon.svg';
   static const String settingIcon = '${iconPath}setting_icon.svg';
+  static const String localShippingIcon = '${iconPath}local_shipping.svg';
+  static const String flyoverIcon = '${iconPath}flyover.svg';
+  static const String directionBoatIcon = '${iconPath}directions_boat.svg';
+  static const String roadIcon = '${iconPath}road_icon.svg';
+  static const String subwayIcon = '${iconPath}subway.svg';
+  static const String unpavedRoadIcon = '${iconPath}unpaved_road.svg';
   
   
   
