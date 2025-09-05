@@ -10,6 +10,7 @@ import 'package:ommo/home/view/map_view.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:location/location.dart';
 
+
 import 'package:ommo/utils/utils.dart';
 
 import '../../map_sdk/truck_guidance_example.dart';
@@ -875,23 +876,20 @@ class _HomeMobileViewState extends State<HomeMobileView>
     });
   }
 
-  bool isSetDirection = false ;
+ 
   void openTruckSetting(){
-    showModalBottomSheet(
-  context: context,
-  isScrollControlled: true, // allows full screen drag
-  backgroundColor: Colors.transparent,
-  shape: const RoundedRectangleBorder(
-    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-  ),
-  builder: (context) {
-    return  CustomDragableWidget(
-      initialSize: 0.80,
-      bottomWidget: Padding(padding: EdgeInsetsGeometry.all(20), child: CustomButtonWidget(title: "Save", onPressed: (){
-                 context.popPage();
-
-                }),),
-      childrens: [
+    Helpers.openBottomSheet(context: context, child: SizedBox(
+      height: context.screenHeight * 0.80,
+      
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              // physics: NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(
+              horizontal: AppTheme.horizontalPadding
+            ),
+            children: [
                       Row(
                         spacing: 10,
                         children: [
@@ -1004,20 +1002,31 @@ class _HomeMobileViewState extends State<HomeMobileView>
            
              
             ]  
-           ); });
+       ,
+          ))
+          ,Padding(padding: EdgeInsets.all(AppTheme.horizontalPadding), child: CustomButtonWidget(title: "Save", onPressed: (){
+            context.popPage();
+          }),),
+          30.h
+        ],
+      ),
+    ));
+
   }
 
   void openSettingBottomSheet(){
-    showModalBottomSheet(
-  context: context,
-  isScrollControlled: true,
-  backgroundColor: Colors.transparent,
-  builder: (context) {
-    return StatefulBuilder(
+    Helpers.openBottomSheet(context: context, child: StatefulBuilder(
       builder: (context, setState) {
-        return CustomDragableWidget(
-          initialSize: 0.80,
-          childrens: [
+        return Container(
+          height: context.screenHeight * 0.80,
+          decoration: BoxDecoration(
+            color: Colors.white
+          ),
+          child: ListView(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppTheme.horizontalPadding
+            ),
+            children: [
             Row(
               spacing: 10,
               children: [
@@ -1137,15 +1146,215 @@ class _HomeMobileViewState extends State<HomeMobileView>
               ),
             ),
           ],
-        );
+       
+          ),
+        ) ;
       },
-    );
-  },
-);
+    )
+ );
 
 
   }
-  @override
+
+  void createTripBottomModalSheet(){
+    Helpers.openBottomSheet(context: context, child: SizedBox(
+      height: context.screenHeight * 0.8,
+      child: ListView(
+        padding: EdgeInsets.symmetric(horizontal: AppTheme.horizontalPadding),
+        children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Create a trip",
+                        style: AppTextTheme().subHeadingText.copyWith(
+                          fontWeight: AppFontWeight.semiBold,
+                          fontSize: 20,
+                        ),
+                      ),
+
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity(
+                          horizontal: -4.0,
+                          vertical: -4.0,
+                        ),
+                        onPressed: () {
+                         context.popPage();
+                        },
+                        icon: Icon(Icons.close, color: Colors.black),
+                      ),
+                    ],
+                  ),
+                  20.h,
+                  VerticalStepWithTextField(
+                    focusNode: focusNode,
+                    textControllers: textController,
+                    removeFieldTap: () {
+                      setState(() {
+                        textController.removeLast();
+                      });
+                    },
+                  ),
+                  5.h,
+                  TextButton(
+                    style: ButtonStyle(
+                      padding: WidgetStatePropertyAll(EdgeInsets.zero),
+                      visualDensity: VisualDensity(
+                        horizontal: -4.0,
+                        vertical: -4.0,
+                      ),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        textController.add(TextEditingController());
+                        focusNode.add(FocusNode());
+                      });
+                    },
+                    child: Row(
+                      spacing: 5,
+                      children: [
+                        Icon(Icons.add, size: 25),
+                        Text(
+                          "Add a stop",
+                          style: AppTextTheme().bodyText.copyWith(
+                            color: AppColorTheme().primary,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  20.h,
+                  DashedLine(),
+                  20.h,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Settings",
+                        style: AppTextTheme().subHeadingText.copyWith(
+                          fontSize: 16,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          openSettingBottomSheet();
+                        },
+                        icon: SvgPicture.asset(AppIcons.settingIcon),
+                        style: ButtonStyle(
+                          padding: WidgetStatePropertyAll(EdgeInsets.zero),
+                          visualDensity: VisualDensity(
+                            horizontal: -4.0,
+                            vertical: -4.0,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Wrap(
+                    spacing: 5,
+
+                    children: List.generate(
+                      settingChipsList.length,
+                      (index) => Chip(
+                        deleteIconColor: AppColorTheme().secondary,
+                        onDeleted: () {
+                          setState(() {
+                            settingChipsList.removeAt(index);
+                          });
+                        },
+                        deleteIconBoxConstraints: BoxConstraints(
+                          maxHeight: 24,
+                          maxWidth: 24,
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          vertical: 0,
+                          horizontal: 3,
+                        ),
+                        backgroundColor: Color(0xffF4F6F8),
+                        deleteIcon: Icon(Icons.cancel),
+
+                        label: Text(settingChipsList[index]),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(50),
+                          side: BorderSide(color: Colors.transparent),
+                        ),
+                      ),
+                    ),
+                  ),
+                  20.h,
+                  DashedLine(),
+                  20.h,
+                  Text(
+                    "Availables routes",
+                    style: AppTextTheme().subHeadingText.copyWith(fontSize: 16),
+                  ),
+                  ...List.generate(
+                    3,
+                    (index) => ListTile(
+                      // minLeadingWidth: 20,
+                      contentPadding: EdgeInsets.symmetric(vertical: 5),
+                      leading: CircleAvatar(
+                        radius: 25,
+                        backgroundColor: Color(0xffF4F6F8),
+                        child: SvgPicture.asset(AppIcons.truckIcon),
+                      ),
+                      title: Text(
+                        "Via I-20E",
+                        style: AppTextTheme().bodyText.copyWith(fontSize: 16),
+                      ),
+                      subtitle: index == 0
+                          ? Row(
+                              spacing: 4,
+                              children: [
+                                Icon(
+                                  Icons.warning_rounded,
+                                  size: 16,
+                                  color: Color(0xffFF4F5B),
+                                ),
+                                Text(
+                                  "This route requires tolls",
+                                  style: AppTextTheme().lightText.copyWith(
+                                    color: AppColorTheme().secondary,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : null,
+                      trailing: Row(
+                        spacing: 5,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                "2h 11m",
+                                style: AppTextTheme().lightText.copyWith(
+                                  color: AppColorTheme().primary,
+                                ),
+                              ),
+                              Text(
+                                "145 mi",
+                                style: AppTextTheme().lightText.copyWith(
+                                  color: AppColorTheme().secondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Icon(Icons.directions, color: Colors.black, size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+             
+      ),
+    ));
+  }
+
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -1416,203 +1625,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
             // width: double.infinity,
           ),
 
-          if (isSetDirection) ...[
-            
-              CustomDragableWidget(
-                childrens: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Create a trip",
-                        style: AppTextTheme().subHeadingText.copyWith(
-                          fontWeight: AppFontWeight.semiBold,
-                          fontSize: 20,
-                        ),
-                      ),
-
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        visualDensity: VisualDensity(
-                          horizontal: -4.0,
-                          vertical: -4.0,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            isSetDirection = false;
-                          });
-                        },
-                        icon: Icon(Icons.close, color: Colors.black),
-                      ),
-                    ],
-                  ),
-                  20.h,
-                  VerticalStepWithTextField(
-                    focusNode: focusNode,
-                    textControllers: textController,
-                    removeFieldTap: () {
-                      setState(() {
-                        textController.removeLast();
-                      });
-                    },
-                  ),
-                  5.h,
-                  TextButton(
-                    style: ButtonStyle(
-                      padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                      visualDensity: VisualDensity(
-                        horizontal: -4.0,
-                        vertical: -4.0,
-                      ),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        textController.add(TextEditingController());
-                        focusNode.add(FocusNode());
-                      });
-                    },
-                    child: Row(
-                      spacing: 5,
-                      children: [
-                        Icon(Icons.add, size: 25),
-                        Text(
-                          "Add a stop",
-                          style: AppTextTheme().bodyText.copyWith(
-                            color: AppColorTheme().primary,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  20.h,
-                  DashedLine(),
-                  20.h,
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Settings",
-                        style: AppTextTheme().subHeadingText.copyWith(
-                          fontSize: 16,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          openSettingBottomSheet();
-                        },
-                        icon: SvgPicture.asset(AppIcons.settingIcon),
-                        style: ButtonStyle(
-                          padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                          visualDensity: VisualDensity(
-                            horizontal: -4.0,
-                            vertical: -4.0,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Wrap(
-                    spacing: 5,
-
-                    children: List.generate(
-                      settingChipsList.length,
-                      (index) => Chip(
-                        deleteIconColor: AppColorTheme().secondary,
-                        onDeleted: () {
-                          setState(() {
-                            settingChipsList.removeAt(index);
-                          });
-                        },
-                        deleteIconBoxConstraints: BoxConstraints(
-                          maxHeight: 24,
-                          maxWidth: 24,
-                        ),
-                        padding: EdgeInsets.symmetric(
-                          vertical: 0,
-                          horizontal: 3,
-                        ),
-                        backgroundColor: Color(0xffF4F6F8),
-                        deleteIcon: Icon(Icons.cancel),
-
-                        label: Text(settingChipsList[index]),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(50),
-                          side: BorderSide(color: Colors.transparent),
-                        ),
-                      ),
-                    ),
-                  ),
-                  20.h,
-                  DashedLine(),
-                  20.h,
-                  Text(
-                    "Availables routes",
-                    style: AppTextTheme().subHeadingText.copyWith(fontSize: 16),
-                  ),
-                  ...List.generate(
-                    3,
-                    (index) => ListTile(
-                      // minLeadingWidth: 20,
-                      contentPadding: EdgeInsets.symmetric(vertical: 5),
-                      leading: CircleAvatar(
-                        radius: 25,
-                        backgroundColor: Color(0xffF4F6F8),
-                        child: SvgPicture.asset(AppIcons.truckIcon),
-                      ),
-                      title: Text(
-                        "Via I-20E",
-                        style: AppTextTheme().bodyText.copyWith(fontSize: 16),
-                      ),
-                      subtitle: index == 0
-                          ? Row(
-                              spacing: 4,
-                              children: [
-                                Icon(
-                                  Icons.warning_rounded,
-                                  size: 16,
-                                  color: Color(0xffFF4F5B),
-                                ),
-                                Text(
-                                  "This route requires tolls",
-                                  style: AppTextTheme().lightText.copyWith(
-                                    color: AppColorTheme().secondary,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : null,
-                      trailing: Row(
-                        spacing: 5,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                "2h 11m",
-                                style: AppTextTheme().lightText.copyWith(
-                                  color: AppColorTheme().primary,
-                                ),
-                              ),
-                              Text(
-                                "145 mi",
-                                style: AppTextTheme().lightText.copyWith(
-                                  color: AppColorTheme().secondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Icon(Icons.directions, color: Colors.black, size: 20),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-          ],
-          if (!isSetDirection)
-            CustomDragableWidget(
+       
+           CustomDragableWidget(
               childrens: [
                 CustomTextfieldWidget(
                   focusNode: searchFieldFocusNode,
@@ -1637,9 +1651,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   title: "Get Direction",
                   onPressed: () {
                     if (searchTextEditController.text.isNotEmpty) {
-                      setState(() {
-                        isSetDirection = true;
-                      });
+                      createTripBottomModalSheet();
                     }
                   },
                   icon: Icon(Icons.directions, color: Colors.white),

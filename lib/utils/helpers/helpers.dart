@@ -79,8 +79,12 @@ static String formatFullDate(DateTime date) {
   }) {
     showModalBottomSheet(
       context: context,
+      elevation: 0.0,
+      clipBehavior: Clip.none,
       isScrollControlled: true,
       showDragHandle: true,
+
+      
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
