@@ -8,7 +8,7 @@ plugins {
 android {
     namespace = "com.example.ommo"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "28.0.12433566"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -20,6 +20,7 @@ android {
     }
 
     defaultConfig {
+        
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.ommo"
         // You can update the following values to match your application needs.

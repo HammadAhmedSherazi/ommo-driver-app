@@ -54,12 +54,7 @@ class CustomTextfieldWidget extends StatelessWidget {
                                 ) : null,
                                 hintText: hintText,
                                 filled: true,
-                                fillColor: const Color.fromRGBO(
-                                  244,
-                                  246,
-                                  248,
-                                  1,
-                                ),
+                                fillColor: AppColorTheme().whiteShade,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide.none,

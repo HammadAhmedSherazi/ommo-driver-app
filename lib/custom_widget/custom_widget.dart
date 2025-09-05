@@ -16,3 +16,4 @@ part 'custom_tab_bar_widget.dart';
 part 'custom_rating_bar_indicator_widget.dart';
 part 'vertical_step_with_textfield.dart';
 part 'custom_dragable_widget.dart';
+part 'custom_dropdown_widget.dart';

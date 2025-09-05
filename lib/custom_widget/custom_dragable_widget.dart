@@ -1,12 +1,14 @@
 part of 'custom_widget.dart';
 class CustomDragableWidget extends StatelessWidget {
   final List<Widget> childrens;
-  const CustomDragableWidget({super.key, required this.childrens});
+  final Widget? bottomWidget;
+  final double? initialSize;
+  const CustomDragableWidget({super.key, required this.childrens, this.bottomWidget, this.initialSize});
 
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
-              initialChildSize: 0.26,
+              initialChildSize: initialSize ?? 0.26,
               minChildSize: 0.24,
               maxChildSize: 0.95,
               builder: (context, scrollController) {
@@ -48,6 +50,7 @@ class CustomDragableWidget extends StatelessWidget {
                             ),
                             children: childrens),
                         ),
+                        ?bottomWidget
                       ],
                     ),
                   ),

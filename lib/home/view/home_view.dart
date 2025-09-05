@@ -875,8 +875,276 @@ class _HomeMobileViewState extends State<HomeMobileView>
     });
   }
 
-  bool isSetDirection = false, isSetting = false, isTruckSettingOn = false;
+  bool isSetDirection = false ;
+  void openTruckSetting(){
+    showModalBottomSheet(
+  context: context,
+  isScrollControlled: true, // allows full screen drag
+  backgroundColor: Colors.transparent,
+  shape: const RoundedRectangleBorder(
+    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  ),
+  builder: (context) {
+    return  CustomDragableWidget(
+      initialSize: 0.80,
+      bottomWidget: Padding(padding: EdgeInsetsGeometry.all(20), child: CustomButtonWidget(title: "Save", onPressed: (){
+                 context.popPage();
 
+                }),),
+      childrens: [
+                      Row(
+                        spacing: 10,
+                        children: [
+                          GestureDetector(
+                              onTap: () {
+                               context.popPage();
+                              },
+                              child: CircleAvatar(
+                                radius: 25,
+                                backgroundColor: AppColorTheme().whiteShade,
+                                child: Icon(
+                                  Icons.arrow_back_ios,
+                                  color: Colors.black,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              "Truck Dimensions",
+                              style: AppTextTheme().subHeadingText.copyWith(
+                                fontWeight: AppFontWeight.semiBold,
+                                fontSize: 20,
+                              ),
+                            ),
+                        ],
+                      ),
+                      20.h,
+                      DashedLine(),
+                      20.h,
+                      Row(
+                        spacing: 10,
+                        children: [
+                          SvgPicture.asset(AppIcons.lengthIcon),
+                          SizedBox(
+                            width: context.screenWidth * 0.24,
+                            child: Text("Length", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
+                        
+                          Expanded(child: CustomTextfieldWidget(hintText: "00'", keyboardType: TextInputType.number,)),
+                          Expanded(child: CustomTextfieldWidget(hintText: "0''", keyboardType: TextInputType.number,)),
+                        ],
+                      ),
+                      5.h,
+                      Row(
+                        spacing: 10,
+                        children: [
+                          SvgPicture.asset(AppIcons.heightIcon),
+                           SizedBox(
+                            width: context.screenWidth * 0.24,
+                            child: Text("Height", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
+                        
+                          Expanded(child: CustomTextfieldWidget(hintText: "00'", keyboardType: TextInputType.number,)),
+                          Expanded(child: CustomTextfieldWidget(hintText: "0''", keyboardType: TextInputType.number,)),
+                        ],
+                      ),
+                      5.h,
+                      Row(
+                        spacing: 10,
+                        children: [
+                          SvgPicture.asset(AppIcons.widthIcon),
+                          SizedBox(
+                            width: context.screenWidth * 0.24,
+                            child: Text("Width", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
+                        
+                          Expanded(child: CustomTextfieldWidget(hintText: "00'", keyboardType: TextInputType.number,)),
+                          Expanded(child: CustomTextfieldWidget(hintText: "0''", keyboardType: TextInputType.number,)),
+                        ],
+                      ),
+                      5.h,
+
+                      Row(
+                        spacing: 10,
+                        children: [
+                          SvgPicture.asset(AppIcons.axleIcon),
+                           SizedBox(
+                            width: context.screenWidth * 0.24,
+                            child: Text("Axle Count", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
+                        
+                        Expanded(
+  child: CustomDropDown<int>(
+    placeholderText: "Select Axle",
+    options: List.generate(
+      5,
+      (index) => CustomDropDownOption(
+        value: index + 1,
+        displayOption: "${index + 1} Axle",
+      ),
+    ),
+    value: 2, // default selected value (optional)
+    onChanged: (selected) {
+      print("Selected axle: $selected");
+    },
+  ),
+),
+                          
+                        ],
+                      ),
+                      5.h,
+                      Row(
+                        spacing: 10,
+                        children: [
+                          SvgPicture.asset(AppIcons.weightScaleIcon),
+                           SizedBox(
+                            width: context.screenWidth * 0.24,
+                            child: Text("Weight", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
+                        
+                          
+                          Expanded(child: CustomTextfieldWidget(hintText: "0''", keyboardType: TextInputType.number,)),
+                        ],
+                      ),
+           
+             
+            ]  
+           ); });
+  }
+
+  void openSettingBottomSheet(){
+    showModalBottomSheet(
+  context: context,
+  isScrollControlled: true,
+  backgroundColor: Colors.transparent,
+  builder: (context) {
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return CustomDragableWidget(
+          initialSize: 0.80,
+          childrens: [
+            Row(
+              spacing: 10,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    context.popPage();
+                  },
+                  child: CircleAvatar(
+                    radius: 25,
+                    backgroundColor: AppColorTheme().whiteShade,
+                    child: const Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.black,
+                      size: 18,
+                    ),
+                  ),
+                ),
+                Text(
+                  "Settings",
+                  style: AppTextTheme().subHeadingText.copyWith(
+                        fontWeight: AppFontWeight.semiBold,
+                        fontSize: 20,
+                      ),
+                ),
+              ],
+            ),
+            20.h,
+            DashedLine(),
+            20.h,
+
+            // Vehicle
+            Text(
+              "Vehicle",
+              style: AppTextTheme().lightText.copyWith(
+                    color: AppColorTheme().secondary,
+                  ),
+            ),
+            20.h,
+            ListTile(
+              onTap: () {
+                openTruckSetting();
+              },
+              leading: SvgPicture.asset(AppIcons.localShippingIcon),
+              title: Text(
+                "My truck",
+                style: AppTextTheme().lightText.copyWith(
+                      fontSize: 16,
+                    ),
+              ),
+              trailing: const Icon(
+                Icons.play_arrow,
+                color: Colors.black,
+                size: 22,
+              ),
+              contentPadding: EdgeInsets.zero,
+            ),
+
+            // Truck info list
+            ...List.generate(
+              truckInfo.length,
+              (index) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: 20.w,
+                title: Text(
+                  truckInfo.entries.elementAt(index).key,
+                  style: AppTextTheme().lightText,
+                ),
+                visualDensity: const VisualDensity(vertical: -4.0),
+                trailing: Text(
+                  truckInfo.entries.elementAt(index).value,
+                  style: AppTextTheme().lightText.copyWith(
+                        color: AppColorTheme().secondary,
+                      ),
+                  textAlign: TextAlign.end,
+                ),
+              ),
+            ),
+
+            20.h,
+
+            // Restrictions
+            Text(
+              "Restrictions",
+              style: AppTextTheme().lightText.copyWith(
+                    color: AppColorTheme().secondary,
+                  ),
+            ),
+            20.h,
+            ...List.generate(
+              routeRestriction.length,
+              (index) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: SvgPicture.asset(
+                  _setRestrictionIcon(
+                    routeRestriction.entries.elementAt(index).key,
+                  ),
+                ),
+                title: Text(
+                  routeRestriction.entries.elementAt(index).key,
+                  style: AppTextTheme().lightText,
+                ),
+                visualDensity: const VisualDensity(vertical: -4.0),
+                trailing: Transform.scale(
+                  scale: 0.6,
+                  child: Switch.adaptive(
+                    value: routeRestriction.entries.elementAt(index).value,
+                    onChanged: (v) {
+                      setState(() {
+                        routeRestriction.update(
+                          routeRestriction.entries.elementAt(index).key,
+                          (c) => v,
+                        );
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  },
+);
+
+
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1149,165 +1417,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
           ),
 
           if (isSetDirection) ...[
-            if (isSetting)
-              CustomDragableWidget(
-                childrens: 
-                isTruckSettingOn
-                    ? [
-                      Row(
-                        spacing: 10,
-                        children: [
-                          GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  isTruckSettingOn = false;
-                                });
-                              },
-                              child: CircleAvatar(
-                                radius: 25,
-                                backgroundColor: AppColorTheme().whiteShade,
-                                child: Icon(
-                                  Icons.arrow_back_ios,
-                                  color: Colors.black,
-                                  size: 18,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              "Truck Dimensions",
-                              style: AppTextTheme().subHeadingText.copyWith(
-                                fontWeight: AppFontWeight.semiBold,
-                                fontSize: 20,
-                              ),
-                            ),
-                        ],
-                      )
-           
-             
-            ] : 
-            [
-                        Row(
-                          spacing: 10,
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  isSetting = false;
-                                });
-                              },
-                              child: CircleAvatar(
-                                radius: 25,
-                                backgroundColor: AppColorTheme().whiteShade,
-                                child: Icon(
-                                  Icons.arrow_back_ios,
-                                  color: Colors.black,
-                                  size: 18,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              "Settings",
-                              style: AppTextTheme().subHeadingText.copyWith(
-                                fontWeight: AppFontWeight.semiBold,
-                                fontSize: 20,
-                              ),
-                            ),
-                          ],
-                        ),
-                        20.h,
-                        DashedLine(),
-                        20.h,
-                        Text(
-                          "Vehicle",
-                          style: AppTextTheme().lightText.copyWith(
-                            color: AppColorTheme().secondary,
-                          ),
-                        ),
-                        20.h,
-                        ListTile(
-                          onTap:(){
-                            setState(() {
-                                  isTruckSettingOn = true;
-                                });
-                          },
-                          leading: SvgPicture.asset(AppIcons.localShippingIcon),
-                          title: Text(
-                            "My truck",
-                            style: AppTextTheme().lightText.copyWith(
-                              fontSize: 16,
-                            ),
-                          ),
-                          trailing: Icon(
-                            Icons.play_arrow,
-                            color: Colors.black,
-                            size: 22,
-                          ),
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        ...List.generate(
-                          truckInfo.length,
-                          (index) => ListTile(
-                            contentPadding: EdgeInsets.zero,
-
-                            leading: 20.w,
-                            title: Text(
-                              truckInfo.entries.elementAt(index).key,
-                              style: AppTextTheme().lightText,
-                            ),
-
-                            visualDensity: VisualDensity(vertical: -4.0),
-                            trailing: Text(
-                              truckInfo.entries.elementAt(index).value,
-                              style: AppTextTheme().lightText.copyWith(
-                                color: AppColorTheme().secondary,
-                              ),
-                              textAlign: TextAlign.end,
-                            ),
-                          ),
-                        ),
-                        20.h,
-                        Text(
-                          "Restrictions",
-                          style: AppTextTheme().lightText.copyWith(
-                            color: AppColorTheme().secondary,
-                          ),
-                        ),
-                        20.h,
-                        ...List.generate(
-                          routeRestriction.length,
-                          (index) => ListTile(
-                            contentPadding: EdgeInsets.zero,
-
-                            leading: SvgPicture.asset(
-                              _setRestrictionIcon(
-                                routeRestriction.entries.elementAt(index).key,
-                              ),
-                            ),
-                            title: Text(
-                              routeRestriction.entries.elementAt(index).key,
-                              style: AppTextTheme().lightText,
-                            ),
-
-                            visualDensity: VisualDensity(vertical: -4.0),
-                            trailing: Transform.scale(
-                              scale: 0.6,
-                              child: Switch.adaptive(
-                                value: routeRestriction.entries
-                                    .elementAt(index)
-                                    .value,
-                                onChanged: (v) {
-                                  setState((){
-                                    routeRestriction.update(routeRestriction.entries.elementAt(index).key, (c)=>v);
-                
-                                  });
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-              )
-            else
+            
               CustomDragableWidget(
                 childrens: [
                   Row(
@@ -1389,9 +1499,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       ),
                       IconButton(
                         onPressed: () {
-                          setState(() {
-                            isSetting = true;
-                          });
+                          openSettingBottomSheet();
                         },
                         icon: SvgPicture.asset(AppIcons.settingIcon),
                         style: ButtonStyle(

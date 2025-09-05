@@ -30,6 +30,11 @@ class AppIcons {
   static const String roadIcon = '${iconPath}road_icon.svg';
   static const String subwayIcon = '${iconPath}subway.svg';
   static const String unpavedRoadIcon = '${iconPath}unpaved_road.svg';
+  static const String lengthIcon = '${iconPath}length_icon.svg';
+  static const String heightIcon = '${iconPath}height.svg';
+  static const String widthIcon = '${iconPath}width_icon.svg';
+  static const String weightScaleIcon = '${iconPath}weight_scale_icon.svg';
+  static const String axleIcon = '${iconPath}axle_icon.svg';
   
   
   
