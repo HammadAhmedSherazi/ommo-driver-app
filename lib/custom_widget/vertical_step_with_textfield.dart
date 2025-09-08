@@ -1,7 +1,5 @@
 part of 'custom_widget.dart';
 
-
-
 class VerticalStepWithTextField extends StatefulWidget {
   final List<TextEditingController> textControllers;
   final List<FocusNode> focusNode;
@@ -13,6 +11,12 @@ class VerticalStepWithTextField extends StatefulWidget {
 }
 
 class _VerticalStepWithTextFieldState extends State<VerticalStepWithTextField> {
+  @override
+  void initState() {
+    super.initState();
+    
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(

@@ -84,13 +84,42 @@ static String formatFullDate(DateTime date) {
       isScrollControlled: true,
       showDragHandle: true,
 
-      
+      barrierColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => child,
     );
   }
+
+ static void showCustomBottomSheet(BuildContext context, Widget child) {
+  showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    fullscreenDialog: false,
+    
+    barrierLabel: "Dismiss",
+    barrierColor: Colors.transparent, // dim background
+    transitionDuration: const Duration(milliseconds: 300),
+    pageBuilder: (context, animation, secondaryAnimation) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Scaffold(body: child),
+      );
+    },
+    // transitionBuilder: (context, animation, secondaryAnimation, child) {
+    //   return SlideTransition(
+    //     position: Tween<Offset>(
+    //       begin: const Offset(0, 1), // from bottom
+    //       end: Offset.zero,
+    //     ).animate(animation),
+    //     child: child,
+    //   );
+    // },
+  );
+}
+
+
 
   static String getDateLabel(DateTime date) {
   final now = DateTime.now();

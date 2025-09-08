@@ -24,6 +24,8 @@ class AppTextTheme {
 
   TextStyle get subHeadingText =>
       _baseTextStyle.copyWith(fontSize: 18, fontWeight: AppFontWeight.bold);
+TextStyle get subHeadingText2 =>
+      _baseTextStyle.copyWith(fontSize: 18, fontWeight: AppFontWeight.semiBold);
 
   TextStyle get bodyText =>
       _baseTextStyle.copyWith(fontSize: 14, fontWeight: AppFontWeight.medium);

@@ -3,9 +3,12 @@ part of 'custom_widget.dart';
 class CustomButtonWidget extends StatelessWidget {
   final bool isLoad;
   final String title;
+  final bool? isRightSide;
   final Widget? icon;
   final VoidCallback onPressed;
-  const CustomButtonWidget({super.key, required this.title, this.isLoad = false, required this.onPressed, this.icon });
+  final Color? bgColor;
+  final Color? textColor;
+  const CustomButtonWidget({super.key, required this.title, this.isLoad = false, required this.onPressed, this.icon, this.isRightSide = false, this.bgColor, this.textColor });
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +16,7 @@ class CustomButtonWidget extends StatelessWidget {
       height: 50,
       width: double.infinity,
       child: Platform.isIOS ? CupertinoButton(
-        color: AppColorTheme().primary,
+        color: bgColor ?? AppColorTheme().primary,
         padding: EdgeInsets.zero,
         borderRadius: BorderRadius.circular(30),
         onPressed: onPressed, child: icon != null ? Row(
@@ -21,17 +24,20 @@ class CustomButtonWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            icon!,
+            if(!isRightSide!)
+            ?icon,
             Text(title, style: AppTextTheme().bodyText.copyWith(
-          color: Colors.white
-        ),)
+          color: textColor ?? Colors.white
+        ),),
+        if(isRightSide!)
+            ?icon,
           ],
         ) :  Text(title, style: AppTextTheme().bodyText.copyWith(
-          color: Colors.white
+          color: textColor ?? Colors.white
         ),)) : ElevatedButton(
           style: ButtonStyle(
             elevation: WidgetStatePropertyAll(0.0),
-            backgroundColor: WidgetStatePropertyAll(AppColorTheme().primary),
+            backgroundColor: WidgetStatePropertyAll( bgColor ?? AppColorTheme().primary),
             shape: WidgetStatePropertyAll(RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)))
             
           ),
@@ -42,11 +48,11 @@ class CustomButtonWidget extends StatelessWidget {
           children: [
             icon!,
             Text(title, style: AppTextTheme().bodyText.copyWith(
-          color: Colors.white
+          color: textColor ?? Colors.white
         ),)
           ],
         ) : Text(title, style: AppTextTheme().bodyText.copyWith(
-          color: Colors.white
+          color: textColor ?? Colors.white
         ),)),
     );
   }
