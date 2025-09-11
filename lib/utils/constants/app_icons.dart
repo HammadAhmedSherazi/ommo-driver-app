@@ -35,6 +35,13 @@ class AppIcons {
   static const String widthIcon = '${iconPath}width_icon.svg';
   static const String weightScaleIcon = '${iconPath}weight_scale_icon.svg';
   static const String axleIcon = '${iconPath}axle_icon.svg';
+  static const String satelliteIcon = "${iconPath}satellite_alt.svg";
+  static const String homeIcon = "${iconPath}home_icon.svg";
+  static const String notificationIcon = "${iconPath}notification_icon.svg";
+  static const String userIcon = "${iconPath}user_icon.svg";
+  static const String timeIcon = "${iconPath}time_icon.svg";
+  static const String parcelBoxIcon = "${iconPath}parcel_box_icon.svg";
+  static const String map = "${iconPath}map.svg";
   
   
   

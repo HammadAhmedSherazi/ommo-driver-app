@@ -8,5 +8,6 @@ class AppImages {
 
   static const String defaultMapImg= "${imagePath}default_map_img.png";
   static const String satelliteMapImg= "${imagePath}satellite_map_img.png";
+  static const String logoIcon = "${imagePath}logo_icon.png";
   
 }
