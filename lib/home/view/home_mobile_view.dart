@@ -320,7 +320,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                 fontSize: 16,
                               ),
                             ),
-                             7.h,
+                            7.h,
                             CustomTextfieldWidget(
                               hintText: "Paste link",
                               keyboardType: TextInputType.phone,
@@ -1290,10 +1290,11 @@ class _HomeMobileViewState extends State<HomeMobileView>
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  "Times Square, New York, NY, USA",
+                                  "Times Square, New York, NY, USA" ,
                                   style: AppTextTheme().bodyText.copyWith(
                                     fontSize: 16,
                                   ),
+                                  maxLines: 2,
                                 ),
                                 Row(
                                   children: [
@@ -1311,6 +1312,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                   style: AppTextTheme().bodyText.copyWith(
                                     fontSize: 16,
                                   ),
+                                  maxLines: 2,
                                 ),
                               ],
                             ),
@@ -1574,48 +1576,59 @@ class _HomeMobileViewState extends State<HomeMobileView>
   //   ));
   // }
 
- void saveDialog() {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        spacing: 10,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColorTheme().primary.withValues(alpha: 0.2)
+  void saveDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          spacing: 10,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColorTheme().primary.withValues(alpha: 0.2),
+              ),
+              child: Icon(Icons.bookmark_outline),
             ),
-            child: Icon(Icons.bookmark_outline,),
-          ),
-          Text("Save this route ", style: AppTextTheme().headingText.copyWith(
-            fontSize: 20
-          ),),
-          Text("Would you like to save this route for future use?", style: AppTextTheme().lightText.copyWith(
-            color: AppColorTheme().secondary
-          ), textAlign: TextAlign.center,),
-          CustomButtonWidget(title: "Yes", onPressed: (){
-            context.popPage();
-            setState(() {
-              isStartNav = false;
-              isSetDirection = false;
-              searchTextEditController.clear();
-            });
-          },),
-          CustomButtonWidget(title: "No", onPressed: (){
-            context.popPage();
-          }, textColor: Colors.black, bgColor: AppColorTheme().whiteShade,),
-        ],
+            Text(
+              "Save this route ",
+              style: AppTextTheme().headingText.copyWith(fontSize: 20),
+            ),
+            Text(
+              "Would you like to save this route for future use?",
+              style: AppTextTheme().lightText.copyWith(
+                color: AppColorTheme().secondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            CustomButtonWidget(
+              title: "Yes",
+              onPressed: () {
+                context.popPage();
+                setState(() {
+                  isStartNav = false;
+                  isSetDirection = false;
+                  searchTextEditController.clear();
+                });
+              },
+            ),
+            CustomButtonWidget(
+              title: "No",
+              onPressed: () {
+                context.popPage();
+              },
+              textColor: Colors.black,
+              bgColor: AppColorTheme().whiteShade,
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   void startNavigation() {
     setState(() {
@@ -1632,7 +1645,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
 
   bool isSetDirection = false;
   bool isStartNav = false;
-  _setDirectionIcon(int index){
+  _setDirectionIcon(int index) {
     switch (index) {
       case 0:
         return Icons.turn_slight_left;
@@ -1644,6 +1657,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
         return Icons.turn_right;
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -2095,13 +2109,15 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                           size: 16,
                                           color: Color(0xffFF4F5B),
                                         ),
-                                        Text(
-                                          "This route requires tolls",
-                                          style: AppTextTheme().lightText
-                                              .copyWith(
-                                                color:
-                                                    AppColorTheme().secondary,
-                                              ),
+                                        Expanded(
+                                          child: Text(
+                                            "This route requires tolls",
+                                            style: AppTextTheme().lightText
+                                                .copyWith(
+                                                  color:
+                                                      AppColorTheme().secondary,
+                                                ),
+                                          ),
                                         ),
                                       ],
                                     )
@@ -2220,10 +2236,12 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                     size: 16,
                                     color: Color(0xffFF4F5B),
                                   ),
-                                  Text(
-                                    "The light rain next 2 hours",
-                                    style: AppTextTheme().lightText.copyWith(
-                                      color: AppColorTheme().secondary,
+                                  Expanded(
+                                    child: Text(
+                                      "The light rain next 2 hours",
+                                      style: AppTextTheme().lightText.copyWith(
+                                        color: AppColorTheme().secondary,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -2784,148 +2802,188 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     height: 150,
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-    color: Colors.white, // background
-    borderRadius: BorderRadius.circular(20), // border-radius: 20px
-    border: Border.all(
-      color: const Color(0xFFEBEEF2), // #EBEEF2
-      width: 1,
-    ),
-    boxShadow: [
-      BoxShadow(
-        color: const Color.fromRGBO(136, 139, 161, 0.18), // rgba(136,139,161,0.18)
-        offset: const Offset(4, 4), // x:4px, y:4px
-        blurRadius: 24,            // blur
-        spreadRadius: -4,          // -4px spread
-      ),
-    ],
-  ),
-  child: Column(
-    spacing: 10,
-    children: [
-      Row(
-        spacing: 10,
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: AppColorTheme().primary,
-            child: Icon(Icons.turn_right),
-            
-          ),
-          Expanded(child: Column(
-          crossAxisAlignment : CrossAxisAlignment.start,
-            children: [
-              Text("Turn right in 500 m", style: AppTextTheme().subHeadingText2.copyWith(
-                fontSize: 16
-              ),),
-              Text("123 Industrial Blvd, CHI", style: AppTextTheme().lightText.copyWith(
-                color: AppColorTheme().secondary
-              ),)
-            ],
-          )),
-            CircleAvatar(
-               radius: 20,
-            backgroundColor: AppColorTheme().whiteShade,
-            child: Icon(Icons.volume_off_outlined, color: Colors.black,),
-            
-          ),
-        ],
-      ),
-      DashedLine(),
-      Expanded(
-        child: Container(
-         
-          decoration: BoxDecoration(
-            color: AppColorTheme().whiteShade,
-            borderRadius: BorderRadius.circular(12)
-          ),
-          child: Row(
-            children: List.generate(4, (index) {
-              
-              return Expanded(child: Icon( _setDirectionIcon(index), color: AppColorTheme().secondary, size: 30, weight:1.5,) ,);
-            }),
-          ),
-        ),
-      )
-    ],
-  ),
+                      color: Colors.white, // background
+                      borderRadius: BorderRadius.circular(
+                        20,
+                      ), // border-radius: 20px
+                      border: Border.all(
+                        color: const Color(0xFFEBEEF2), // #EBEEF2
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromRGBO(
+                            136,
+                            139,
+                            161,
+                            0.18,
+                          ), // rgba(136,139,161,0.18)
+                          offset: const Offset(4, 4), // x:4px, y:4px
+                          blurRadius: 24, // blur
+                          spreadRadius: -4, // -4px spread
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      spacing: 10,
+                      children: [
+                        Row(
+                          spacing: 10,
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: AppColorTheme().primary,
+                              child: Icon(Icons.turn_right),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Turn right in 500 m",
+                                    style: AppTextTheme().subHeadingText2
+                                        .copyWith(fontSize: 16),
+                                  ),
+                                  Text(
+                                    "123 Industrial Blvd, CHI",
+                                    style: AppTextTheme().lightText.copyWith(
+                                      color: AppColorTheme().secondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: AppColorTheme().whiteShade,
+                              child: Icon(
+                                Icons.volume_off_outlined,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                        DashedLine(),
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: AppColorTheme().whiteShade,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: List.generate(4, (index) {
+                                return Expanded(
+                                  child: Icon(
+                                    _setDirectionIcon(index),
+                                    color: AppColorTheme().secondary,
+                                    size: 30,
+                                    weight: 1.5,
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Positioned(
                   bottom: 200,
                   left: 20,
                   right: 20,
-                  child: Row(
-                    children: [
-                      Container(
-                        height: 80,
-                        width: 160,
-                        decoration: BoxDecoration(
-    color: Colors.white, // background
-    borderRadius: BorderRadius.circular(20), // border-radius: 20px
-    border: Border.all(
-      color: const Color(0xFFEBEEF2), // #EBEEF2
-      width: 1,
-    ),
-    boxShadow: [
-      BoxShadow(
-        color: const Color.fromRGBO(136, 139, 161, 0.18), // rgba(136,139,161,0.18)
-        offset: const Offset(4, 4), // x:4px, y:4px
-        blurRadius: 24,            // blur
-        spreadRadius: -4,          // -4px spread
-      ),
-    ],
-  ),
-  child: Row(
-    children: [
-      Expanded(child: Container(
-        height: double.infinity,
-        margin: EdgeInsets.all(5),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.black,width: 2)
-        ),
-        child: Text("50", style: AppTextTheme().subHeadingText.copyWith(
-          fontSize: 28
-        ),),
-      )),
-       Expanded(child: Container(
-        height: double.infinity,
-        padding:EdgeInsets.all(5),
-       
-        alignment: Alignment.center,
-       
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text("5", style: AppTextTheme().subHeadingText.copyWith(
-              fontSize: 28
-            ),),
-            Text("mph")
-          ],
-        ),
-      ))
-    ],
-  ),
+                  child: Container(
+                    height: 80,
+                    width: 160,
+                    decoration: BoxDecoration(
+                      color: Colors.white, // background
+                      borderRadius: BorderRadius.circular(
+                        20,
+                      ), // border-radius: 20px
+                      border: Border.all(
+                        color: const Color(0xFFEBEEF2), // #EBEEF2
+                        width: 1,
                       ),
-                    ],
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromRGBO(
+                            136,
+                            139,
+                            161,
+                            0.18,
+                          ), // rgba(136,139,161,0.18)
+                          offset: const Offset(4, 4), // x:4px, y:4px
+                          blurRadius: 24, // blur
+                          spreadRadius: -4, // -4px spread
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: double.infinity,
+                            margin: EdgeInsets.all(5),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Colors.black,
+                                width: 2,
+                              ),
+                            ),
+                            child: Text(
+                              "50",
+                              style: AppTextTheme().subHeadingText.copyWith(
+                                fontSize: 28,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            height: double.infinity,
+                            padding: EdgeInsets.all(5),
+                  
+                            alignment: Alignment.center,
+                  
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "5",
+                                  style: AppTextTheme().subHeadingText
+                                      .copyWith(fontSize: 28),
+                                ),
+                                Text("mph"),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 CustomDragableWidget(
                   initialSize: 0.9,
-                  bottomWidget: Padding(padding: EdgeInsets.all(20), child: CustomButtonWidget(
-                    bgColor:AppColorTheme().whiteShade,
-                    textColor: Colors.black ,
-                    icon: Icon(
-                      Icons.double_arrow,
-                      color: Colors.black,
-                      size: 18,
+                  bottomWidget: Padding(
+                    padding: EdgeInsets.all(20),
+                    child: CustomButtonWidget(
+                      bgColor: AppColorTheme().whiteShade,
+                      textColor: Colors.black,
+                      icon: Icon(
+                        Icons.double_arrow,
+                        color: Colors.black,
+                        size: 18,
+                      ),
+                      isRightSide: true,
+
+                      title: "Finish Trip",
+                      onPressed: () {
+                        saveDialog();
+                      },
                     ),
-                    isRightSide: true,
-                    
-                    title: "Finish Trip", onPressed: (){
-                    saveDialog();
-                  }),),
+                  ),
                   childrens: [
                     Row(
                       spacing: 10,
@@ -2985,11 +3043,13 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       spacing: 10,
                       children: [
                         Icon(Icons.location_on),
-                        Text(
-                          "Times Square, New York, NY, USA",
-                          style: AppTextTheme().bodyText.copyWith(
-                            fontWeight: AppFontWeight.semiBold,
-                            fontSize: 16,
+                        Expanded(
+                          child: Text(
+                            "Times Square, New York, NY, USA",
+                            style: AppTextTheme().bodyText.copyWith(
+                              fontWeight: AppFontWeight.semiBold,
+                              fontSize: 16,
+                            ),
                           ),
                         ),
                       ],
@@ -3095,14 +3155,18 @@ class _HomeMobileViewState extends State<HomeMobileView>
                             Row(
                               spacing: 10,
                               children: [
-                               Icon(Icons.warning_rounded, color: Color(0xffFF4F5B),),
-                                Text(
-                                  "Toll required at Lincoln Tunnel",
-                                  style: AppTextTheme().bodyText.copyWith(
-                                    color: AppColorTheme().secondary,
+                                Icon(
+                                  Icons.warning_rounded,
+                                  color: Color(0xffFF4F5B),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    "Toll required at Lincoln Tunnel",
+                                    style: AppTextTheme().bodyText.copyWith(
+                                      color: AppColorTheme().secondary,
+                                    ),
                                   ),
                                 ),
-                                
                               ],
                             ),
                           ],
@@ -3110,7 +3174,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       ),
                     ),
                     10.h,
-                    CustomAccordionWidget(title: "Continue via NJ-495 W → I-95 S", child: Padding(
+                    CustomAccordionWidget(
+                      title: "Continue via NJ-495 W → I-95 S",
+                      child: Padding(
                         padding: const EdgeInsets.only(left: 40),
                         child: Column(
                           spacing: 10,
@@ -3208,20 +3274,24 @@ class _HomeMobileViewState extends State<HomeMobileView>
                             Row(
                               spacing: 10,
                               children: [
-                               Icon(Icons.warning_rounded, color: Color(0xffFF4F5B),),
-                                Text(
-                                  "Toll required at Lincoln Tunnel",
-                                  style: AppTextTheme().bodyText.copyWith(
-                                    color: AppColorTheme().secondary,
+                                Icon(
+                                  Icons.warning_rounded,
+                                  color: Color(0xffFF4F5B),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    "Toll required at Lincoln Tunnel",
+                                    style: AppTextTheme().bodyText.copyWith(
+                                      color: AppColorTheme().secondary,
+                                    ),
                                   ),
                                 ),
-                                
                               ],
                             ),
                           ],
                         ),
                       ),
-                   )
+                    ),
                   ],
                 ),
               ],
