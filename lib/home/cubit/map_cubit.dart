@@ -4,25 +4,27 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:here_sdk/core.dart';
 import 'package:here_sdk/mapview.dart';
-import 'package:here_sdk/routing.dart';
-import 'package:here_sdk/search.dart';
+
+import 'package:ommo/home/view/map_view.dart';
 import '../../map_sdk/truck_guidance_example.dart';
 import '../../utils/utils.dart';
 import 'map_state.dart';
 
 class MapCubit extends Cubit<MapState> {
-   late final TruckGuidanceExample _truckExampleInstance;
+ TruckGuidanceExample? _truckExampleInstance;
   MapCubit()
-     : // initialize here
-        super(MapState()) ;
+    : // initialize here
+      super(MapState());
 
   void onMapCreated(HereMapController hereMapController) {
-    _truckExampleInstance = TruckGuidanceExample((text1,text2)=>{}, hereMapController);
+    _truckExampleInstance ??= TruckGuidanceExample((text1,text2)=>{}, hereMapController);
     // emit a new state with the controller set
     emit(state.copyWith(mapController: hereMapController));
 
     // Load the map scene after controller is set
-    hereMapController.mapScene.loadSceneForMapScheme(MapScheme.normalDay, (error) {
+    hereMapController.mapScene.loadSceneForMapScheme(MapScheme.normalDay, (
+      error,
+    ) {
       if (error != null) {
         print("Map scene not loaded. Error: ${error.toString()}");
         return;
@@ -78,7 +80,7 @@ class MapCubit extends Cubit<MapState> {
   }
  searchLocation(String text,GeoCoordinates startLocCoordinate )  {
 
-  _truckExampleInstance.searchLocation(text).then((value){emit(state.copyWith(suggestionDestination: value));});
+  _truckExampleInstance?.searchLocation(text).then((value){emit(state.copyWith(suggestionDestination: value));});
 }
 
 
@@ -88,18 +90,23 @@ void setDestinationCoordinate(GeoCoordinates coordinate){
   ));
 }
  void setRoute(){
-  _truckExampleInstance.onShowRouteButtonClicked(state.startCoordinates ?? TruckGuidanceExample.myStartCoordinadtes, state.destinationCoordinates!);
+  _truckExampleInstance?.onShowRouteButtonClicked(state.startCoordinates ?? TruckGuidanceExample.myStartCoordinadtes, state.destinationCoordinates!);
   emit(state.copyWith(mapController: state.mapController));
  }
 
  void startNavigation(){
-  _truckExampleInstance.onStartStopButtonClicked();
+  _truckExampleInstance?.onStartStopButtonClicked();
   emit(state.copyWith(mapController: state.mapController));
  }
 
- void clearRoute(){
-  _truckExampleInstance.clearRoute();
-  emit(state.copyWith(mapController: state.mapController));
 
- }
+
+  void clearRoute() {
+    _truckExampleInstance?.clearRoute();
+    emit(state.copyWith(mapController: state.mapController));
+  }
+
+  void initialMap(UICallback callback) {
+    _truckExampleInstance?.setUICallback(callback);
+  }
 }

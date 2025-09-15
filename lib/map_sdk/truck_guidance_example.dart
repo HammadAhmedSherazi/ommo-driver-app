@@ -28,6 +28,7 @@ import 'package:here_sdk/navigation.dart';
 import 'package:here_sdk/routing.dart';
 import 'package:here_sdk/search.dart';
 import 'package:here_sdk/transport.dart';
+import 'package:ommo/utils/utils.dart';
 
 import '../home/view/map_view.dart';
 import 'HEREPositioningSimulator.dart';
@@ -575,7 +576,7 @@ class TruckGuidanceExample {
     }
 
     // Create a truck route color (RGBA). Adjust as needed for your Flutter color class.
-    final truckRouteColor = Color.fromRGBO(0, 153, 255, 1.0); // For example, a shade of blue.
+    final truckRouteColor = AppColorTheme().primary; // For example, a shade of blue.
     const truckRouteWidthInPixels = 30.0;
     _showRouteOnMap(lastCalculatedTruckRoute!, truckRouteColor, truckRouteWidthInPixels);
   }

@@ -1604,12 +1604,13 @@ class _HomeMobileViewState extends State<HomeMobileView>
             CustomButtonWidget(
               title: "Yes",
               onPressed: () {
-                context.popPage();
-                setState(() {
-                  isStartNav = false;
-                  isSetDirection = false;
-                  searchTextEditController.clear();
-                });
+                // context.popPage();
+                // setState(() {
+                //   isStartNav = false;
+                //   isSetDirection = false;
+                //   searchTextEditController.clear();
+                // });
+                context.pushReplacementPage(HomeView());
               },
             ),
             CustomButtonWidget(
@@ -1702,6 +1703,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
         ),
       ),
       body: Stack(
+        // alignment: Alignment.center,
         children: !isStartNav
             ? [
                 // Background content
@@ -2500,7 +2502,12 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                         shrinkWrap: true,
                                         physics: NeverScrollableScrollPhysics(),
                                       )
-                                    : SizedBox.shrink();
+                                    : SizedBox(
+                                      height: context.screenHeight * 0.45,
+                                      child: Center(
+                                        child: Text("No result found!"),
+                                      ),
+                                    );
                               },
                             ),
                           ],
@@ -2965,78 +2972,83 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   bottom: 200,
                   left: 20,
                   right: 20,
-                  child: Container(
-                    height: 80,
-                    width: 160,
-                    decoration: BoxDecoration(
-                      color: Colors.white, // background
-                      borderRadius: BorderRadius.circular(
-                        20,
-                      ), // border-radius: 20px
-                      border: Border.all(
-                        color: const Color(0xFFEBEEF2), // #EBEEF2
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color.fromRGBO(
-                            136,
-                            139,
-                            161,
-                            0.18,
-                          ), // rgba(136,139,161,0.18)
-                          offset: const Offset(4, 4), // x:4px, y:4px
-                          blurRadius: 24, // blur
-                          spreadRadius: -4, // -4px spread
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            height: double.infinity,
-                            margin: EdgeInsets.all(5),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Colors.black, width: 2),
-                            ),
-                            child: Text(
-                              "50",
-                              style: AppTextTheme().subHeadingText.copyWith(
-                                fontSize: 28,
-                              ),
-                            ),
+                  child: Row(
+                    children: [
+                      Container(
+                        height: 80,
+                        width: 160,
+                        decoration: BoxDecoration(
+                          color: Colors.white, // background
+                          borderRadius: BorderRadius.circular(
+                            20,
+                          ), // border-radius: 20px
+                          border: Border.all(
+                            color: const Color(0xFFEBEEF2), // #EBEEF2
+                            width: 1,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color.fromRGBO(
+                                136,
+                                139,
+                                161,
+                                0.18,
+                              ), // rgba(136,139,161,0.18)
+                              offset: const Offset(4, 4), // x:4px, y:4px
+                              blurRadius: 24, // blur
+                              spreadRadius: -4, // -4px spread
+                            ),
+                          ],
                         ),
-                        Expanded(
-                          child: Container(
-                            height: double.infinity,
-                            padding: EdgeInsets.all(5),
-
-                            alignment: Alignment.center,
-
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "5",
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: double.infinity,
+                                margin: EdgeInsets.all(5),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.black, width: 2),
+                                ),
+                                child: Text(
+                                  "50",
                                   style: AppTextTheme().subHeadingText.copyWith(
                                     fontSize: 28,
                                   ),
                                 ),
-                                Text("mph"),
-                              ],
+                              ),
                             ),
-                          ),
+                            Expanded(
+                              child: Container(
+                                height: double.infinity,
+                                padding: EdgeInsets.all(5),
+                      
+                                alignment: Alignment.center,
+                      
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "5",
+                                      style: AppTextTheme().subHeadingText.copyWith(
+                                        fontSize: 28,
+                                      ),
+                                    ),
+                                    Text("mph"),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
                 CustomDragableWidget(
-                  initialSize: 0.9,
+                  initialSize: 0.24,
+                  
                   bottomWidget: Padding(
                     padding: EdgeInsets.all(20),
                     child: CustomButtonWidget(
@@ -3051,6 +3063,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
 
                       title: "Finish Trip",
                       onPressed: () {
+                        context.read<MapCubit>().startNavigation();
+                        
                         saveDialog();
                       },
                     ),

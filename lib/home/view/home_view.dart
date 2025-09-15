@@ -8,10 +8,11 @@ class HomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ResponsiveLayout(
-      mobileTemplate: HomeMobileView(),
-      tabletTemplate: HomeTabletView(),
-    );
+    return HomeMobileView();
+    //  ResponsiveLayout(
+    //   mobileTemplate: HomeMobileView(),
+    //   tabletTemplate: HomeTabletView(),
+    // );
   }
 }
 

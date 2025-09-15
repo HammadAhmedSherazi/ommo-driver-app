@@ -9,6 +9,7 @@ import 'package:here_sdk/core.errors.dart';
 import 'package:here_sdk/mapview.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/home/cubit/map_state.dart';
+import 'package:ommo/utils/utils.dart';
 
 import '../../map_sdk/truck_guidance_example.dart';
 import '../cubit/map_cubit.dart';
@@ -72,7 +73,10 @@ handleLowMemory() async {
   Widget build(BuildContext context) {
     return BlocBuilder<MapCubit, MapState>(
       builder: (context, state) {
-        return HereMap(onMapCreated: context.read<MapCubit>().onMapCreated);
+        return SizedBox(
+          height: context.screenHeight * 0.7,
+          width: context.screenWidth,
+          child: HereMap(onMapCreated: context.read<MapCubit>().onMapCreated));
       },
     );
   }
@@ -116,6 +120,12 @@ handleLowMemory() async {
   @override
   void initState() {
     super.initState();
+    Future.delayed(Duration(seconds: 4),(){
+      if(mounted){
+      context.read<MapCubit>().initialMap(this);
+
+      }
+    });
     WidgetsBinding.instance.addObserver(this);
     _appLifecycleListener = AppLifecycleListener(
       onDetach: () => {
