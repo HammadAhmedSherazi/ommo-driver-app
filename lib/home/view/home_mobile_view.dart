@@ -1,12 +1,16 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:here_sdk/core.dart' hide Location;
 import 'package:here_sdk/mapview.dart';
+import 'package:here_sdk/search.dart';
 import 'package:ommo/custom_widget/custom_accordion_widget.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
+import 'package:ommo/home/cubit/map_cubit.dart';
+import 'package:ommo/home/cubit/map_state.dart';
 import 'package:ommo/home/view/map_view.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:location/location.dart';
@@ -40,7 +44,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
     "Truck washes",
     "Dealership",
   ];
-  late MapMarker _userMarker;
+  // late MapMarker _userMarker;
   // late MapPolygon _accuracyCircle;
   final Map<String, String> truckInfo = {
     "Height": "12ft 10in",
@@ -745,46 +749,29 @@ class _HomeMobileViewState extends State<HomeMobileView>
     );
   }
 
-  void _showUserLocation(HereMapController controller, GeoCoordinates coords) {
-    // Create marker (blue dot)
-    MapImage userImage = MapImage.withFilePathAndWidthAndHeight(
-      AppIcons.myLocIcon,
-      40,
-      40,
-    ); // add your own icon
-    _userMarker = MapMarker(coords, userImage);
-    controller.mapScene.addMapMarker(_userMarker);
+  // void _showUserLocation(HereMapController controller, GeoCoordinates coords) {
+  //   // Create marker (blue dot)
+  //   MapImage userImage = MapImage.withFilePathAndWidthAndHeight(
+  //     AppIcons.myLocIcon,
+  //     40,
+  //     40,
+  //   ); // add your own icon
+  //   _userMarker = MapMarker(coords, userImage);
+  //   controller.mapScene.addMapMarker(_userMarker);
 
-    // Create accuracy circle
-    // GeoCircle geoCircle = GeoCircle(coords, accuracy); // accuracy in meters
-    // GeoCircleStyle circleStyle = GeoCircleStyle()
-    //   ..fillColor = Color.fromARGB(80, 0, 0, 255)  // semi-transparent blue
-    //   ..strokeColor = Color.fromARGB(120, 0, 0, 200)
-    //   ..strokeWidth = 2;
+  //   // Create accuracy circle
+  //   // GeoCircle geoCircle = GeoCircle(coords, accuracy); // accuracy in meters
+  //   // GeoCircleStyle circleStyle = GeoCircleStyle()
+  //   //   ..fillColor = Color.fromARGB(80, 0, 0, 255)  // semi-transparent blue
+  //   //   ..strokeColor = Color.fromARGB(120, 0, 0, 200)
+  //   //   ..strokeWidth = 2;
 
-    // _accuracyCircle = MapPolygon(geoCircle., circleStyle);
-    // controller.mapScene.addMapPolygon(_accuracyCircle);
+  //   // _accuracyCircle = MapPolygon(geoCircle., circleStyle);
+  //   // controller.mapScene.addMapPolygon(_accuracyCircle);
 
-    // Center camera
-    controller.camera.lookAtPoint(coords);
-  }
-
-  void _onMapCreated(HereMapController hereMapController) {
-    _hereMapController = hereMapController;
-
-    // Load the map scene with the chosen map scheme.
-    _hereMapController?.mapScene.loadSceneForMapScheme(MapScheme.normalDay, (
-      MapError? error,
-    ) {
-      if (error != null) {
-        print("Map scene not loaded. Error: ${error.toString()}");
-        return;
-      }
-
-      // Enable safety cameras after the scene loads successfully.
-      // _enableSafetyCameras(_hereMapController!);
-    });
-  }
+  //   // Center camera
+  //   controller.camera.lookAtPoint(coords);
+  // }
 
   void _enableSafetyCameras(HereMapController controller) {
     controller.mapScene.enableFeatures({
@@ -844,16 +831,24 @@ class _HomeMobileViewState extends State<HomeMobileView>
   void initState() {
     super.initState();
 
-    Future.microtask(() async {
-      final loc = await _getCurrentLocation();
-      _showUserLocation(_hereMapController!, loc!);
-    });
     _tabController = TabController(length: locationOpt.length, vsync: this);
     textController.add(searchTextEditController);
     focusNode.add(FocusNode());
     searchFieldFocusNode.addListener(() {
       setState(() {});
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    Future.microtask(() async {
+      final loc = await _getCurrentLocation();
+      // _showUserLocation(_hereMapController!, loc!);
+      if (mounted && loc != null) {
+        context.read<MapCubit>().setCurrentLocationPoint(loc);
+      }
+    });
+    super.didChangeDependencies();
   }
 
   void openTruckSetting() {
@@ -1290,7 +1285,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  "Times Square, New York, NY, USA" ,
+                                  "Times Square, New York, NY, USA",
                                   style: AppTextTheme().bodyText.copyWith(
                                     fontSize: 16,
                                   ),
@@ -1329,6 +1324,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     onPressed: () {
                       //  openNavigationDialogSheet();
                       context.popPage();
+
                       startNavigation();
                     },
                     icon: Icon(
@@ -1634,6 +1630,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
     setState(() {
       isStartNav = true;
     });
+    context.read<MapCubit>().startNavigation();
   }
 
   void cancelNavigation() {
@@ -1708,7 +1705,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
         children: !isStartNav
             ? [
                 // Background content
-                MapView(onMapCreated: _onMapCreated),
+                MapView(),
                 if (changeMapScheme)
                   Align(
                     child: Container(
@@ -1819,7 +1816,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                   context.screenWidth / 2,
                                   context.screenHeight / 2,
                                 );
-                                _hereMapController?.camera.zoomBy(2.0, center);
+                                context.read<MapCubit>().mapZoomIn(center);
                               },
                               icon: SvgPicture.asset(AppIcons.zoomInIcon),
                             ),
@@ -1829,7 +1826,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                   context.screenWidth / 2,
                                   context.screenHeight / 2,
                                 );
-                                _hereMapController?.camera.zoomBy(0.5, center);
+                                context.read<MapCubit>().mapZoomOut(center);
+                                ;
                               },
                               icon: SvgPicture.asset(AppIcons.zoomOutIcon),
                             ),
@@ -1968,6 +1966,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                   setState(() {
                                     isSetDirection = false;
                                   });
+                                  context.read<MapCubit>().clearRoute();
                                 },
                                 icon: Icon(Icons.close, color: Colors.black),
                               ),
@@ -2159,6 +2158,18 @@ class _HomeMobileViewState extends State<HomeMobileView>
                           CustomTextfieldWidget(
                             focusNode: searchFieldFocusNode,
                             onTapOutside: (e) {},
+                            onChanged: (text) {
+                              setState(() {});
+                              Future.delayed(Duration(milliseconds: 400), () {
+                                if (context.mounted) {
+                                  context.read<MapCubit>().searchLocation(
+                                    text,
+                                    TruckGuidanceExample.myStartCoordinadtes,
+                                  );
+                                }
+                              });
+                            },
+
                             prefixIcon: SvgPicture.asset(AppIcons.searchIcon),
                             hintText: "Find a destination...",
                             controller: searchTextEditController,
@@ -2182,6 +2193,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                 setState(() {
                                   isSetDirection = true;
                                 });
+                                context.read<MapCubit>().setRoute();
                               }
                             },
                             icon: Icon(Icons.directions, color: Colors.white),
@@ -2429,6 +2441,67 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                   ),
                                 ],
                               ),
+                            ),
+                          ],
+
+                          if (searchFieldFocusNode.hasFocus &&
+                              searchTextEditController.text.isNotEmpty) ...[
+                            BlocBuilder<MapCubit, MapState>(
+                              buildWhen: (previous, current) {
+                                return previous.suggestionDestination !=
+                                    current.suggestionDestination;
+                              },
+                              builder: (context, state) {
+                                return state.suggestionDestination != null &&
+                                        state.suggestionDestination!.isNotEmpty
+                                    ? ListView.separated(
+                                        itemBuilder: (context, index) {
+                                          final Suggestion item = state
+                                              .suggestionDestination![index];
+                                          return ListTile(
+                                            onTap:(){
+                                              searchTextEditController.text = item.title;
+                                              context.read<MapCubit>().setDestinationCoordinate(item.place!.geoCoordinates!);
+                                            },
+                                            contentPadding: EdgeInsets.zero,
+                                            leading: CircleAvatar(
+                                              radius: 25,
+                                              backgroundColor: AppColorTheme()
+                                                  .primary
+                                                  .withValues(alpha: 0.2),
+                                              child: SvgPicture.asset(
+                                                AppIcons.navigationIconGreen,
+                                              ),
+                                            ),
+                                            title: Text(
+                                              item.title,
+                                              maxLines: 1,
+                                              style: AppTextTheme().bodyText
+                                                  .copyWith(
+                                                    color: Colors.black,
+                                                    fontSize: 16,
+                                                  ),
+                                            ),
+                                            subtitle: Text(
+                                              "${item.place?.address.addressText}",
+                                              maxLines: 2,
+                                              style: AppTextTheme().lightText
+                                                  .copyWith(
+                                                    color: AppColorTheme()
+                                                        .secondary,
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                        separatorBuilder: (context, index) =>
+                                            Divider(),
+                                        itemCount:
+                                            state.suggestionDestination!.length,
+                                        shrinkWrap: true,
+                                        physics: NeverScrollableScrollPhysics(),
+                                      )
+                                    : SizedBox.shrink();
+                              },
                             ),
                           ],
 
@@ -2793,7 +2866,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 ),
               ]
             : [
-                MapView(onMapCreated: _onMapCreated),
+                MapView(),
                 Positioned(
                   top: 20,
                   left: 20,
@@ -2927,10 +3000,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Colors.black,
-                                width: 2,
-                              ),
+                              border: Border.all(color: Colors.black, width: 2),
                             ),
                             child: Text(
                               "50",
@@ -2944,16 +3014,17 @@ class _HomeMobileViewState extends State<HomeMobileView>
                           child: Container(
                             height: double.infinity,
                             padding: EdgeInsets.all(5),
-                  
+
                             alignment: Alignment.center,
-                  
+
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
                                   "5",
-                                  style: AppTextTheme().subHeadingText
-                                      .copyWith(fontSize: 28),
+                                  style: AppTextTheme().subHeadingText.copyWith(
+                                    fontSize: 28,
+                                  ),
                                 ),
                                 Text("mph"),
                               ],
@@ -3304,14 +3375,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          _hereMapController?.mapScene.loadSceneForMapScheme(scheme, (
-            MapError? error,
-          ) {
-            if (error != null) {
-              print("Error loading scheme: $error");
-            }
-            _enableSafetyCameras(_hereMapController!);
-          });
+          context.read<MapCubit>().setMapViewScheme(scheme);
           setState(() {
             selectIndexMapView = index;
           });

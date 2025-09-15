@@ -1,6 +1,8 @@
 
 // import 'package:authentication_repository/authentication_repository.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ommo/home/cubit/map_cubit.dart';
 import 'package:ommo/home/home.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 // import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,24 +25,18 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // return MultiRepositoryProvider(
-    //   providers: [
-    //     // RepositoryProvider.value(value: authenticationRepository),
-    //     RepositoryProvider.value(value: generalRepository),
-    //   ],
-    //   child: MultiBlocProvider(
-    //     providers: [
-    //       // BlocProvider(
-    //       //   create: (_) => AppCubit(authenticationRepository)..initializeApp(),
-    //       // ),
-    //       //  BlocProvider(
-    //       //   create: (_) => AuthenticationCubit(),
-    //       // ),
-    //     ],
-    //     child: const _AppView(),
-    //   ),
-    // );
-    return _AppView();
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => MapCubit(),
+        ),
+        //  BlocProvider(
+        //   create: (_) => AuthenticationCubit(),
+        // ),
+      ],
+      child: const _AppView(),
+    );
+    // return _AppView();
   }
 }
 

@@ -10,9 +10,9 @@ class CustomTextfieldWidget extends StatelessWidget {
   final String? Function(String?)? validator;
   final List<TextInputFormatter>? inputFormatters;
   final FocusNode ? focusNode;
-
+  final void Function(String)? onChanged;
   final VoidCallback ? onTap;
-  const CustomTextfieldWidget({super.key, this.controller, required this.hintText, this.prefixIcon, this.suffixIcon,  this.onTap, this.keyboardType, this.validator, this.inputFormatters, this.focusNode, this.onTapOutside});
+  const CustomTextfieldWidget({super.key, this.controller, required this.hintText, this.prefixIcon, this.suffixIcon,  this.onTap, this.keyboardType, this.validator, this.inputFormatters, this.focusNode, this.onTapOutside, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +23,7 @@ class CustomTextfieldWidget extends StatelessWidget {
       onEditingComplete: () {
          FocusScope.of(context).unfocus();
       },
+      onChanged: onChanged,
       focusNode: focusNode,
       onTap: onTap,
       controller: controller,

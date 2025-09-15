@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:here_sdk/core.dart';
@@ -11,6 +12,7 @@ import 'package:ommo/home/view/map_view.dart';
 
 import '../../custom_widget/custom_accordion_widget.dart';
 import '../../utils/utils.dart';
+import '../cubit/map_cubit.dart';
 import '../home.dart';
 import 'home_mobile_view.dart';
 
@@ -920,7 +922,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                           clipBehavior: Clip.none,
 
                           children: [
-                            MapView(onMapCreated: _onMapCreated),
+                            MapView(),
                             if (!isSetDirection)
                               Positioned(
                                 right: 10,
@@ -3194,7 +3196,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                 bgColor: AppColorTheme().whiteShade,
                 textColor: Colors.black,
                 onPressed: () {
-                  //  openNavigationDialogSheet();
+                  context.read<MapCubit>().startNavigation();
                   saveDialog();
                 },
                 icon: Icon(Icons.double_arrow, color: Colors.black, size: 18),
@@ -3207,6 +3209,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                   setState(() {
                     startNavigation = true;
                   });
+                  context.read<MapCubit>().startNavigation();
                 },
                 icon: Icon(Icons.double_arrow, color: Colors.white, size: 18),
                 isRightSide: true,
