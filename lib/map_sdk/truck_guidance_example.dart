@@ -753,7 +753,7 @@ class TruckGuidanceExample {
     });
   }
  Future<List<Suggestion>?> searchLocation(String text) async {
-  GeoCoordinates centerGeoCoordinates = startGeoCoordinates! ;
+  GeoCoordinates centerGeoCoordinates = startGeoCoordinates ?? TruckGuidanceExample.myStartCoordinadtes ;
 
   SearchOptions searchOptions = SearchOptions();
   searchOptions.languageCode = LanguageCode.enUs;
