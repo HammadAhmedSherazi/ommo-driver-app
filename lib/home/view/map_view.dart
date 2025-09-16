@@ -72,6 +72,7 @@ handleLowMemory() async {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<MapCubit, MapState>(
+      // buildWhen: (previous, current) => previous.mapController != current.mapController,
       builder: (context, state) {
         return SizedBox(
           height: context.screenHeight * 0.7,

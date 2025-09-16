@@ -65,19 +65,11 @@ class MapCubit extends Cubit<MapState> {
    
     state.mapController?.mapScene.addMapMarker( MapMarker(coords, userImage));
 
-    // Create accuracy circle
-    // GeoCircle geoCircle = GeoCircle(coords, accuracy); // accuracy in meters
-    // GeoCircleStyle circleStyle = GeoCircleStyle()
-    //   ..fillColor = Color.fromARGB(80, 0, 0, 255)  // semi-transparent blue
-    //   ..strokeColor = Color.fromARGB(120, 0, 0, 200)
-    //   ..strokeWidth = 2;
-
-    // _accuracyCircle = MapPolygon(geoCircle., circleStyle);
-    // controller.mapScene.addMapPolygon(_accuracyCircle);
+   
 
     // Center camera
    state.mapController?.camera.lookAtPoint(coords);
-   emit(state.copyWith(mapController: state.mapController, startCoordinates: state.startCoordinates));
+   emit(state.copyWith(mapController: state.mapController, startCoordinates: coords));
   }
  searchLocation(String text,GeoCoordinates startLocCoordinate )  {
 

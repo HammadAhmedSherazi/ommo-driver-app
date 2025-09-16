@@ -830,7 +830,19 @@ class _HomeMobileViewState extends State<HomeMobileView>
   @override
   void initState() {
     super.initState();
-
+    
+Future.microtask(() async {
+  if(mounted){
+    final mapCubit = context.read<MapCubit>();
+    final loc = await _getCurrentLocation();
+      
+      // _showUserLocation(_hereMapController!, loc!);
+      if ( loc != null && mapCubit.state.startCoordinates == null) {
+        mapCubit.setCurrentLocationPoint(loc);
+      }
+  }
+      
+    });
     _tabController = TabController(length: locationOpt.length, vsync: this);
     textController.add(searchTextEditController);
     focusNode.add(FocusNode());
@@ -839,17 +851,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
     });
   }
 
-  @override
-  void didChangeDependencies() {
-    Future.microtask(() async {
-      final loc = await _getCurrentLocation();
-      // _showUserLocation(_hereMapController!, loc!);
-      if (mounted && loc != null) {
-        context.read<MapCubit>().setCurrentLocationPoint(loc);
-      }
-    });
-    super.didChangeDependencies();
-  }
+  
 
   void openTruckSetting() {
     Helpers.openBottomSheet(
