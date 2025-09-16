@@ -42,16 +42,16 @@ typedef ShowDialogFunction = void Function(String title, String message);
 /// navigation and listen for speed limit and restriction updates.
 class TruckGuidanceExample {
   static final String tag = 'TruckGuidanceExample';
-  // static final GeoCoordinates myStartCoordinadtes = GeoCoordinates(40.712778, -74.006111);
-  static final GeoCoordinates myStartCoordinadtes = GeoCoordinates(40.8530408,-73.8377071);
+  static final GeoCoordinates myStartCoordinadtes = GeoCoordinates(40.712778, -74.006111);
+  // static final GeoCoordinates myStartCoordinadtes = GeoCoordinates(40.8530408,-73.8377071);
   UICallback? uiCallback;
   List<MapMarker> mapMarkers = [];
   List<MapPolyline> mapPolylines = [];
   SearchEngine? _searchEngine;
   RoutingEngine? _routingEngine;
   // A route in Berlin - can be changed via long tap.
-  GeoCoordinates _startGeoCoordinates = TruckGuidanceExample.myStartCoordinadtes ;
-  GeoCoordinates _destinationGeoCoordinates = TruckGuidanceExample.myStartCoordinadtes;
+  GeoCoordinates? startGeoCoordinates  ;
+  GeoCoordinates? destinationGeoCoordinates ;
   MapMarker? _startMapMarker;
   MapMarker? _destinationMapMarker;
   bool changeDestination = true;
@@ -74,7 +74,7 @@ class TruckGuidanceExample {
     // Center map in Berlin.
     double distanceToEarthInMeters = 1000 * 90;
     MapMeasure mapMeasureZoom = MapMeasure(MapMeasureKind.distanceInMeters, distanceToEarthInMeters);
-    camera.lookAtPointWithMeasure(TruckGuidanceExample.myStartCoordinadtes, mapMeasureZoom);
+    camera.lookAtPointWithMeasure(startGeoCoordinates ?? TruckGuidanceExample.myStartCoordinadtes, mapMeasureZoom);
 
     try {
       // We use the search engine to find places along a route.
@@ -109,7 +109,7 @@ class TruckGuidanceExample {
     // Create a TransportProfile instance.
     // This profile is currently only used to retrieve speed limits during tracking mode
     // when no route is set to the VisualNavigator instance.
-    // This profile needs to be set only once during the lifetime of the VisualNavigator
+    // This profile neeshowDialogCallbackds to be set only once during the lifetime of the VisualNavigator
     // instance - unless it should be updated.
     // Note that currently not all parameters are consumed, see API Reference for details.
     TransportProfile transportProfile = TransportProfile();
@@ -123,8 +123,8 @@ class TruckGuidanceExample {
     _herePositioningSimulator = HEREPositioningSimulator();
 
     // Draw a circle to indicate the currently selected starting point and destination.
-    _startMapMarker = _addPOIMapMarker(_startGeoCoordinates, "assets/poi_start.png");
-    _destinationMapMarker = _addPOIMapMarker(_destinationGeoCoordinates, "assets/poi_destination.png");
+    _startMapMarker = _addPOIMapMarker(startGeoCoordinates ?? TruckGuidanceExample.myStartCoordinadtes, AppIcons.myLocIcon);
+    _destinationMapMarker = _addPOIMapMarker(destinationGeoCoordinates ?? TruckGuidanceExample.myStartCoordinadtes, AppIcons.pinLocIcon);
 
     _setLongPressGestureHandler(_hereMapController);
     _showDialog("Note", "Do a long press to change start and destination coordinates. Map icons are pickable.");
@@ -504,10 +504,10 @@ class TruckGuidanceExample {
       if (gestureState == GestureState.begin) {
         // Set new route start or destination geographic coordinates based on long press location.
         if (changeDestination) {
-          _destinationGeoCoordinates = geoCoordinates;
+          destinationGeoCoordinates = geoCoordinates;
           _destinationMapMarker!.coordinates = geoCoordinates;
         } else {
-          _startGeoCoordinates = geoCoordinates;
+          startGeoCoordinates = geoCoordinates;
           _startMapMarker!.coordinates = geoCoordinates;
         }
         // Toggle the marker that should be updated on next long press.
@@ -753,7 +753,7 @@ class TruckGuidanceExample {
     });
   }
  Future<List<Suggestion>?> searchLocation(String text) async {
-  GeoCoordinates centerGeoCoordinates = TruckGuidanceExample.myStartCoordinadtes;
+  GeoCoordinates centerGeoCoordinates = startGeoCoordinates! ;
 
   SearchOptions searchOptions = SearchOptions();
   searchOptions.languageCode = LanguageCode.enUs;

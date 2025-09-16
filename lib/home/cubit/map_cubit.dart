@@ -56,6 +56,7 @@ class MapCubit extends Cubit<MapState> {
 
   void setCurrentLocationPoint( GeoCoordinates coords) {
     // Create marker (blue dot)
+    _truckExampleInstance?.startGeoCoordinates = coords;
     MapImage userImage = MapImage.withFilePathAndWidthAndHeight(
       AppIcons.myLocIcon,
       40,
@@ -76,7 +77,7 @@ class MapCubit extends Cubit<MapState> {
 
     // Center camera
    state.mapController?.camera.lookAtPoint(coords);
-   emit(state.copyWith(mapController: state.mapController));
+   emit(state.copyWith(mapController: state.mapController, startCoordinates: state.startCoordinates));
   }
  searchLocation(String text,GeoCoordinates startLocCoordinate )  {
 
@@ -85,6 +86,7 @@ class MapCubit extends Cubit<MapState> {
 
 
 void setDestinationCoordinate(GeoCoordinates coordinate){
+   _truckExampleInstance?.destinationGeoCoordinates = coordinate;
   emit(state.copyWith(
     destinationCoordinates: coordinate
   ));
