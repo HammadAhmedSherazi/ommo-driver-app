@@ -17,7 +17,7 @@ import '../cubit/map_cubit.dart';
 class MapView extends StatefulWidget {
   final HereMapController? controller;
   // final void Function(HereMapController)? onMapCreated;
-  const MapView({super.key,  this.controller});
+  const MapView({super.key, this.controller});
 
   @override
   MapViewState createState() => MapViewState();
@@ -31,7 +31,7 @@ abstract class UICallback {
   void onHideTruckRestrictionWarning();
 }
 
-class MapViewState extends State<MapView> implements UICallback,WidgetsBindingObserver {
+class MapViewState extends State<MapView> implements UICallback, WidgetsBindingObserver {
   // String _truckSpeedLimit = "";
   // String _carSpeedLimit = "";
   // String _drivingSpeed = "";
@@ -47,27 +47,26 @@ class MapViewState extends State<MapView> implements UICallback,WidgetsBindingOb
   final TextEditingController currentLocationTextfield = TextEditingController(
     text: "New York Logistics, 2856 E 195th St, Bronx, NY 10461, United States",
   );
-  final TextEditingController destinationLocationTextfield =
-      TextEditingController();
+  final TextEditingController destinationLocationTextfield = TextEditingController();
   GeoCoordinates? startLocation = TruckGuidanceExample.myStartCoordinadtes;
   GeoCoordinates? destinationLocation;
-handleLowMemory() async {
-  print("System is running extremely low on memory!");
-  print("Clearing HERE SDK's internal memory caches.");
+  handleLowMemory() async {
+    print("System is running extremely low on memory!");
+    print("Clearing HERE SDK's internal memory caches.");
 
-  SDKNativeEngine.sharedInstance!.purgeMemoryCaches(SDKNativeEnginePurgeMemoryStrategy.full);
+    SDKNativeEngine.sharedInstance!.purgeMemoryCaches(SDKNativeEnginePurgeMemoryStrategy.full);
 
-  AuthenticationMode authenticationMode = AuthenticationMode.withKeySecret("YOUR_ACCESS_KEY_ID", "YOUR_ACCESS_KEY_SECRET");
-  SDKOptions sdkOptions = SDKOptions.withAuthenticationMode(authenticationMode);
-  sdkOptions.lowMemoryMode = true;
+    AuthenticationMode authenticationMode = AuthenticationMode.withKeySecret("YOUR_ACCESS_KEY_ID", "YOUR_ACCESS_KEY_SECRET");
+    SDKOptions sdkOptions = SDKOptions.withAuthenticationMode(authenticationMode);
+    sdkOptions.lowMemoryMode = true;
 
-  try {
-    await SDKNativeEngine.makeSharedInstance(sdkOptions);
-    print("Low Memory: Low memory mode has been enabled.");
-  } on InstantiationException catch (e) {
-    print("Low Memory: Failed to enable low memory mode: ${e.toString()}");
+    try {
+      await SDKNativeEngine.makeSharedInstance(sdkOptions);
+      print("Low Memory: Low memory mode has been enabled.");
+    } on InstantiationException catch (e) {
+      print("Low Memory: Failed to enable low memory mode: ${e.toString()}");
+    }
   }
-}    
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +76,8 @@ handleLowMemory() async {
         return SizedBox(
           height: context.screenHeight * 0.7,
           width: context.screenWidth,
-          child: HereMap(onMapCreated: context.read<MapCubit>().onMapCreated));
+          child: HereMap(onMapCreated: context.read<MapCubit>().onMapCreated),
+        );
       },
     );
   }
@@ -121,10 +121,9 @@ handleLowMemory() async {
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(seconds: 4),(){
-      if(mounted){
-      context.read<MapCubit>().initialMap(this);
-
+    Future.delayed(Duration(seconds: 4), () {
+      if (mounted) {
+        context.read<MapCubit>().initialMap(this);
       }
     });
     WidgetsBinding.instance.addObserver(this);
@@ -140,7 +139,7 @@ handleLowMemory() async {
   @override
   void dispose() {
     _disposeHERESDK();
-    
+
     super.dispose();
   }
 
@@ -149,7 +148,6 @@ handleLowMemory() async {
     await SDKNativeEngine.sharedInstance?.dispose();
     SdkContext.release();
     WidgetsBinding.instance.removeObserver(this);
-    
     _appLifecycleListener.dispose();
   }
 
@@ -158,10 +156,7 @@ handleLowMemory() async {
     return Align(
       alignment: Alignment.topCenter,
       child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: Colors.lightBlueAccent,
-        ),
+        style: ElevatedButton.styleFrom(foregroundColor: Colors.white, backgroundColor: Colors.lightBlueAccent),
         onPressed: () => callbackFunction(),
         child: Text(buttonLabel, style: const TextStyle(fontSize: 20)),
       ),
@@ -232,10 +227,9 @@ handleLowMemory() async {
   }
 
   @override
-void didHaveMemoryPressure() {
-  
-  handleLowMemory();
-}
+  void didHaveMemoryPressure() {
+    handleLowMemory();
+  }
 
   @override
   Future<bool> didPopRoute() {
