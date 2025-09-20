@@ -1,9 +1,9 @@
-
 // import 'package:authentication_repository/authentication_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ommo/home/cubit/map_cubit.dart';
 import 'package:ommo/home/home.dart';
+import 'package:ommo/home/view/truck_navigation/cubit/truck_navigation_cubit.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 // import 'package:flutter_bloc/flutter_bloc.dart';
 // import 'package:general_repository/general_repository.dart';
@@ -27,12 +27,10 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(
-          create: (_) => MapCubit(),
-        ),
-        //  BlocProvider(
-        //   create: (_) => AuthenticationCubit(),
+        // BlocProvider(
+        //   create: (_) => MapCubit(),
         // ),
+        BlocProvider(create: (_) => TruckNavigationCubit()),
       ],
       child: const _AppView(),
     );
@@ -46,12 +44,11 @@ class _AppView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      
       debugShowCheckedModeBanner: false,
       title: "OMMO",
       navigatorKey: navigatorKey,
       theme: AppTheme().themeData,
-      
+
       // builder: (context, child) => ResponsiveBreakpoints.builder(
       //   child: MediaQuery(
       //       data: MediaQuery.of(context).copyWith(
@@ -67,25 +64,20 @@ class _AppView extends StatelessWidget {
       //     const Breakpoint(start: 1921, end: double.infinity, name: '4K'),
       //   ],
       // ),
-      builder:
-          (context, child) => MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaler: const TextScaler.linear(1.0),
-              boldText: false,
-            ),
-            child: child!,
-          ),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.0), boldText: false),
+        child: child!,
+      ),
       home: Container(
         color: Colors.white,
         child: SafeArea(
           //  top: false,
-            // bottom: false,
-            // maintainBottomViewPadding: true,
-            minimum: EdgeInsets.only(
-              bottom: MediaQuery.of(context).padding.bottom
-            ),
-          child: HomeView())),
+          // bottom: false,
+          // maintainBottomViewPadding: true,
+          minimum: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+          child: HomeView(),
+        ),
+      ),
     );
   }
 }
-

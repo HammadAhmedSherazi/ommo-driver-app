@@ -81,7 +81,7 @@ class MapCubit extends Cubit<MapState> {
 
   void onGetAvailableRoutes(List<Route>? routes) {
     if ((routes ?? []).isNotEmpty) {
-      emit(state.copyWith(availableDestinationRoutes: routes));
+      emit(state.copyWith(availableDestinationRoutes: [routes!.first]));
     }
   }
 
@@ -90,7 +90,12 @@ class MapCubit extends Cubit<MapState> {
     emit(state.copyWith(mapController: state.mapController));
   }
 
+  void stopNavigation() {
+    clearRoute();
+  }
+
   void clearRoute() {
+    _truckExampleInstance?.onStartStopButtonClicked();
     _truckExampleInstance?.clearRoute();
     emit(state.copyWith(mapController: state.mapController));
   }

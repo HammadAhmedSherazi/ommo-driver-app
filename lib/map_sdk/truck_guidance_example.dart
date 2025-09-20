@@ -575,7 +575,7 @@ class TruckGuidanceExample {
       return;
     }
 
-    availableRoutes = List.from(routes);
+    // availableRoutes = List.from(routes);
     selectRouteAndDrawPolyLines(routes.first);
     // When no error, routes contains at least one route.
     // lastCalculatedTruckRoute = routes.first;

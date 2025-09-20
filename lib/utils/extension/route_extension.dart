@@ -27,4 +27,16 @@ extension RouteExtension on Route {
       return "${minutes}m";
     }
   }
+
+  String get getRouteName {
+    for (final section in sections) {
+      for (final maneuver in section.maneuvers) {
+        final roadName = maneuver.nextRoadTexts.names.items.first.text;
+        if (roadName.isNotEmpty) {
+          return "Via $roadName";
+        }
+      }
+    }
+    return "Unnamed Route";
+  }
 }
