@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -101,9 +103,10 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
         ),
       ),
       body: BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
-        buildWhen: (previous, current) => previous.currentRoute != current.currentRoute,
+        buildWhen: (previous, current) => previous.isNavigating != current.isNavigating || previous.hasDirection != current.hasDirection,
         builder: (context, state) {
-          return Stack(children: !state.isNavigating ? buildInitialUi(context, state.hasDirection) : buildNavigationUi());
+          log("home view rebuilding");
+          return Stack(children: !state.isNavigating ? buildInitialUi(context, state.hasDirection) : buildNavigationUi(state));
         },
       ),
     );
@@ -296,6 +299,8 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                       padding: EdgeInsets.zero,
                       visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
                       onPressed: () {
+                        context.read<TruckNavigationCubit>().clearCurrentRouteDetail();
+                        searchTextEditController.clear();
                         // setState(() {
                         //   hasDirection = false;
                         // });
@@ -452,7 +457,7 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                   focusNode: searchFieldFocusNode,
                   onTapOutside: (e) {},
                   onChanged: (text) {
-                    // setState(() {});
+                    setState(() {});
                     Future.delayed(Duration(milliseconds: 400), () {
                       if (context.mounted) {
                         context.read<TruckNavigationCubit>().searchPlaces(text);
@@ -625,7 +630,6 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                     ),
                   ),
                 ],
-
                 if (searchFieldFocusNode.hasFocus && searchTextEditController.text.isNotEmpty) ...[
                   BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
                     buildWhen: (previous, current) {
@@ -901,72 +905,92 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
     ];
   }
 
-  List<Widget> buildNavigationUi() {
+  List<Widget> buildNavigationUi(TruckNavigationState state) {
     return [
       MapView(),
-      Positioned(
-        top: 20,
-        left: 20,
-        right: 20,
-        child: Container(
-          height: 150,
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white, // background
-            borderRadius: BorderRadius.circular(20), // border-radius: 20px
-            border: Border.all(
-              color: const Color(0xFFEBEEF2), // #EBEEF2
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color.fromRGBO(136, 139, 161, 0.18), // rgba(136,139,161,0.18)
-                offset: const Offset(4, 4), // x:4px, y:4px
-                blurRadius: 24, // blur
-                spreadRadius: -4, // -4px spread
-              ),
-            ],
-          ),
-          child: Column(
-            spacing: 10,
-            children: [
-              Row(
-                spacing: 10,
-                children: [
-                  CircleAvatar(radius: 20, backgroundColor: AppColorTheme().primary, child: Icon(Icons.turn_right)),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Turn right in 500 m", style: AppTextTheme().subHeadingText2.copyWith(fontSize: 16)),
-                        Text("123 Industrial Blvd, CHI", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
-                      ],
-                    ),
-                  ),
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: AppColorTheme().whiteShade,
-                    child: Icon(Icons.volume_off_outlined, color: Colors.black),
-                  ),
-                ],
-              ),
-              DashedLine(),
-              Expanded(
+      BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+        buildWhen: (p, c) => p.maneuverProgress != c.maneuverProgress,
+        builder: (context, state) => (state.currentRoute == null || state.maneuverProgress == null)
+            ? SizedBox()
+            : Positioned(
+                top: 20,
+                left: 20,
+                right: 20,
                 child: Container(
-                  decoration: BoxDecoration(color: AppColorTheme().whiteShade, borderRadius: BorderRadius.circular(12)),
-                  child: Row(
-                    children: List.generate(4, (index) {
-                      return Expanded(child: Icon(_setDirectionIcon(index), color: AppColorTheme().secondary, size: 30, weight: 1.5));
-                    }),
+                  height: 150,
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white, // background
+                    borderRadius: BorderRadius.circular(20), // border-radius: 20px
+                    border: Border.all(
+                      color: const Color(0xFFEBEEF2), // #EBEEF2
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color.fromRGBO(136, 139, 161, 0.18), // rgba(136,139,161,0.18)
+                        offset: const Offset(4, 4), // x:4px, y:4px
+                        blurRadius: 24, // blur
+                        spreadRadius: -4, // -4px spread
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    spacing: 10,
+                    children: [
+                      Row(
+                        spacing: 10,
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: AppColorTheme().primary,
+                            child: Icon(state.currentRoute?.maneuverInstructionIcon(state.maneuverProgress?.maneuverIndex)),
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  state.currentRoute?.formattedManeuverInstructionWithRemainingDistance(
+                                        state.maneuverProgress?.maneuverIndex,
+                                        state.maneuverProgress?.remainingDistanceInMeters.toDouble(),
+                                      ) ??
+                                      '',
+                                  style: AppTextTheme().subHeadingText2.copyWith(fontSize: 16),
+                                ),
+                                Text(
+                                  state.currentRoute?.maneuverNextAddress(state.maneuverProgress?.maneuverIndex) ?? '',
+                                  style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: AppColorTheme().whiteShade,
+                            child: Icon(Icons.volume_off_outlined, color: Colors.black),
+                          ),
+                        ],
+                      ),
+                      DashedLine(),
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(color: AppColorTheme().whiteShade, borderRadius: BorderRadius.circular(12)),
+                          child: Row(
+                            children: List.generate(4, (index) {
+                              return Expanded(child: Icon(_setDirectionIcon(index), color: AppColorTheme().secondary, size: 30, weight: 1.5));
+                            }),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
       ),
+
       Positioned(
-        bottom: 200,
+        bottom: 250,
         left: 20,
         right: 20,
         child: Row(
@@ -1026,6 +1050,7 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
           ],
         ),
       ),
+
       CustomDragableWidget(
         initialSize: 0.24,
 
@@ -1040,7 +1065,8 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
             title: "Finish Trip",
             onPressed: () {
               // context.read<MapCubit>().startNavigation();
-
+              context.read<TruckNavigationCubit>().stopNavigation();
+              searchTextEditController.clear();
               TruckNavigationUtils.saveDialog(context);
             },
           ),
@@ -1067,14 +1093,15 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                     TextSpan(
                       children: [
                         TextSpan(
-                          text: "2h 11m",
+                          text: " ${state.currentRoute?.formattedDuration}  ",
+                          //  "2h 11m",
                           style: TextStyle(color: AppColorTheme().primary),
                         ),
-                        TextSpan(text: " (122 mi 2:10 pm)", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
+                        TextSpan(text: state.currentRoute?.formattedSummary(context) ?? '', style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                       ],
                     ),
                   ),
-                  Text("via I-20E", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
+                  Text(state.currentRoute?.getRouteName ?? '', style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
                 ],
               ),
             ],
@@ -1088,144 +1115,161 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
               Icon(Icons.location_on),
               Expanded(
                 child: Text(
-                  "Times Square, New York, NY, USA",
+                  'My Current Location',
+                  // "Times Square, New York, NY, USA",
                   style: AppTextTheme().bodyText.copyWith(fontWeight: AppFontWeight.semiBold, fontSize: 16),
                 ),
               ),
             ],
           ),
           20.h,
-          CustomAccordionWidget(
-            title: "Along 8th Ave toward W 42nd St",
-            child: Padding(
-              padding: const EdgeInsets.only(left: 40),
-              child: Column(
-                spacing: 10,
-                children: [
-                  10.h,
-                  Row(
-                    spacing: 10,
-                    children: [
-                      Text("20 min (25 mi)", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-                      Expanded(child: Divider()),
-                    ],
-                  ),
-                  Row(
-                    spacing: 10,
-                    children: [
-                      Icon(Icons.straight, color: AppColorTheme().secondary),
-                      Expanded(child: Text("Head west on W 42nd St", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
-                    ],
-                  ),
-                  Row(
-                    spacing: 10,
-                    children: [
-                      24.w,
-                      Text("5 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-                      Expanded(child: Divider()),
-                    ],
-                  ),
-                  Row(
-                    spacing: 10,
-                    children: [
-                      Icon(Icons.turn_left, color: AppColorTheme().secondary),
-                      Expanded(child: Text("Turn left onto 9th Ave", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
-                    ],
-                  ),
-                  Row(
-                    spacing: 10,
-                    children: [
-                      24.w,
-                      Text("20 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-                      Expanded(child: Divider()),
-                    ],
-                  ),
-                  Row(
-                    spacing: 10,
-                    children: [
-                      Icon(Icons.turn_sharp_right, color: AppColorTheme().secondary),
-                      Expanded(child: Text("Keep right to merge onto Lincoln Tunnel", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
-                    ],
-                  ),
-                  Row(
-                    spacing: 10,
-                    children: [
-                      Icon(Icons.warning_rounded, color: Color(0xffFF4F5B)),
-                      Expanded(
-                        child: Text("Toll required at Lincoln Tunnel", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-                      ),
-                    ],
-                  ),
-                ],
+          // CustomAccordionWidget(
+          //   title: "Along 8th Ave toward W 42nd St",
+          //   child: Padding(
+          //     padding: const EdgeInsets.only(left: 40),
+          //     child: Column(
+          //       spacing: 10,
+          //       children: [
+          //         10.h,
+          //         Row(
+          //           spacing: 10,
+          //           children: [
+          //             Text("20 min (25 mi)", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
+          //             Expanded(child: Divider()),
+          //           ],
+          //         ),
+          //         Row(
+          //           spacing: 10,
+          //           children: [
+          //             Icon(Icons.straight, color: AppColorTheme().secondary),
+          //             Expanded(child: Text("Head west on W 42nd St", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
+          //           ],
+          //         ),
+          //         Row(
+          //           spacing: 10,
+          //           children: [
+          //             24.w,
+          //             Text("5 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
+          //             Expanded(child: Divider()),
+          //           ],
+          //         ),
+          //         Row(
+          //           spacing: 10,
+          //           children: [
+          //             Icon(Icons.turn_left, color: AppColorTheme().secondary),
+          //             Expanded(child: Text("Turn left onto 9th Ave", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
+          //           ],
+          //         ),
+          //         Row(
+          //           spacing: 10,
+          //           children: [
+          //             24.w,
+          //             Text("20 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
+          //             Expanded(child: Divider()),
+          //           ],
+          //         ),
+          //         Row(
+          //           spacing: 10,
+          //           children: [
+          //             Icon(Icons.turn_sharp_right, color: AppColorTheme().secondary),
+          //             Expanded(child: Text("Keep right to merge onto Lincoln Tunnel", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
+          //           ],
+          //         ),
+          //         Row(
+          //           spacing: 10,
+          //           children: [
+          //             Icon(Icons.warning_rounded, color: Color(0xffFF4F5B)),
+          //             Expanded(
+          //               child: Text("Toll required at Lincoln Tunnel", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
+          //             ),
+          //           ],
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ),
+          // 10.h,
+          // CustomAccordionWidget(
+          //   title: "Continue via NJ-495 W → I-95 S",
+          //   child: Padding(
+          //     padding: const EdgeInsets.only(left: 40),
+          //     child: Column(
+          //       spacing: 10,
+          //       children: [
+          //         10.h,
+          //         Row(
+          //           spacing: 10,
+          //           children: [
+          //             Text("20 min (25 mi)", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
+          //             Expanded(child: Divider()),
+          //           ],
+          //         ),
+          //         Row(
+          //           spacing: 10,
+          //           children: [
+          //             Icon(Icons.straight, color: AppColorTheme().secondary),
+          //             Expanded(child: Text("Head west on W 42nd St", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
+          //           ],
+          //         ),
+          //         Row(
+          //           spacing: 10,
+          //           children: [
+          //             24.w,
+          //             Text("5 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
+          //             Expanded(child: Divider()),
+          //           ],
+          //         ),
+          //         Row(
+          //           spacing: 10,
+          //           children: [
+          //             Icon(Icons.turn_left, color: AppColorTheme().secondary),
+          //             Expanded(child: Text("Turn left onto 9th Ave", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
+          //           ],
+          //         ),
+          //         Row(
+          //           spacing: 10,
+          //           children: [
+          //             24.w,
+          //             Text("20 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
+          //             Expanded(child: Divider()),
+          //           ],
+          //         ),
+          //         Row(
+          //           spacing: 10,
+          //           children: [
+          //             Icon(Icons.turn_sharp_right, color: AppColorTheme().secondary),
+          //             Expanded(child: Text("Keep right to merge onto Lincoln Tunnel", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
+          //           ],
+          //         ),
+          //         Row(
+          //           spacing: 10,
+          //           children: [
+          //             Icon(Icons.warning_rounded, color: Color(0xffFF4F5B)),
+          //             Expanded(
+          //               child: Text("Toll required at Lincoln Tunnel", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
+          //             ),
+          //           ],
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ),
+          TruckNavigationUtils.buildRouteDetails(state.currentRoute!),
+          20.h,
+          Row(
+            spacing: 10,
+            children: [
+              Icon(Icons.location_on),
+              Expanded(
+                child: Text(
+                  searchTextEditController.text,
+                  // "Times Square, New York, NY, USA",
+                  style: AppTextTheme().bodyText.copyWith(fontWeight: AppFontWeight.semiBold, fontSize: 16),
+                ),
               ),
-            ),
+            ],
           ),
-          10.h,
-          CustomAccordionWidget(
-            title: "Continue via NJ-495 W → I-95 S",
-            child: Padding(
-              padding: const EdgeInsets.only(left: 40),
-              child: Column(
-                spacing: 10,
-                children: [
-                  10.h,
-                  Row(
-                    spacing: 10,
-                    children: [
-                      Text("20 min (25 mi)", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-                      Expanded(child: Divider()),
-                    ],
-                  ),
-                  Row(
-                    spacing: 10,
-                    children: [
-                      Icon(Icons.straight, color: AppColorTheme().secondary),
-                      Expanded(child: Text("Head west on W 42nd St", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
-                    ],
-                  ),
-                  Row(
-                    spacing: 10,
-                    children: [
-                      24.w,
-                      Text("5 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-                      Expanded(child: Divider()),
-                    ],
-                  ),
-                  Row(
-                    spacing: 10,
-                    children: [
-                      Icon(Icons.turn_left, color: AppColorTheme().secondary),
-                      Expanded(child: Text("Turn left onto 9th Ave", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
-                    ],
-                  ),
-                  Row(
-                    spacing: 10,
-                    children: [
-                      24.w,
-                      Text("20 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-                      Expanded(child: Divider()),
-                    ],
-                  ),
-                  Row(
-                    spacing: 10,
-                    children: [
-                      Icon(Icons.turn_sharp_right, color: AppColorTheme().secondary),
-                      Expanded(child: Text("Keep right to merge onto Lincoln Tunnel", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
-                    ],
-                  ),
-                  Row(
-                    spacing: 10,
-                    children: [
-                      Icon(Icons.warning_rounded, color: Color(0xffFF4F5B)),
-                      Expanded(
-                        child: Text("Toll required at Lincoln Tunnel", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+          20.h,
         ],
       ),
     ];

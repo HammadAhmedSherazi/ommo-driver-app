@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -55,8 +56,9 @@ class MapViewState extends State<MapView> implements UICallback, WidgetsBindingO
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
-      // buildWhen: (previous, current) => previous.mapController != current.mapController,
+      buildWhen: (previous, current) => previous.mapController != current.mapController,
       builder: (context, state) {
+        log("map bloc rebuilding");
         return SizedBox(
           height: context.screenHeight * 0.7,
           width: context.screenWidth,

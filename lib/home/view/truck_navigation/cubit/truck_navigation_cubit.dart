@@ -71,7 +71,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _locationEngine = LocationEngine();
     _locationEngine?.confirmHEREPrivacyNoticeInclusion();
 
-    final GeoCoordinates? initialCoordinates = await _getCurrentLocation();
+    // final GeoCoordinates? initialCoordinates = await _getCurrentLocation();
+    final GeoCoordinates? initialCoordinates = GeoCoordinates(40.8519592, -73.8829223);
 
     if (initialCoordinates != null) {
       _updateCurrentLocationMarker(initialCoordinates);
@@ -79,7 +80,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     _locationEngine?.addLocationListener(
       LocationListener((Location location) {
-        final coords = location.coordinates;
+        if (state.isSimulating) return;
+        // final coords = location.coordinates;
+        final coords = GeoCoordinates(40.8519592, -73.8829223);
+
         emit(state.copyWith(startCoordinates: coords));
         if (!state.isNavigating) {
           _updateCurrentLocationMarker(coords);
@@ -206,17 +210,24 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   /// 🚗 Start navigation (choose GPS or Simulation)
-  void startNavigation({bool simulate = false}) {
+  void startNavigation({bool simulate = true}) {
     if (state.currentRoute == null) return;
     _visualNavigator?.route = state.currentRoute!;
     _visualNavigator?.startRendering(state.mapController!);
-
+    setupManeuverUpdates();
     if (simulate) {
+      _locationEngine?.stop();
+
+      emit(state.copyWith(isNavigating: true, isSimulating: true, cameraControlledByNavigator: true));
       _simulator = HEREPositioningSimulator();
-      _simulator?.startLocating(_visualNavigator!, _navigator!, state.currentRoute!);
-      emit(state.copyWith(isNavigating: true, isSimulating: true));
+
+      final LocationListener navigatorForwarder = LocationListener((Location location) {
+        _navigator?.onLocationUpdated(location);
+      });
+
+      _simulator?.startLocating(_visualNavigator!, navigatorForwarder, state.currentRoute!);
     } else {
-      emit(state.copyWith(isNavigating: true, isSimulating: false));
+      emit(state.copyWith(isNavigating: true, isSimulating: false, cameraControlledByNavigator: true));
     }
   }
 
@@ -229,14 +240,24 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     state.mapController?.mapScene.addMapMarker(_currentLocationMarker!);
 
     // Center camera
-    state.mapController?.camera.lookAtPoint(coords);
+    if (!state.cameraControlledByNavigator) {
+      state.mapController?.camera.lookAtPoint(coords);
+    }
     emit(state.copyWith(startCoordinates: coords));
   }
 
   void stopNavigation() {
     _visualNavigator?.stopRendering();
-    _simulator?.stopLocating();
-    _locationEngine?.stop();
+
+    if (state.isSimulating) {
+      _simulator?.stopLocating();
+      _simulator = null;
+    }
+    emit(state.copyWith(cameraControlledByNavigator: false));
+
+    if (_locationEngine != null && !(state.isSimulating)) {
+      _locationEngine?.startWithLocationAccuracy(LocationAccuracy.bestAvailable);
+    }
 
     // Clear polylines
     if (_currentRoutePolyline != null) {
@@ -254,6 +275,30 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       _destinationMarker = null;
     }
 
-    emit(state.copyWith(currentRoute: null, isNavigating: false, isSimulating: false));
+    clearCurrentRouteDetail();
+  }
+
+  clearCurrentRouteDetail() {
+    emit(
+      state.copyWith(
+        destinationSuggestions: FutureData<List<Suggestion>>.initial(),
+        destinationCoordinates: 'null',
+        currentRoute: 'null',
+        hasDirection: false,
+        isNavigating: false,
+        isSimulating: false,
+      ),
+    );
+  }
+
+  void setupManeuverUpdates() {
+    if (_visualNavigator == null) return;
+    _visualNavigator!.routeProgressListener = RouteProgressListener((RouteProgress progress) {
+      if (progress.maneuverProgress.isEmpty) {
+        emit(state.copyWith(maneuverProgress: "null"));
+      } else {
+        emit(state.copyWith(maneuverProgress: progress.maneuverProgress.first));
+      }
+    });
   }
 }

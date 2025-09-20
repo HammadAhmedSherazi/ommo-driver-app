@@ -5,14 +5,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:here_sdk/mapview.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:ommo/custom_widget/custom_accordion_widget.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/home/view/home_mobile_view.dart';
 import 'package:ommo/home/view/truck_navigation/cubit/truck_navigation_cubit.dart';
 import 'package:ommo/home/view/truck_navigation/cubit/truck_navigation_state.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
+import 'package:ommo/utils/extension/manuever_extension.dart';
 import 'package:ommo/utils/extension/route_extension.dart';
+import 'package:ommo/utils/extension/section_extension.dart';
 import 'package:ommo/utils/utils.dart';
-import 'package:here_sdk/routing.dart' as route;
+import 'package:here_sdk/routing.dart' as r;
 
 class TruckNavigationUtils {
   static void openDialog(BuildContext context) {
@@ -744,13 +747,14 @@ class TruckNavigationUtils {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text('My Current Location', style: AppTextTheme().bodyText.copyWith(fontSize: 16), maxLines: 2),
+                                TruckNavigationUtils.buildRouteDetails(state.currentRoute!),
                                 // Text("Times Square, New York, NY, USA", style: AppTextTheme().bodyText.copyWith(fontSize: 16), maxLines: 2),
-                                Row(
-                                  children: [
-                                    Icon(Icons.u_turn_right),
-                                    Text("20 min (25 mi)", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().primary)),
-                                  ],
-                                ),
+                                // Row(
+                                //   children: [
+                                //     Icon(Icons.u_turn_right),
+                                //     Text("20 min (25 mi)", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().primary)),
+                                //   ],
+                                // ),
                                 // Text("Centre St, Scranton, PA", style: AppTextTheme().bodyText.copyWith(fontSize: 16), maxLines: 2),
                                 Text(destinationAddress, style: AppTextTheme().bodyText.copyWith(fontSize: 16), maxLines: 2),
                               ],
@@ -766,10 +770,8 @@ class TruckNavigationUtils {
                   child: CustomButtonWidget(
                     title: "Start navigation",
                     onPressed: () {
-                      //  openNavigationDialogSheet();
                       context.popPage();
                       context.read<TruckNavigationCubit>().startNavigation();
-                      // startNavigation();
                     },
                     icon: Icon(Icons.double_arrow, color: Colors.white, size: 18),
                     isRightSide: true,
@@ -808,13 +810,7 @@ class TruckNavigationUtils {
             CustomButtonWidget(
               title: "Yes",
               onPressed: () {
-                // context.popPage();
-                // setState(() {
-                //   isStartNav = false;
-                //   isSetDirection = false;
-                //   searchTextEditController.clear();
-                // });
-                // context.pushReplacementPage(HomeView());
+                context.popPage();
               },
             ),
             CustomButtonWidget(
@@ -825,6 +821,77 @@ class TruckNavigationUtils {
               textColor: Colors.black,
               bgColor: AppColorTheme().whiteShade,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Widget buildRouteDetails(r.Route route) {
+    return Column(children: List.generate(route.sections.length, (i) => buildSectionAccordion(route.sections[i])));
+  }
+
+  static Widget buildSectionAccordion(r.Section section) {
+    // Title: you can use road names from maneuvers or fallback
+    final String title = section.maneuvers.isNotEmpty ? section.maneuvers.first.text : "Continue route";
+
+    return CustomAccordionWidget(
+      title: title,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 40),
+        child: Column(
+          spacing: 10,
+          children: [
+            10.h,
+
+            // ⏱ Section summary row
+            Row(
+              spacing: 10,
+              children: [
+                Text(
+                  "${section.formattedDuration} (${section.distanceInMiles})",
+                  style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary),
+                ),
+                Expanded(child: Divider()),
+              ],
+            ),
+
+            // 🚘 All maneuvers inside this section
+            for (final maneuver in section.maneuvers) ...[
+              Row(
+                spacing: 10,
+                children: [
+                  Icon(maneuver.toIcon, color: AppColorTheme().secondary),
+                  Expanded(
+                    child: Text(
+                      maneuver.text, // "Turn left onto 9th Ave"
+                      style: AppTextTheme().lightText.copyWith(fontSize: 16),
+                    ),
+                  ),
+                ],
+              ),
+              if (maneuver.lengthInMeters > 0)
+                Row(
+                  spacing: 10,
+                  children: [
+                    24.w,
+                    Text(maneuver.formattedDistance, style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
+                    Expanded(child: Divider()),
+                  ],
+                ),
+            ],
+
+            // ⚠️ Tolls if any
+            for (final toll in section.tolls)
+              Row(
+                spacing: 10,
+                children: [
+                  const Icon(Icons.warning_rounded, color: Color(0xffFF4F5B)),
+                  Expanded(
+                    child: Text("Toll required ", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
+                  ),
+                ],
+              ),
           ],
         ),
       ),
