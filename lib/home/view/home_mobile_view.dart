@@ -649,7 +649,7 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                                           style: AppTextTheme().bodyText.copyWith(color: Colors.black, fontSize: 16),
                                         ),
                                         subtitle: Text(
-                                          "${item.place?.address.addressText}",
+                                          item.place?.address.addressText ?? '',
                                           maxLines: 2,
                                           style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
                                         ),
@@ -1223,7 +1223,7 @@ class PlaceDisplayWidget extends StatelessWidget {
                   Text("  • ${place.storeType} • ${place.distance} mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
                 ],
               ),
-              Text(place.address, style: AppTextTheme().bodyText),
+              Text(place.address == 'null' ? '' : place.address, style: AppTextTheme().bodyText),
               Row(
                 children: [
                   Text(

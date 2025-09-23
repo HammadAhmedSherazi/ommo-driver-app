@@ -160,7 +160,43 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     });
   }
 
-  void setDestinationCoordinate(Suggestion suggestion) => emit(state.copyWith(selectedSuggestion: suggestion));
+  void setDestinationCoordinate(Suggestion suggestion) {
+    emit(state.copyWith(selectedSuggestion: suggestion));
+    setDestinationMarkerFromSuggestion();
+  }
+
+  void setDestinationMarkerFromSuggestion() {
+    if (state.destinationCoordinates == null) return;
+    if (_destinationMarker != null) {
+      state.mapController?.mapScene.removeMapMarker(_destinationMarker!);
+      _destinationMarker = null;
+    }
+
+    MapImage destIcon = MapImage.withFilePathAndWidthAndHeight(AppImages.greenMarker, 60, 100);
+    _destinationMarker = MapMarker(state.destinationCoordinates!, destIcon);
+    state.mapController?.mapScene.addMapMarker(_destinationMarker!);
+    focusDestinationWithOffset(state.destinationCoordinates!);
+  }
+
+  void focusDestinationWithOffset(GeoCoordinates coords, {double offsetPixels = 90}) {
+    const double zoomDistance = 3000;
+    MapMeasure measure = MapMeasure(MapMeasureKind.distanceInMeters, zoomDistance);
+
+    // Get screen size
+    final screenSize = state.mapController!.viewportSize;
+
+    // Convert pixel offset (100px) into meters at current zoom
+    double metersPerPixel = zoomDistance / screenSize.height;
+    double offsetMeters = metersPerPixel * offsetPixels;
+
+    // Move the target slightly south (negative latitude delta)
+    GeoCoordinates shiftedCoords = GeoCoordinates(
+      coords.latitude - (offsetMeters / 111000), // approx meters -> degrees
+      coords.longitude,
+    );
+
+    state.mapController?.camera.lookAtPointWithMeasure(shiftedCoords, measure);
+  }
 
   void calculateRoute() {
     final start = state.startCoordinates;
@@ -308,7 +344,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     clearCurrentRouteDetail();
   }
 
-  clearCurrentRouteDetail() {
+  void clearCurrentRouteDetail() {
     emit(
       state.copyWith(
         destinationSuggestions: FutureData<List<Suggestion>>.initial(),
