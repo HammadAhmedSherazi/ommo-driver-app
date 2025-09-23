@@ -1,10 +1,8 @@
 // import 'package:authentication_repository/authentication_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:ommo/home/cubit/map_cubit.dart';
 import 'package:ommo/home/home.dart';
 import 'package:ommo/home/view/truck_navigation/cubit/truck_navigation_cubit.dart';
-import 'package:responsive_framework/responsive_framework.dart';
 // import 'package:flutter_bloc/flutter_bloc.dart';
 // import 'package:general_repository/general_repository.dart';
 

@@ -13,8 +13,8 @@ void main() async {
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown, // Optional: allow upside-down
-  ]);
+    DeviceOrientation.portraitDown,
+  ]);                      
   runApp(App());
 }
 

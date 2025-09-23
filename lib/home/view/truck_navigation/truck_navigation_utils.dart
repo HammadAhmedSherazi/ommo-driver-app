@@ -669,7 +669,7 @@ class TruckNavigationUtils {
     );
   }
 
-  static void openRouteDialogSheet(BuildContext context, String destinationAddress) {
+  static void openRouteDialogSheet(BuildContext context) {
     Helpers.openBottomSheet(
       context: context,
       child: BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
@@ -756,7 +756,11 @@ class TruckNavigationUtils {
                                 //   ],
                                 // ),
                                 // Text("Centre St, Scranton, PA", style: AppTextTheme().bodyText.copyWith(fontSize: 16), maxLines: 2),
-                                Text(destinationAddress, style: AppTextTheme().bodyText.copyWith(fontSize: 16), maxLines: 2),
+                                Text(
+                                  state.selectedSuggestion?.place?.address.addressText ?? '',
+                                  style: AppTextTheme().bodyText.copyWith(fontSize: 16),
+                                  maxLines: 2,
+                                ),
                               ],
                             ),
                           ),

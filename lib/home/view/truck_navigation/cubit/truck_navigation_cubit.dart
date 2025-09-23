@@ -1,5 +1,4 @@
-import 'dart:async';
-
+import 'package:flutter/material.dart' as material;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:here_sdk/animation.dart';
 import 'package:here_sdk/core.dart';
@@ -15,6 +14,7 @@ import 'package:ommo/home/view/truck_navigation/cubit/truck_navigation_state.dar
 import 'package:ommo/map_sdk/HEREPositioningSimulator.dart';
 import 'package:ommo/map_sdk/truck_guidance_example.dart';
 import 'package:ommo/utils/constants/constants.dart';
+import 'package:ommo/utils/generics/generics.dart';
 import 'package:ommo/utils/theme/theme.dart';
 
 class TruckNavigationCubit extends Cubit<TruckNavigationState> {
@@ -33,19 +33,23 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   MapMarker? _currentLocationMarker;
   MapMarker? _startMarker;
   MapMarker? _destinationMarker;
+
   final loc.Location _location = loc.Location();
 
   void onMapCreated(HereMapController controller) {
     emit(state.copyWith(mapController: controller));
-
-    // Load the map scene after controller is set
     controller.mapScene.loadSceneForMapScheme(MapScheme.normalDay, (error) {
       if (error != null) {
         print("Map scene not loaded. Error: ${error.toString()}");
         return;
       }
-      // You can trigger further state updates here if needed
     });
+    if (state.startCoordinates != null) {
+      setInitialLocation(state.startCoordinates!);
+      const double distanceToEarthInMeters = 8000;
+      MapMeasure mapMeasureZoom = MapMeasure(MapMeasureKind.distanceInMeters, distanceToEarthInMeters);
+      controller.camera.lookAtPointWithMeasure(state.startCoordinates!, mapMeasureZoom);
+    }
     _visualNavigator = VisualNavigator();
     _navigator = Navigator();
   }
@@ -68,35 +72,76 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   void startListeningToLocation() async {
-    _locationEngine = LocationEngine();
-    _locationEngine?.confirmHEREPrivacyNoticeInclusion();
+    if (AppKeys().isSimulation) {
+      setInitialLocation(GeoCoordinates(40.7064783, -74.00585));
+    } else {
+      _locationEngine = LocationEngine();
+      _locationEngine?.confirmHEREPrivacyNoticeInclusion();
+      final GeoCoordinates? initialCoordinates = await _getCurrentLocation();
 
-    // final GeoCoordinates? initialCoordinates = await _getCurrentLocation();
-    final GeoCoordinates? initialCoordinates = GeoCoordinates(40.8519592, -73.8829223);
+      if (initialCoordinates != null) {
+        setInitialLocation(initialCoordinates);
+      }
 
-    if (initialCoordinates != null) {
-      _updateCurrentLocationMarker(initialCoordinates);
+      _locationEngine?.addLocationListener(
+        LocationListener((Location location) {
+          final GeoCoordinates coords = location.coordinates;
+          if (!state.isNavigating) {
+            _updateCurrentLocationMarker(coords);
+          }
+          if (state.isNavigating) {
+            _visualNavigator?.onLocationUpdated(location);
+            _navigator?.onLocationUpdated(location);
+          }
+        }),
+      );
+
+      _locationEngine?.startWithLocationAccuracy(LocationAccuracy.bestAvailable);
     }
-
-    _locationEngine?.addLocationListener(
-      LocationListener((Location location) {
-        if (state.isSimulating) return;
-        // final coords = location.coordinates;
-        final coords = GeoCoordinates(40.8519592, -73.8829223);
-
-        emit(state.copyWith(startCoordinates: coords));
-        if (!state.isNavigating) {
-          _updateCurrentLocationMarker(coords);
-        }
-        if (state.isNavigating) {
-          _visualNavigator?.onLocationUpdated(location);
-          _navigator?.onLocationUpdated(location);
-        }
-      }),
-    );
-
-    _locationEngine?.startWithLocationAccuracy(LocationAccuracy.bestAvailable);
   }
+
+  void setInitialLocation(GeoCoordinates coords) {
+    emit(state.copyWith(isMapLoading: false, startCoordinates: coords));
+    _updateCurrentLocationMarker(coords);
+  }
+
+  void _updateCurrentLocationMarker(GeoCoordinates coords) {
+    if (_currentLocationMarker != null) {
+      state.mapController?.mapScene.removeMapMarker(_currentLocationMarker!);
+    }
+    MapImage userImage = MapImage.withFilePathAndWidthAndHeight(AppIcons.myLocIcon, 40, 40); // add your own icon
+    _currentLocationMarker = MapMarker(coords, userImage);
+    state.mapController?.mapScene.addMapMarker(_currentLocationMarker!);
+
+    // Center camera
+    if (!state.cameraControlledByNavigator) {
+      state.mapController?.camera.lookAtPoint(coords);
+    }
+    emit(state.copyWith(startCoordinates: coords));
+  }
+
+  void mapZoomIn(material.BuildContext context) {
+    Point2D center = Point2D(context.screenWidth / 2, context.screenHeight / 2);
+    state.mapController?.camera.zoomBy(2.0, center);
+  }
+
+  void mapZoomOut(material.BuildContext context) {
+    Point2D center = Point2D(context.screenWidth / 2, context.screenHeight / 2);
+    state.mapController?.camera.zoomBy(0.5, center);
+  }
+
+  void focusOnCurrentLocation({double distanceInMeters = 1000}) {
+    final coords = state.startCoordinates;
+    final controller = state.mapController;
+
+    if (coords == null || controller == null) return;
+
+    final mapMeasure = MapMeasure(MapMeasureKind.distanceInMeters, distanceInMeters);
+
+    controller.camera.lookAtPointWithMeasure(coords, mapMeasure);
+  }
+
+  /// Routing and Navigation Functions
 
   void searchPlaces(String query) {
     if (state.startCoordinates == null) return;
@@ -115,7 +160,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     });
   }
 
-  void setDestinationCoordinate(GeoCoordinates coordinates) => emit(state.copyWith(destinationCoordinates: coordinates));
+  void setDestinationCoordinate(Suggestion suggestion) => emit(state.copyWith(selectedSuggestion: suggestion));
 
   void calculateRoute() {
     final start = state.startCoordinates;
@@ -209,53 +254,38 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     state.mapController!.camera.startAnimation(animation);
   }
 
-  /// 🚗 Start navigation (choose GPS or Simulation)
-  void startNavigation({bool simulate = true}) {
+  void startNavigation() {
     if (state.currentRoute == null) return;
+
     _visualNavigator?.route = state.currentRoute!;
     _visualNavigator?.startRendering(state.mapController!);
+
     setupManeuverUpdates();
-    if (simulate) {
+    if (AppKeys().isSimulation) {
       _locationEngine?.stop();
 
-      emit(state.copyWith(isNavigating: true, isSimulating: true, cameraControlledByNavigator: true));
+      emit(state.copyWith(isNavigating: true, cameraControlledByNavigator: true));
       _simulator = HEREPositioningSimulator();
 
       final LocationListener navigatorForwarder = LocationListener((Location location) {
         _navigator?.onLocationUpdated(location);
       });
-
       _simulator?.startLocating(_visualNavigator!, navigatorForwarder, state.currentRoute!);
     } else {
-      emit(state.copyWith(isNavigating: true, isSimulating: false, cameraControlledByNavigator: true));
+      emit(state.copyWith(isNavigating: true, cameraControlledByNavigator: true));
     }
-  }
-
-  void _updateCurrentLocationMarker(GeoCoordinates coords) {
-    if (_currentLocationMarker != null) {
-      state.mapController?.mapScene.removeMapMarker(_currentLocationMarker!);
-    }
-    MapImage userImage = MapImage.withFilePathAndWidthAndHeight(AppIcons.myLocIcon, 40, 40); // add your own icon
-    _currentLocationMarker = MapMarker(coords, userImage);
-    state.mapController?.mapScene.addMapMarker(_currentLocationMarker!);
-
-    // Center camera
-    if (!state.cameraControlledByNavigator) {
-      state.mapController?.camera.lookAtPoint(coords);
-    }
-    emit(state.copyWith(startCoordinates: coords));
   }
 
   void stopNavigation() {
     _visualNavigator?.stopRendering();
 
-    if (state.isSimulating) {
+    if (AppKeys().isSimulation) {
       _simulator?.stopLocating();
       _simulator = null;
     }
     emit(state.copyWith(cameraControlledByNavigator: false));
 
-    if (_locationEngine != null && !(state.isSimulating)) {
+    if (_locationEngine != null && !(AppKeys().isSimulation)) {
       _locationEngine?.startWithLocationAccuracy(LocationAccuracy.bestAvailable);
     }
 
@@ -282,11 +312,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     emit(
       state.copyWith(
         destinationSuggestions: FutureData<List<Suggestion>>.initial(),
-        destinationCoordinates: 'null',
+        selectedSuggestion: 'null',
         currentRoute: 'null',
         hasDirection: false,
         isNavigating: false,
-        isSimulating: false,
       ),
     );
   }

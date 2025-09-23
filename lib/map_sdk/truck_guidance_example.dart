@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:ui';
 
@@ -877,4 +876,12 @@ class MyTruckSpecs {
   static final int axleCount = 4;
   static final int trailerCount = 2;
   static final TruckType truckType = TruckType.straight;
+}
+
+abstract class UICallback {
+  void onTruckSpeedLimit(String speedLimit);
+  void onCarSpeedLimit(String speedLimit);
+  void onDrivingSpeed(String drivingSpeed);
+  void onTruckRestrictionWarning(String description);
+  void onHideTruckRestrictionWarning();
 }

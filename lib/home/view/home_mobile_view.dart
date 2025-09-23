@@ -1,5 +1,4 @@
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -7,10 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:here_sdk/core.dart' hide Location;
 import 'package:here_sdk/mapview.dart';
 import 'package:here_sdk/search.dart';
-import 'package:ommo/custom_widget/custom_accordion_widget.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
-import 'package:ommo/home/cubit/map_cubit.dart';
-import 'package:ommo/home/cubit/map_state.dart';
 import 'package:ommo/home/view/map_view.dart';
 import 'package:ommo/home/view/truck_navigation/cubit/truck_navigation_cubit.dart';
 import 'package:ommo/home/view/truck_navigation/cubit/truck_navigation_state.dart';
@@ -103,7 +99,7 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
         ),
       ),
       body: BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
-        buildWhen: (previous, current) => previous.isNavigating != current.isNavigating || previous.hasDirection != current.hasDirection,
+        buildWhen: (previous, current) => (previous.isNavigating != current.isNavigating || previous.hasDirection != current.hasDirection),
         builder: (context, state) {
           log("home view rebuilding");
           return Stack(children: !state.isNavigating ? buildInitialUi(context, state.hasDirection) : buildNavigationUi(state));
@@ -194,41 +190,31 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
-                    onPressed: () {
-                      Point2D center = Point2D(context.screenWidth / 2, context.screenHeight / 2);
-                      context.read<MapCubit>().mapZoomIn(center);
-                    },
-                    icon: SvgPicture.asset(AppIcons.zoomInIcon),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      Point2D center = Point2D(context.screenWidth / 2, context.screenHeight / 2);
-                      context.read<MapCubit>().mapZoomOut(center);
-                      ;
-                    },
-                    icon: SvgPicture.asset(AppIcons.zoomOutIcon),
-                  ),
+                  IconButton(onPressed: () => context.read<TruckNavigationCubit>().mapZoomIn(context), icon: SvgPicture.asset(AppIcons.zoomInIcon)),
+                  IconButton(onPressed: () => context.read<TruckNavigationCubit>().mapZoomOut(context), icon: SvgPicture.asset(AppIcons.zoomOutIcon)),
                 ],
               ),
             ),
-            Container(
-              width: 48,
-              height: 48,
-              padding: EdgeInsets.all(13),
-              decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x0A000000), // same as #0000000A
-                    offset: Offset(0, 2), // x=0, y=2
-                    blurRadius: 6, // blur radius
-                    spreadRadius: 0, // spread
-                  ),
-                ],
-                shape: BoxShape.circle,
-                color: Colors.white,
+            InkWell(
+              onTap: () => context.read<TruckNavigationCubit>().focusOnCurrentLocation(),
+              child: Container(
+                width: 48,
+                height: 48,
+                padding: EdgeInsets.all(13),
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x0A000000), // same as #0000000A
+                      offset: Offset(0, 2), // x=0, y=2
+                      blurRadius: 6, // blur radius
+                      spreadRadius: 0, // spread
+                    ),
+                  ],
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+                child: SvgPicture.asset(AppIcons.navigationIconGreen, colorFilter: ColorFilter.mode(Colors.black, BlendMode.srcIn)),
               ),
-              child: SvgPicture.asset(AppIcons.navigationIconGreen, colorFilter: ColorFilter.mode(Colors.black, BlendMode.srcIn)),
             ),
           ],
         ),
@@ -393,7 +379,7 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                     return ListTile(
                       // minLeadingWidth: 20,
                       onTap: () {
-                        TruckNavigationUtils.openRouteDialogSheet(context, textController.last.text);
+                        TruckNavigationUtils.openRouteDialogSheet(context);
                         // if (state.availableDestinationRoutes?[index] != null) {
                         //   _truckGuidanceExample?.selectRouteAndDrawPolyLines(state.availableDestinationRoutes![index]);
                         // }
@@ -482,19 +468,21 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                       : null,
                 ),
                 15.h,
-                CustomButtonWidget(
-                  title: "Get Direction",
-                  onPressed: () {
-                    if (searchTextEditController.text.isNotEmpty) {
-                      // setState(() {
-                      //   isSetDirection = true;
-                      // });
-
-                      context.read<TruckNavigationCubit>().calculateRoute();
-                      // context.read<MapCubit>().setRoute();
-                    }
+                BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+                  buildWhen: (p, c) => p.selectedSuggestion != c.selectedSuggestion,
+                  builder: (context, state) {
+                    return state.selectedSuggestion == null
+                        ? const SizedBox()
+                        : CustomButtonWidget(
+                            title: "Get Direction",
+                            onPressed: () {
+                              if (searchTextEditController.text.isNotEmpty) {
+                                context.read<TruckNavigationCubit>().calculateRoute();
+                              }
+                            },
+                            icon: Icon(Icons.directions, color: Colors.white),
+                          );
                   },
-                  icon: Icon(Icons.directions, color: Colors.white),
                 ),
                 15.h,
                 DashedLine(color: Color(0xffEBEEF2)),
@@ -646,7 +634,7 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                                     : ListTile(
                                         onTap: () {
                                           searchTextEditController.text = item.title;
-                                          context.read<TruckNavigationCubit>().setDestinationCoordinate(item.place!.geoCoordinates!);
+                                          context.read<TruckNavigationCubit>().setDestinationCoordinate(item);
                                           // context.read<MapCubit>().setDestinationCoordinate(item.place!.geoCoordinates!);
                                         },
                                         contentPadding: EdgeInsets.zero,
@@ -1123,137 +1111,6 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
             ],
           ),
           20.h,
-          // CustomAccordionWidget(
-          //   title: "Along 8th Ave toward W 42nd St",
-          //   child: Padding(
-          //     padding: const EdgeInsets.only(left: 40),
-          //     child: Column(
-          //       spacing: 10,
-          //       children: [
-          //         10.h,
-          //         Row(
-          //           spacing: 10,
-          //           children: [
-          //             Text("20 min (25 mi)", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-          //             Expanded(child: Divider()),
-          //           ],
-          //         ),
-          //         Row(
-          //           spacing: 10,
-          //           children: [
-          //             Icon(Icons.straight, color: AppColorTheme().secondary),
-          //             Expanded(child: Text("Head west on W 42nd St", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
-          //           ],
-          //         ),
-          //         Row(
-          //           spacing: 10,
-          //           children: [
-          //             24.w,
-          //             Text("5 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-          //             Expanded(child: Divider()),
-          //           ],
-          //         ),
-          //         Row(
-          //           spacing: 10,
-          //           children: [
-          //             Icon(Icons.turn_left, color: AppColorTheme().secondary),
-          //             Expanded(child: Text("Turn left onto 9th Ave", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
-          //           ],
-          //         ),
-          //         Row(
-          //           spacing: 10,
-          //           children: [
-          //             24.w,
-          //             Text("20 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-          //             Expanded(child: Divider()),
-          //           ],
-          //         ),
-          //         Row(
-          //           spacing: 10,
-          //           children: [
-          //             Icon(Icons.turn_sharp_right, color: AppColorTheme().secondary),
-          //             Expanded(child: Text("Keep right to merge onto Lincoln Tunnel", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
-          //           ],
-          //         ),
-          //         Row(
-          //           spacing: 10,
-          //           children: [
-          //             Icon(Icons.warning_rounded, color: Color(0xffFF4F5B)),
-          //             Expanded(
-          //               child: Text("Toll required at Lincoln Tunnel", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-          //             ),
-          //           ],
-          //         ),
-          //       ],
-          //     ),
-          //   ),
-          // ),
-          // 10.h,
-          // CustomAccordionWidget(
-          //   title: "Continue via NJ-495 W → I-95 S",
-          //   child: Padding(
-          //     padding: const EdgeInsets.only(left: 40),
-          //     child: Column(
-          //       spacing: 10,
-          //       children: [
-          //         10.h,
-          //         Row(
-          //           spacing: 10,
-          //           children: [
-          //             Text("20 min (25 mi)", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-          //             Expanded(child: Divider()),
-          //           ],
-          //         ),
-          //         Row(
-          //           spacing: 10,
-          //           children: [
-          //             Icon(Icons.straight, color: AppColorTheme().secondary),
-          //             Expanded(child: Text("Head west on W 42nd St", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
-          //           ],
-          //         ),
-          //         Row(
-          //           spacing: 10,
-          //           children: [
-          //             24.w,
-          //             Text("5 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-          //             Expanded(child: Divider()),
-          //           ],
-          //         ),
-          //         Row(
-          //           spacing: 10,
-          //           children: [
-          //             Icon(Icons.turn_left, color: AppColorTheme().secondary),
-          //             Expanded(child: Text("Turn left onto 9th Ave", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
-          //           ],
-          //         ),
-          //         Row(
-          //           spacing: 10,
-          //           children: [
-          //             24.w,
-          //             Text("20 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-          //             Expanded(child: Divider()),
-          //           ],
-          //         ),
-          //         Row(
-          //           spacing: 10,
-          //           children: [
-          //             Icon(Icons.turn_sharp_right, color: AppColorTheme().secondary),
-          //             Expanded(child: Text("Keep right to merge onto Lincoln Tunnel", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
-          //           ],
-          //         ),
-          //         Row(
-          //           spacing: 10,
-          //           children: [
-          //             Icon(Icons.warning_rounded, color: Color(0xffFF4F5B)),
-          //             Expanded(
-          //               child: Text("Toll required at Lincoln Tunnel", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-          //             ),
-          //           ],
-          //         ),
-          //       ],
-          //     ),
-          //   ),
-          // ),
           TruckNavigationUtils.buildRouteDetails(state.currentRoute!),
           20.h,
           Row(
@@ -1262,7 +1119,8 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
               Icon(Icons.location_on),
               Expanded(
                 child: Text(
-                  searchTextEditController.text,
+                  state.selectedSuggestion?.place?.address.addressText ?? searchTextEditController.text,
+                  // searchTextEditController.text,
                   // "Times Square, New York, NY, USA",
                   style: AppTextTheme().bodyText.copyWith(fontWeight: AppFontWeight.semiBold, fontSize: 16),
                 ),
@@ -1280,7 +1138,7 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          context.read<MapCubit>().setMapViewScheme(scheme);
+          // context.read<MapCubit>().setMapViewScheme(scheme);
           setState(() {
             selectIndexMapView = index;
           });

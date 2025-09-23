@@ -12,7 +12,6 @@ import 'package:ommo/home/view/map_view.dart';
 
 import '../../custom_widget/custom_accordion_widget.dart';
 import '../../utils/utils.dart';
-import '../cubit/map_cubit.dart';
 import '../home.dart';
 import 'home_mobile_view.dart';
 
@@ -23,30 +22,15 @@ class HomeTabletView extends StatefulWidget {
   State<HomeTabletView> createState() => _HomeTabletViewState();
 }
 
-class _HomeTabletViewState extends State<HomeTabletView>
-    with SingleTickerProviderStateMixin {
+class _HomeTabletViewState extends State<HomeTabletView> with SingleTickerProviderStateMixin {
   late final TabController _tabController;
   final List<FocusNode> focusNode = [FocusNode()];
-  final List<TextEditingController> textController = [
-    TextEditingController(text: "Start My Current Location"),
-  ];
-  final List<String> settingChipsList = [
-    "Avoid unpaved roads",
-    "Avoid tunnels",
-    "Avoid ferries",
-    "Avoid restriction Areas",
-  ];
+  final List<TextEditingController> textController = [TextEditingController(text: "Start My Current Location")];
+  final List<String> settingChipsList = ["Avoid unpaved roads", "Avoid tunnels", "Avoid ferries", "Avoid restriction Areas"];
 
   HereMapController? _hereMapController;
   final List<String> tabs = ["Places", "Traffic cams", "DOT 511s"];
-  final List<String> stationList = [
-    "Truck stops",
-    "Weight stations",
-    "Parking",
-    "Rest areas",
-    "Truck washes",
-    "Dealership",
-  ];
+  final List<String> stationList = ["Truck stops", "Weight stations", "Parking", "Rest areas", "Truck washes", "Dealership"];
 
   final List<PlaceDataModel> places = [
     PlaceDataModel(
@@ -136,9 +120,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
     _hereMapController = hereMapController;
 
     // Load the map scene with the chosen map scheme.
-    _hereMapController?.mapScene.loadSceneForMapScheme(MapScheme.normalDay, (
-      MapError? error,
-    ) {
+    _hereMapController?.mapScene.loadSceneForMapScheme(MapScheme.normalDay, (MapError? error) {
       if (error != null) {
         print("Map scene not loaded. Error: ${error.toString()}");
         return;
@@ -181,8 +163,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
     }
   }
 
-  final TextEditingController searchTextEditController =
-      TextEditingController();
+  final TextEditingController searchTextEditController = TextEditingController();
   FocusNode searchFieldFocusNode = FocusNode();
   bool isSetDirection = false,
       showMore = false,
@@ -213,9 +194,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
       context: context,
       builder: (context) {
         return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           backgroundColor: Colors.white,
           child: StatefulBuilder(
             builder: (context, setState) {
@@ -235,49 +214,25 @@ class _HomeTabletViewState extends State<HomeTabletView>
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                "Add new place",
-                                style: AppTextTheme().headingText,
-                              ),
+                              Text("Add new place", style: AppTextTheme().headingText),
                               IconButton(
                                 padding: EdgeInsets.zero,
-                                visualDensity: VisualDensity(
-                                  horizontal: -4.0,
-                                  vertical: -4.0,
-                                ),
+                                visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
                                 onPressed: () {
                                   context.popPage();
                                 },
-                                icon: Icon(
-                                  Icons.close,
-                                  color: Color(0xff8C93A4),
-                                ),
+                                icon: Icon(Icons.close, color: Color(0xff8C93A4)),
                               ),
                             ],
                           ),
                           24.h,
-                          Text(
-                            "Name",
-                            style: AppTextTheme().bodyText.copyWith(
-                              fontSize: 16,
-                            ),
-                          ),
+                          Text("Name", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                           7.h,
                           CustomTextfieldWidget(hintText: "Enter place name"),
                           24.h,
-                          Text(
-                            "Address",
-                            style: AppTextTheme().bodyText.copyWith(
-                              fontSize: 16,
-                            ),
-                          ),
+                          Text("Address", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                           7.h,
-                          CustomTextfieldWidget(
-                            hintText: "Enter address",
-                            suffixIcon: SvgPicture.asset(
-                              AppIcons.navigationOutlineIcon,
-                            ),
-                          ),
+                          CustomTextfieldWidget(hintText: "Enter address", suffixIcon: SvgPicture.asset(AppIcons.navigationOutlineIcon)),
                           24.h,
                           SizedBox(
                             height: 200,
@@ -287,20 +242,14 @@ class _HomeTabletViewState extends State<HomeTabletView>
                               child: HereMap(
                                 onMapCreated: (mapController) {
                                   // Load the map scene using a map scheme to render the map with.
-                                  mapController.mapScene.loadSceneForMapScheme(
-                                    MapScheme.normalDay,
-                                    (MapError? error) {
-                                      if (error == null) {
-                                        mapController.mapScene.enableFeatures({
-                                          MapFeatures.lowSpeedZones:
-                                              MapFeatureModes.lowSpeedZonesAll,
-                                        });
-                                        // _truckGuidanceExample =
-                                        //     TruckGuidanceExample(_showDialog, hereMapController);
-                                        // _truckGuidanceExample!.setUICallback(this);
-                                      } else {}
-                                    },
-                                  );
+                                  mapController.mapScene.loadSceneForMapScheme(MapScheme.normalDay, (MapError? error) {
+                                    if (error == null) {
+                                      mapController.mapScene.enableFeatures({MapFeatures.lowSpeedZones: MapFeatureModes.lowSpeedZonesAll});
+                                      // _truckGuidanceExample =
+                                      //     TruckGuidanceExample(_showDialog, hereMapController);
+                                      // _truckGuidanceExample!.setUICallback(this);
+                                    } else {}
+                                  });
                                 },
                               ),
                             ),
@@ -312,39 +261,21 @@ class _HomeTabletViewState extends State<HomeTabletView>
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        "Phone number",
-                                        style: AppTextTheme().bodyText.copyWith(
-                                          fontSize: 16,
-                                        ),
-                                      ),
+                                      Text("Phone number", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                                       7.h,
-                                      CustomTextfieldWidget(
-                                        hintText: "Enter number",
-                                        keyboardType: TextInputType.phone,
-                                      ),
+                                      CustomTextfieldWidget(hintText: "Enter number", keyboardType: TextInputType.phone),
                                     ],
                                   ),
                                 ),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        "Website",
-                                        style: AppTextTheme().bodyText.copyWith(
-                                          fontSize: 16,
-                                        ),
-                                      ),
+                                      Text("Website", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                                       7.h,
-                                      CustomTextfieldWidget(
-                                        hintText: "Paste Link",
-                                        keyboardType: TextInputType.phone,
-                                      ),
+                                      CustomTextfieldWidget(hintText: "Paste Link", keyboardType: TextInputType.phone),
                                     ],
                                   ),
                                 ),
@@ -352,87 +283,54 @@ class _HomeTabletViewState extends State<HomeTabletView>
                             ),
 
                             24.h,
-                            Text(
-                              "Opening hours",
-                              style: AppTextTheme().bodyText.copyWith(
-                                fontSize: 16,
-                              ),
-                            ),
+                            Text("Opening hours", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                             7.h,
                             CustomTextfieldWidget(
-                              suffixIcon: Icon(
-                                Icons.arrow_forward_ios,
-                                size: 17,
-                              ),
+                              suffixIcon: Icon(Icons.arrow_forward_ios, size: 17),
                               hintText: "Opening hours ",
                               onTap: () {
                                 openHourDialog();
                               },
                             ),
                             24.h,
-                            Text(
-                              "Brand logo (optional)",
-                              style: AppTextTheme().bodyText.copyWith(
-                                fontSize: 16,
-                              ),
-                            ),
+                            Text("Brand logo (optional)", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                             7.h,
                             GestureDetector(
                               onTap: () async {
                                 final picker = ImagePicker();
 
                                 // Show choice dialog
-                                final source =
-                                    await showModalBottomSheet<ImageSource>(
-                                      context: context,
-                                      builder: (context) {
-                                        return SafeArea(
-                                          child: Padding(
-                                            padding: EdgeInsets.symmetric(
-                                              vertical:
-                                                  AppTheme.horizontalPadding,
+                                final source = await showModalBottomSheet<ImageSource>(
+                                  context: context,
+                                  builder: (context) {
+                                    return SafeArea(
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(vertical: AppTheme.horizontalPadding),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            ListTile(
+                                              leading: const Icon(Icons.camera_alt),
+                                              title: const Text('Take a photo'),
+                                              onTap: () => Navigator.pop(context, ImageSource.camera),
                                             ),
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                ListTile(
-                                                  leading: const Icon(
-                                                    Icons.camera_alt,
-                                                  ),
-                                                  title: const Text(
-                                                    'Take a photo',
-                                                  ),
-                                                  onTap: () => Navigator.pop(
-                                                    context,
-                                                    ImageSource.camera,
-                                                  ),
-                                                ),
-                                                ListTile(
-                                                  leading: const Icon(
-                                                    Icons.photo_library,
-                                                  ),
-                                                  title: const Text(
-                                                    'Choose from gallery',
-                                                  ),
-                                                  onTap: () => Navigator.pop(
-                                                    context,
-                                                    ImageSource.gallery,
-                                                  ),
-                                                ),
-                                              ],
+                                            ListTile(
+                                              leading: const Icon(Icons.photo_library),
+                                              title: const Text('Choose from gallery'),
+                                              onTap: () => Navigator.pop(context, ImageSource.gallery),
                                             ),
-                                          ),
-                                        );
-                                      },
+                                          ],
+                                        ),
+                                      ),
                                     );
+                                  },
+                                );
 
                                 // If user canceled dialog
                                 if (source == null) return;
 
                                 // Pick image from selected source
-                                final picked = await picker.pickImage(
-                                  source: source,
-                                );
+                                final picked = await picker.pickImage(source: source);
                                 if (picked != null) {
                                   final imageFile = File(picked.path);
                                   setState(() {
@@ -445,13 +343,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                       spacing: 5,
                                       children: [
                                         Icon(Icons.add),
-                                        Text(
-                                          "Add Logo",
-                                          style: AppTextTheme().bodyText
-                                              .copyWith(
-                                                color: AppColorTheme().primary,
-                                              ),
-                                        ),
+                                        Text("Add Logo", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().primary)),
                                       ],
                                     )
                                   : Row(
@@ -462,19 +354,11 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                           padding: EdgeInsets.all(3),
                                           alignment: Alignment.topCenter,
                                           decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(
-                                              5,
-                                            ),
-                                            image: DecorationImage(
-                                              image: FileImage(
-                                                File(selectedImage!.path),
-                                              ),
-                                              fit: BoxFit.cover,
-                                            ),
+                                            borderRadius: BorderRadius.circular(5),
+                                            image: DecorationImage(image: FileImage(File(selectedImage!.path)), fit: BoxFit.cover),
                                           ),
                                           child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.end,
+                                            mainAxisAlignment: MainAxisAlignment.end,
                                             children: [
                                               InkWell(
                                                 onTap: () {
@@ -485,11 +369,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                                 child: CircleAvatar(
                                                   backgroundColor: Colors.white,
                                                   radius: 8,
-                                                  child: Icon(
-                                                    Icons.close,
-                                                    size: 10,
-                                                    color: Colors.black,
-                                                  ),
+                                                  child: Icon(Icons.close, size: 10, color: Colors.black),
                                                 ),
                                               ),
                                             ],
@@ -499,12 +379,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                     ),
                             ),
                             24.h,
-                            Text(
-                              "Amenities",
-                              style: AppTextTheme().bodyText.copyWith(
-                                fontSize: 16,
-                              ),
-                            ),
+                            Text("Amenities", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                             7.h,
                             ...List.generate(
                               amenitiesList.length,
@@ -515,25 +390,15 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                     child: Switch.adaptive(
                                       padding: EdgeInsets.zero,
 
-                                      value: amenitiesList.entries
-                                          .elementAt(index)
-                                          .value,
+                                      value: amenitiesList.entries.elementAt(index).value,
                                       onChanged: (v) {
                                         setState(() {
-                                          amenitiesList.update(
-                                            amenitiesList.entries
-                                                .elementAt(index)
-                                                .key,
-                                            (bol) => !bol,
-                                          );
+                                          amenitiesList.update(amenitiesList.entries.elementAt(index).key, (bol) => !bol);
                                         });
                                       },
                                     ),
                                   ),
-                                  Text(
-                                    amenitiesList.entries.elementAt(index).key,
-                                    style: AppTextTheme().bodyText,
-                                  ),
+                                  Text(amenitiesList.entries.elementAt(index).key, style: AppTextTheme().bodyText),
                                 ],
                               ),
                             ),
@@ -549,12 +414,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                               child: Row(
                                 spacing: 5,
                                 children: [
-                                  Text(
-                                    "Add more details",
-                                    style: AppTextTheme().bodyText.copyWith(
-                                      color: AppColorTheme().primary,
-                                    ),
-                                  ),
+                                  Text("Add more details", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().primary)),
                                   Icon(Icons.keyboard_arrow_down, size: 17),
                                 ],
                               ),
@@ -564,9 +424,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                       ),
                     ),
                     Padding(
-                      padding: EdgeInsetsGeometry.all(
-                        AppTheme.horizontalPadding,
-                      ),
+                      padding: EdgeInsetsGeometry.all(AppTheme.horizontalPadding),
                       child: CustomButtonWidget(
                         title: "Add place",
                         onPressed: () {
@@ -595,23 +453,15 @@ class _HomeTabletViewState extends State<HomeTabletView>
       "Sunday": true,
     };
 
-    List<TextEditingController> openTextEditController = List.generate(
-      days.length,
-      (index) => TextEditingController(),
-    );
+    List<TextEditingController> openTextEditController = List.generate(days.length, (index) => TextEditingController());
 
-    List<TextEditingController> closeTextEditController = List.generate(
-      days.length,
-      (index) => TextEditingController(),
-    );
+    List<TextEditingController> closeTextEditController = List.generate(days.length, (index) => TextEditingController());
 
     showDialog(
       context: context,
       builder: (context) {
         return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           backgroundColor: Colors.white,
           child: StatefulBuilder(
             builder: (context, setState) {
@@ -631,32 +481,17 @@ class _HomeTabletViewState extends State<HomeTabletView>
                             children: [
                               IconButton(
                                 onPressed: () => context.popPage(),
-                                icon: Icon(
-                                  Icons.arrow_back,
-                                  color: Colors.black,
-                                ),
+                                icon: Icon(Icons.arrow_back, color: Colors.black),
                                 padding: EdgeInsets.zero,
-                                visualDensity: VisualDensity(
-                                  horizontal: -4.0,
-                                  vertical: -4.0,
-                                ),
+                                visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
                               ),
-                              Text(
-                                "Opening hours",
-                                style: AppTextTheme().headingText,
-                              ),
+                              Text("Opening hours", style: AppTextTheme().headingText),
                               Spacer(),
                               IconButton(
                                 onPressed: () => context.popPage(),
-                                icon: Icon(
-                                  Icons.close,
-                                  color: Color(0xff8C93A4),
-                                ),
+                                icon: Icon(Icons.close, color: Color(0xff8C93A4)),
                                 padding: EdgeInsets.zero,
-                                visualDensity: VisualDensity(
-                                  horizontal: -4.0,
-                                  vertical: -4.0,
-                                ),
+                                visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
                               ),
                             ],
                           ),
@@ -677,18 +512,12 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                       child: CustomTextfieldWidget(
                                         hintText: "--:--",
 
-                                        controller:
-                                            openTextEditController[index],
+                                        controller: openTextEditController[index],
                                         onTap: () async {
-                                          final TimeOfDay? picked =
-                                              await showTimePicker(
-                                                context: context,
-                                                initialTime: TimeOfDay.now(),
-                                              );
+                                          final TimeOfDay? picked = await showTimePicker(context: context, initialTime: TimeOfDay.now());
                                           if (!context.mounted) return;
                                           if (picked != null) {
-                                            openTextEditController[index].text =
-                                                picked.format(context);
+                                            openTextEditController[index].text = picked.format(context);
                                           }
                                         },
                                       ),
@@ -698,29 +527,18 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                       child: CustomTextfieldWidget(
                                         hintText: "--:--",
 
-                                        controller:
-                                            closeTextEditController[index],
+                                        controller: closeTextEditController[index],
                                         onTap: () async {
-                                          final TimeOfDay? picked =
-                                              await showTimePicker(
-                                                context: context,
-                                                initialTime: TimeOfDay.now(),
-                                              );
+                                          final TimeOfDay? picked = await showTimePicker(context: context, initialTime: TimeOfDay.now());
                                           if (!context.mounted) return;
                                           if (picked != null) {
-                                            closeTextEditController[index]
-                                                .text = picked.format(
-                                              context,
-                                            );
+                                            closeTextEditController[index].text = picked.format(context);
                                           }
                                         },
                                       ),
                                     ),
                                     20.w,
-                                    Text(
-                                      "Closed",
-                                      style: AppTextTheme().lightText,
-                                    ),
+                                    Text("Closed", style: AppTextTheme().lightText),
                                     Transform.scale(
                                       scale: 0.6,
                                       child: Switch.adaptive(
@@ -777,21 +595,13 @@ class _HomeTabletViewState extends State<HomeTabletView>
             Container(
               width: 48,
               height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColorTheme().primary.withValues(alpha: 0.2),
-              ),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: AppColorTheme().primary.withValues(alpha: 0.2)),
               child: Icon(Icons.bookmark_outline),
             ),
-            Text(
-              "Save this route ",
-              style: AppTextTheme().headingText.copyWith(fontSize: 20),
-            ),
+            Text("Save this route ", style: AppTextTheme().headingText.copyWith(fontSize: 20)),
             Text(
               "Would you like to save this route for future use?",
-              style: AppTextTheme().lightText.copyWith(
-                color: AppColorTheme().secondary,
-              ),
+              style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
               textAlign: TextAlign.center,
             ),
             CustomButtonWidget(
@@ -885,20 +695,11 @@ class _HomeTabletViewState extends State<HomeTabletView>
                               margin: EdgeInsets.symmetric(vertical: 5),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
-                                color: selectMenuIndex == index
-                                    ? AppColorTheme().primary.withValues(
-                                        alpha: 0.16,
-                                      )
-                                    : null,
+                                color: selectMenuIndex == index ? AppColorTheme().primary.withValues(alpha: 0.16) : null,
                               ),
                               child: SvgPicture.asset(
                                 mainMenuIcons[index],
-                                colorFilter: ColorFilter.mode(
-                                  selectMenuIndex == index
-                                      ? AppColorTheme().primary
-                                      : Colors.black,
-                                  BlendMode.srcIn,
-                                ),
+                                colorFilter: ColorFilter.mode(selectMenuIndex == index ? AppColorTheme().primary : Colors.black, BlendMode.srcIn),
                               ),
                             ),
                           ),
@@ -912,10 +713,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                     child: Container(
                       padding: EdgeInsets.all(5),
                       height: context.screenHeight,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20),
                         child: Stack(
@@ -940,10 +738,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                       child: Container(
                                         width: 48,
                                         height: 48,
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          shape: BoxShape.circle,
-                                        ),
+                                        decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
 
                                         child: Container(
                                           width: 48,
@@ -952,31 +747,18 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                           decoration: BoxDecoration(
                                             boxShadow: [
                                               BoxShadow(
-                                                color: Color(
-                                                  0x0A000000,
-                                                ), // same as #0000000A
-                                                offset: Offset(
-                                                  0,
-                                                  2,
-                                                ), // x=0, y=2
+                                                color: Color(0x0A000000), // same as #0000000A
+                                                offset: Offset(0, 2), // x=0, y=2
                                                 blurRadius: 6, // blur radius
                                                 spreadRadius: 0, // spread
                                               ),
                                             ],
                                             shape: BoxShape.circle,
-                                            color: changeMapScheme
-                                                ? AppColorTheme().primary
-                                                      .withValues(alpha: 0.2)
-                                                : Colors.white,
+                                            color: changeMapScheme ? AppColorTheme().primary.withValues(alpha: 0.2) : Colors.white,
                                           ),
                                           child: SvgPicture.asset(
                                             AppIcons.layerBoxIcon,
-                                            colorFilter: changeMapScheme
-                                                ? ColorFilter.mode(
-                                                    AppColorTheme().primary,
-                                                    BlendMode.srcIn,
-                                                  )
-                                                : null,
+                                            colorFilter: changeMapScheme ? ColorFilter.mode(AppColorTheme().primary, BlendMode.srcIn) : null,
                                           ),
                                         ),
                                       ),
@@ -986,15 +768,10 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                       // height: 200,
                                       // padding: EdgeInsets.all(13),
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(50),
-                                          bottom: Radius.circular(50),
-                                        ),
+                                        borderRadius: BorderRadius.vertical(top: Radius.circular(50), bottom: Radius.circular(50)),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Color(
-                                              0x0A000000,
-                                            ), // same as #0000000A
+                                            color: Color(0x0A000000), // same as #0000000A
                                             offset: Offset(0, 2), // x=0, y=2
                                             blurRadius: 6, // blur radius
                                             spreadRadius: 0, // spread
@@ -1008,33 +785,17 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                         children: [
                                           IconButton(
                                             onPressed: () {
-                                              Point2D center = Point2D(
-                                                context.screenWidth / 2,
-                                                context.screenHeight / 2,
-                                              );
-                                              _hereMapController?.camera.zoomBy(
-                                                2.0,
-                                                center,
-                                              );
+                                              Point2D center = Point2D(context.screenWidth / 2, context.screenHeight / 2);
+                                              _hereMapController?.camera.zoomBy(2.0, center);
                                             },
-                                            icon: SvgPicture.asset(
-                                              AppIcons.zoomInIcon,
-                                            ),
+                                            icon: SvgPicture.asset(AppIcons.zoomInIcon),
                                           ),
                                           IconButton(
                                             onPressed: () {
-                                              Point2D center = Point2D(
-                                                context.screenWidth / 2,
-                                                context.screenHeight / 2,
-                                              );
-                                              _hereMapController?.camera.zoomBy(
-                                                0.5,
-                                                center,
-                                              );
+                                              Point2D center = Point2D(context.screenWidth / 2, context.screenHeight / 2);
+                                              _hereMapController?.camera.zoomBy(0.5, center);
                                             },
-                                            icon: SvgPicture.asset(
-                                              AppIcons.zoomOutIcon,
-                                            ),
+                                            icon: SvgPicture.asset(AppIcons.zoomOutIcon),
                                           ),
                                         ],
                                       ),
@@ -1046,9 +807,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                       decoration: BoxDecoration(
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Color(
-                                              0x0A000000,
-                                            ), // same as #0000000A
+                                            color: Color(0x0A000000), // same as #0000000A
                                             offset: Offset(0, 2), // x=0, y=2
                                             blurRadius: 6, // blur radius
                                             spreadRadius: 0, // spread
@@ -1059,10 +818,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                       ),
                                       child: SvgPicture.asset(
                                         AppIcons.navigationIconGreen,
-                                        colorFilter: ColorFilter.mode(
-                                          Colors.black,
-                                          BlendMode.srcIn,
-                                        ),
+                                        colorFilter: ColorFilter.mode(Colors.black, BlendMode.srcIn),
                                       ),
                                     ),
                                   ],
@@ -1078,25 +834,15 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                   padding: EdgeInsets.all(16),
                                   decoration: BoxDecoration(
                                     color: Colors.white, // background
-                                    borderRadius: BorderRadius.circular(
-                                      20,
-                                    ), // border-radius: 20px
+                                    borderRadius: BorderRadius.circular(20), // border-radius: 20px
                                     border: Border.all(
                                       color: const Color(0xFFEBEEF2), // #EBEEF2
                                       width: 1,
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color.fromRGBO(
-                                          136,
-                                          139,
-                                          161,
-                                          0.18,
-                                        ), // rgba(136,139,161,0.18)
-                                        offset: const Offset(
-                                          4,
-                                          4,
-                                        ), // x:4px, y:4px
+                                        color: const Color.fromRGBO(136, 139, 161, 0.18), // rgba(136,139,161,0.18)
+                                        offset: const Offset(4, 4), // x:4px, y:4px
                                         blurRadius: 24, // blur
                                         spreadRadius: -4, // -4px spread
                                       ),
@@ -1108,65 +854,34 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                       Row(
                                         spacing: 10,
                                         children: [
-                                          CircleAvatar(
-                                            radius: 20,
-                                            backgroundColor:
-                                                AppColorTheme().primary,
-                                            child: Icon(Icons.turn_right),
-                                          ),
+                                          CircleAvatar(radius: 20, backgroundColor: AppColorTheme().primary, child: Icon(Icons.turn_right)),
                                           Expanded(
                                             child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
+                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                Text(
-                                                  "Turn right in 500 m",
-                                                  style: AppTextTheme()
-                                                      .subHeadingText2
-                                                      .copyWith(fontSize: 16),
-                                                ),
+                                                Text("Turn right in 500 m", style: AppTextTheme().subHeadingText2.copyWith(fontSize: 16)),
                                                 Text(
                                                   "123 Industrial Blvd, CHI",
-                                                  style: AppTextTheme()
-                                                      .lightText
-                                                      .copyWith(
-                                                        color: AppColorTheme()
-                                                            .secondary,
-                                                      ),
+                                                  style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
                                                 ),
                                               ],
                                             ),
                                           ),
                                           CircleAvatar(
                                             radius: 20,
-                                            backgroundColor:
-                                                AppColorTheme().whiteShade,
-                                            child: Icon(
-                                              Icons.volume_off_outlined,
-                                              color: Colors.black,
-                                            ),
+                                            backgroundColor: AppColorTheme().whiteShade,
+                                            child: Icon(Icons.volume_off_outlined, color: Colors.black),
                                           ),
                                         ],
                                       ),
                                       DashedLine(),
                                       Expanded(
                                         child: Container(
-                                          decoration: BoxDecoration(
-                                            color: AppColorTheme().whiteShade,
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
+                                          decoration: BoxDecoration(color: AppColorTheme().whiteShade, borderRadius: BorderRadius.circular(12)),
                                           child: Row(
                                             children: List.generate(4, (index) {
                                               return Expanded(
-                                                child: Icon(
-                                                  _setDirectionIcon(index),
-                                                  color:
-                                                      AppColorTheme().secondary,
-                                                  size: 30,
-                                                  weight: 1.5,
-                                                ),
+                                                child: Icon(_setDirectionIcon(index), color: AppColorTheme().secondary, size: 30, weight: 1.5),
                                               );
                                             }),
                                           ),
@@ -1176,84 +891,65 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                   ),
                                 ),
                               ),
-                            
-                            if(startNavigation)
-                            Positioned(
-                              bottom: 10,
-                              left: 10,
-                              child:Container(
-                                height: 80,
-                                width: 160,
-                                decoration: BoxDecoration(
-                                  color: Colors.white, // background
-                                  borderRadius: BorderRadius.circular(
-                                    20,
-                                  ), // border-radius: 20px
-                                  border: Border.all(
-                                    color: const Color(0xFFEBEEF2), // #EBEEF2
-                                    width: 1,
+
+                            if (startNavigation)
+                              Positioned(
+                                bottom: 10,
+                                left: 10,
+                                child: Container(
+                                  height: 80,
+                                  width: 160,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white, // background
+                                    borderRadius: BorderRadius.circular(20), // border-radius: 20px
+                                    border: Border.all(
+                                      color: const Color(0xFFEBEEF2), // #EBEEF2
+                                      width: 1,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color.fromRGBO(136, 139, 161, 0.18), // rgba(136,139,161,0.18)
+                                        offset: const Offset(4, 4), // x:4px, y:4px
+                                        blurRadius: 24, // blur
+                                        spreadRadius: -4, // -4px spread
+                                      ),
+                                    ],
                                   ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color.fromRGBO(
-                                        136,
-                                        139,
-                                        161,
-                                        0.18,
-                                      ), // rgba(136,139,161,0.18)
-                                      offset: const Offset(4, 4), // x:4px, y:4px
-                                      blurRadius: 24, // blur
-                                      spreadRadius: -4, // -4px spread
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Container(
-                                        height: double.infinity,
-                                        margin: EdgeInsets.all(5),
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(16),
-                                          border: Border.all(
-                                            color: Colors.black,
-                                            width: 2,
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Container(
+                                          height: double.infinity,
+                                          margin: EdgeInsets.all(5),
+                                          alignment: Alignment.center,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(16),
+                                            border: Border.all(color: Colors.black, width: 2),
                                           ),
+                                          child: Text("50", style: AppTextTheme().subHeadingText.copyWith(fontSize: 28)),
                                         ),
-                                        child: Text(
-                                          "50",
-                                          style: AppTextTheme().subHeadingText.copyWith(
-                                            fontSize: 28,
+                                      ),
+                                      Expanded(
+                                        child: Container(
+                                          height: double.infinity,
+                                          padding: EdgeInsets.all(5),
+
+                                          alignment: Alignment.center,
+
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text("5", style: AppTextTheme().subHeadingText.copyWith(fontSize: 28)),
+                                              Text("mph"),
+                                            ],
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    Expanded(
-                                      child: Container(
-                                        height: double.infinity,
-                                        padding: EdgeInsets.all(5),
-                              
-                                        alignment: Alignment.center,
-                              
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              "5",
-                                              style: AppTextTheme().subHeadingText
-                                                  .copyWith(fontSize: 28),
-                                            ),
-                                            Text("mph"),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
-                ),
-                            
+
                             Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: Row(
@@ -1265,37 +961,23 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                         // mainAxisAlignment:
                                         // MainAxisAlignment.spaceBetween,
                                         children: [
-                                          if(!searchFieldFocusNode.hasFocus || searchTextEditController.text.isNotEmpty) 
-                                          Container(
-                                            width: context.screenWidth,
-                                            height: 56,
-                                            padding: EdgeInsets.all(8),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius:
-                                                  BorderRadius.horizontal(
-                                                    left: Radius.circular(50),
-                                                    right: Radius.circular(50),
-                                                  ),
-                                            ),
-                                            child: Container(
+                                          if (!searchFieldFocusNode.hasFocus || searchTextEditController.text.isNotEmpty)
+                                            Container(
+                                              width: context.screenWidth,
+                                              height: 56,
+                                              padding: EdgeInsets.all(8),
                                               decoration: BoxDecoration(
-                                                color:
-                                                    AppColorTheme().whiteShade,
-                                                borderRadius:
-                                                    BorderRadius.horizontal(
-                                                      left: Radius.circular(50),
-                                                      right: Radius.circular(
-                                                        50,
-                                                      ),
-                                                    ),
+                                                color: Colors.white,
+                                                borderRadius: BorderRadius.horizontal(left: Radius.circular(50), right: Radius.circular(50)),
                                               ),
-                                              child: CustomTabBarWidget(
-                                                options: tabs,
-                                                tabController: _tabController,
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  color: AppColorTheme().whiteShade,
+                                                  borderRadius: BorderRadius.horizontal(left: Radius.circular(50), right: Radius.circular(50)),
+                                                ),
+                                                child: CustomTabBarWidget(options: tabs, tabController: _tabController),
                                               ),
                                             ),
-                                          ),
                                           Container(
                                             width: context.screenWidth,
                                             margin: EdgeInsets.only(top: 10),
@@ -1304,21 +986,13 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                             child: ListView.separated(
                                               clipBehavior: Clip.none,
                                               itemCount: stationList.length,
-                                              padding: EdgeInsets.symmetric(
-                                                horizontal:
-                                                    AppTheme.horizontalPadding,
-                                              ),
-                                              separatorBuilder:
-                                                  (context, index) => 5.w,
+                                              padding: EdgeInsets.symmetric(horizontal: AppTheme.horizontalPadding),
+                                              separatorBuilder: (context, index) => 5.w,
                                               itemBuilder: (context, index) => GestureDetector(
                                                 onTap: () {
-                                                  _hereMapController?.mapScene
-                                                      .enableFeatures({
-                                                        MapFeatures
-                                                                .lowSpeedZones:
-                                                            MapFeatureModes
-                                                                .lowSpeedZonesAll,
-                                                      });
+                                                  _hereMapController?.mapScene.enableFeatures({
+                                                    MapFeatures.lowSpeedZones: MapFeatureModes.lowSpeedZonesAll,
+                                                  });
                                                   // _truckGuidanceExample = TruckGuidanceExample(
                                                   //   _showDialog,
                                                   //   _hereMapController!,
@@ -1326,39 +1000,19 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                                 },
                                                 child: Container(
                                                   // width: 100,
-                                                  padding: EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                  ),
+                                                  padding: EdgeInsets.symmetric(horizontal: 8),
                                                   decoration: BoxDecoration(
                                                     color: Colors.white,
                                                     border: Border.all(
-                                                      color:
-                                                          const Color.fromRGBO(
-                                                            235,
-                                                            238,
-                                                            242,
-                                                            1,
-                                                          ), // border color
+                                                      color: const Color.fromRGBO(235, 238, 242, 1), // border color
                                                       width: 1, // border width
                                                     ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          50,
-                                                        ), // optional rounded corners
+                                                    borderRadius: BorderRadius.circular(50), // optional rounded corners
                                                     boxShadow: const [
                                                       BoxShadow(
-                                                        color: Color.fromRGBO(
-                                                          0,
-                                                          0,
-                                                          0,
-                                                          0.04,
-                                                        ), // shadow color
-                                                        offset: Offset(
-                                                          0,
-                                                          2,
-                                                        ), // x=0, y=2 (downwards)
-                                                        blurRadius:
-                                                            6, // soft shadow
+                                                        color: Color.fromRGBO(0, 0, 0, 0.04), // shadow color
+                                                        offset: Offset(0, 2), // x=0, y=2 (downwards)
+                                                        blurRadius: 6, // soft shadow
                                                         spreadRadius: 0,
                                                       ),
                                                     ],
@@ -1368,27 +1022,13 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                                     children: [
                                                       CircleAvatar(
                                                         radius: 14,
-                                                        backgroundColor:
-                                                            index % 2 == 0
-                                                            ? Color(0xff4676F6)
-                                                            : Color(0xffFFC300),
+                                                        backgroundColor: index % 2 == 0 ? Color(0xff4676F6) : Color(0xffFFC300),
                                                         child: Text(
-                                                          stationList[index]
-                                                              .splitMapJoin(
-                                                                '',
-                                                              )[0],
-                                                          style: AppTextTheme()
-                                                              .headingText
-                                                              .copyWith(
-                                                                fontSize: 16,
-                                                              ),
+                                                          stationList[index].splitMapJoin('')[0],
+                                                          style: AppTextTheme().headingText.copyWith(fontSize: 16),
                                                         ),
                                                       ),
-                                                      Text(
-                                                        stationList[index],
-                                                        style: AppTextTheme()
-                                                            .bodyText,
-                                                      ),
+                                                      Text(stationList[index], style: AppTextTheme().bodyText),
                                                     ],
                                                   ),
                                                 ),
@@ -1400,8 +1040,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                           Spacer(),
 
                                           Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.end,
+                                            mainAxisAlignment: MainAxisAlignment.end,
                                             children: [
                                               Column(
                                                 mainAxisSize: MainAxisSize.min,
@@ -1409,80 +1048,43 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                                 children: [
                                                   GestureDetector(
                                                     onTap: () {
-                                                      _hereMapController
-                                                          ?.mapScene
-                                                          .loadSceneForMapScheme(
-                                                            !changeMapScheme
-                                                                ? MapScheme
-                                                                      .hybridDay
-                                                                : MapScheme
-                                                                      .normalDay,
-                                                            (MapError? error) {
-                                                              if (error !=
-                                                                  null) {
-                                                                print(
-                                                                  "Error loading scheme: $error",
-                                                                );
-                                                              }
-                                                            },
-                                                          );
+                                                      _hereMapController?.mapScene.loadSceneForMapScheme(
+                                                        !changeMapScheme ? MapScheme.hybridDay : MapScheme.normalDay,
+                                                        (MapError? error) {
+                                                          if (error != null) {
+                                                            print("Error loading scheme: $error");
+                                                          }
+                                                        },
+                                                      );
                                                       setState(() {
-                                                        changeMapScheme =
-                                                            !changeMapScheme;
+                                                        changeMapScheme = !changeMapScheme;
                                                       });
                                                     },
                                                     child: Container(
                                                       width: 48,
                                                       height: 48,
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.white,
-                                                        shape: BoxShape.circle,
-                                                      ),
+                                                      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
 
                                                       child: Container(
                                                         width: 48,
                                                         height: 48,
-                                                        padding: EdgeInsets.all(
-                                                          13,
-                                                        ),
+                                                        padding: EdgeInsets.all(13),
                                                         decoration: BoxDecoration(
                                                           boxShadow: [
                                                             BoxShadow(
-                                                              color: Color(
-                                                                0x0A000000,
-                                                              ), // same as #0000000A
-                                                              offset: Offset(
-                                                                0,
-                                                                2,
-                                                              ), // x=0, y=2
-                                                              blurRadius:
-                                                                  6, // blur radius
-                                                              spreadRadius:
-                                                                  0, // spread
+                                                              color: Color(0x0A000000), // same as #0000000A
+                                                              offset: Offset(0, 2), // x=0, y=2
+                                                              blurRadius: 6, // blur radius
+                                                              spreadRadius: 0, // spread
                                                             ),
                                                           ],
-                                                          shape:
-                                                              BoxShape.circle,
-                                                          color: changeMapScheme
-                                                              ? AppColorTheme()
-                                                                    .primary
-                                                                    .withValues(
-                                                                      alpha:
-                                                                          0.2,
-                                                                    )
-                                                              : Colors.white,
+                                                          shape: BoxShape.circle,
+                                                          color: changeMapScheme ? AppColorTheme().primary.withValues(alpha: 0.2) : Colors.white,
                                                         ),
                                                         child: SvgPicture.asset(
-                                                          AppIcons
-                                                              .satelliteIcon,
-                                                          colorFilter:
-                                                              changeMapScheme
-                                                              ? ColorFilter.mode(
-                                                                  AppColorTheme()
-                                                                      .primary,
-                                                                  BlendMode
-                                                                      .srcIn,
-                                                                )
+                                                          AppIcons.satelliteIcon,
+                                                          colorFilter: changeMapScheme
+                                                              ? ColorFilter.mode(AppColorTheme().primary, BlendMode.srcIn)
                                                               : null,
                                                         ),
                                                       ),
@@ -1493,81 +1095,34 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                                     // height: 200,
                                                     // padding: EdgeInsets.all(13),
                                                     decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.vertical(
-                                                            top:
-                                                                Radius.circular(
-                                                                  50,
-                                                                ),
-                                                            bottom:
-                                                                Radius.circular(
-                                                                  50,
-                                                                ),
-                                                          ),
+                                                      borderRadius: BorderRadius.vertical(top: Radius.circular(50), bottom: Radius.circular(50)),
                                                       boxShadow: [
                                                         BoxShadow(
-                                                          color: Color(
-                                                            0x0A000000,
-                                                          ), // same as #0000000A
-                                                          offset: Offset(
-                                                            0,
-                                                            2,
-                                                          ), // x=0, y=2
-                                                          blurRadius:
-                                                              6, // blur radius
-                                                          spreadRadius:
-                                                              0, // spread
+                                                          color: Color(0x0A000000), // same as #0000000A
+                                                          offset: Offset(0, 2), // x=0, y=2
+                                                          blurRadius: 6, // blur radius
+                                                          spreadRadius: 0, // spread
                                                         ),
                                                       ],
 
                                                       color: Colors.white,
                                                     ),
                                                     child: Column(
-                                                      mainAxisSize:
-                                                          MainAxisSize.min,
+                                                      mainAxisSize: MainAxisSize.min,
                                                       children: [
                                                         IconButton(
                                                           onPressed: () {
-                                                            Point2D
-                                                            center = Point2D(
-                                                              context.screenWidth /
-                                                                  2,
-                                                              context.screenHeight /
-                                                                  2,
-                                                            );
-                                                            _hereMapController
-                                                                ?.camera
-                                                                .zoomBy(
-                                                                  2.0,
-                                                                  center,
-                                                                );
+                                                            Point2D center = Point2D(context.screenWidth / 2, context.screenHeight / 2);
+                                                            _hereMapController?.camera.zoomBy(2.0, center);
                                                           },
-                                                          icon:
-                                                              SvgPicture.asset(
-                                                                AppIcons
-                                                                    .zoomInIcon,
-                                                              ),
+                                                          icon: SvgPicture.asset(AppIcons.zoomInIcon),
                                                         ),
                                                         IconButton(
                                                           onPressed: () {
-                                                            Point2D
-                                                            center = Point2D(
-                                                              context.screenWidth /
-                                                                  2,
-                                                              context.screenHeight /
-                                                                  2,
-                                                            );
-                                                            _hereMapController
-                                                                ?.camera
-                                                                .zoomBy(
-                                                                  0.5,
-                                                                  center,
-                                                                );
+                                                            Point2D center = Point2D(context.screenWidth / 2, context.screenHeight / 2);
+                                                            _hereMapController?.camera.zoomBy(0.5, center);
                                                           },
-                                                          icon: SvgPicture.asset(
-                                                            AppIcons
-                                                                .zoomOutIcon,
-                                                          ),
+                                                          icon: SvgPicture.asset(AppIcons.zoomOutIcon),
                                                         ),
                                                       ],
                                                     ),
@@ -1579,30 +1134,18 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                                     decoration: BoxDecoration(
                                                       boxShadow: [
                                                         BoxShadow(
-                                                          color: Color(
-                                                            0x0A000000,
-                                                          ), // same as #0000000A
-                                                          offset: Offset(
-                                                            0,
-                                                            2,
-                                                          ), // x=0, y=2
-                                                          blurRadius:
-                                                              6, // blur radius
-                                                          spreadRadius:
-                                                              0, // spread
+                                                          color: Color(0x0A000000), // same as #0000000A
+                                                          offset: Offset(0, 2), // x=0, y=2
+                                                          blurRadius: 6, // blur radius
+                                                          spreadRadius: 0, // spread
                                                         ),
                                                       ],
                                                       shape: BoxShape.circle,
                                                       color: Colors.white,
                                                     ),
                                                     child: SvgPicture.asset(
-                                                      AppIcons
-                                                          .navigationIconGreen,
-                                                      colorFilter:
-                                                          ColorFilter.mode(
-                                                            Colors.black,
-                                                            BlendMode.srcIn,
-                                                          ),
+                                                      AppIcons.navigationIconGreen,
+                                                      colorFilter: ColorFilter.mode(Colors.black, BlendMode.srcIn),
                                                     ),
                                                   ),
                                                 ],
@@ -1614,21 +1157,14 @@ class _HomeTabletViewState extends State<HomeTabletView>
                                     ),
                                   if (isSetDirection) Spacer(),
                                   Container(
-                                    padding: EdgeInsets.all(
-                                      AppTheme.horizontalPadding,
-                                    ),
+                                    padding: EdgeInsets.all(AppTheme.horizontalPadding),
 
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(20),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Color.fromRGBO(
-                                            0,
-                                            0,
-                                            0,
-                                            0.04,
-                                          ), // rgba(0, 0, 0, 0.04)
+                                          color: Color.fromRGBO(0, 0, 0, 0.04), // rgba(0, 0, 0, 0.04)
                                           blurRadius: 6, // Spread of the blur
                                           offset: Offset(0, 2), // X=0, Y=2
                                         ),
@@ -1666,20 +1202,11 @@ class _HomeTabletViewState extends State<HomeTabletView>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Create a trip",
-                    style: AppTextTheme().subHeadingText.copyWith(
-                      fontWeight: AppFontWeight.semiBold,
-                      fontSize: 20,
-                    ),
-                  ),
+                  Text("Create a trip", style: AppTextTheme().subHeadingText.copyWith(fontWeight: AppFontWeight.semiBold, fontSize: 20)),
 
                   IconButton(
                     padding: EdgeInsets.zero,
-                    visualDensity: VisualDensity(
-                      horizontal: -4.0,
-                      vertical: -4.0,
-                    ),
+                    visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
                     onPressed: () {
                       setState(() {
                         isSetDirection = false;
@@ -1703,13 +1230,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
               ),
               5.h,
               TextButton(
-                style: ButtonStyle(
-                  padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                  visualDensity: VisualDensity(
-                    horizontal: -4.0,
-                    vertical: -4.0,
-                  ),
-                ),
+                style: ButtonStyle(padding: WidgetStatePropertyAll(EdgeInsets.zero), visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0)),
                 onPressed: () {
                   setState(() {
                     textController.add(TextEditingController());
@@ -1720,13 +1241,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                   spacing: 5,
                   children: [
                     Icon(Icons.add, size: 25),
-                    Text(
-                      "Add a stop",
-                      style: AppTextTheme().bodyText.copyWith(
-                        color: AppColorTheme().primary,
-                        fontSize: 16,
-                      ),
-                    ),
+                    Text("Add a stop", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().primary, fontSize: 16)),
                   ],
                 ),
               ),
@@ -1736,10 +1251,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Settings",
-                    style: AppTextTheme().subHeadingText.copyWith(fontSize: 16),
-                  ),
+                  Text("Settings", style: AppTextTheme().subHeadingText.copyWith(fontSize: 16)),
                   IconButton(
                     onPressed: () {
                       setState(() {
@@ -1749,10 +1261,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                     icon: SvgPicture.asset(AppIcons.settingIcon),
                     style: ButtonStyle(
                       padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                      visualDensity: VisualDensity(
-                        horizontal: -4.0,
-                        vertical: -4.0,
-                      ),
+                      visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
                     ),
                   ),
                 ],
@@ -1769,10 +1278,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                         settingChipsList.removeAt(index);
                       });
                     },
-                    deleteIconBoxConstraints: BoxConstraints(
-                      maxHeight: 24,
-                      maxWidth: 24,
-                    ),
+                    deleteIconBoxConstraints: BoxConstraints(maxHeight: 24, maxWidth: 24),
                     padding: EdgeInsets.symmetric(vertical: 0, horizontal: 3),
                     backgroundColor: Color(0xffF4F6F8),
                     deleteIcon: Icon(Icons.cancel),
@@ -1788,10 +1294,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
               20.h,
               DashedLine(),
               20.h,
-              Text(
-                "Availables routes",
-                style: AppTextTheme().subHeadingText.copyWith(fontSize: 16),
-              ),
+              Text("Availables routes", style: AppTextTheme().subHeadingText.copyWith(fontSize: 16)),
               ...List.generate(
                 3,
                 (index) => ListTile(
@@ -1802,31 +1305,18 @@ class _HomeTabletViewState extends State<HomeTabletView>
                     });
                   },
                   contentPadding: EdgeInsets.symmetric(vertical: 5),
-                  leading: CircleAvatar(
-                    radius: 25,
-                    backgroundColor: Color(0xffF4F6F8),
-                    child: SvgPicture.asset(AppIcons.truckIcon),
-                  ),
-                  title: Text(
-                    "Via I-20E",
-                    style: AppTextTheme().bodyText.copyWith(fontSize: 16),
-                  ),
+                  leading: CircleAvatar(radius: 25, backgroundColor: Color(0xffF4F6F8), child: SvgPicture.asset(AppIcons.truckIcon)),
+                  title: Text("Via I-20E", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                   subtitle: index == 0
                       ? Row(
                           spacing: 4,
                           children: [
-                            Icon(
-                              Icons.warning_rounded,
-                              size: 16,
-                              color: Color(0xffFF4F5B),
-                            ),
+                            Icon(Icons.warning_rounded, size: 16, color: Color(0xffFF4F5B)),
                             Expanded(
                               child: Text(
                                 "This route requires tolls",
 
-                                style: AppTextTheme().lightText.copyWith(
-                                  color: AppColorTheme().secondary,
-                                ),
+                                style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
 
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1842,18 +1332,8 @@ class _HomeTabletViewState extends State<HomeTabletView>
                       Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            "2h 11m",
-                            style: AppTextTheme().lightText.copyWith(
-                              color: AppColorTheme().primary,
-                            ),
-                          ),
-                          Text(
-                            "145 mi",
-                            style: AppTextTheme().lightText.copyWith(
-                              color: AppColorTheme().secondary,
-                            ),
-                          ),
+                          Text("2h 11m", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().primary)),
+                          Text("145 mi", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
                         ],
                       ),
                       Icon(Icons.directions, color: Colors.black, size: 20),
@@ -1900,62 +1380,25 @@ class _HomeTabletViewState extends State<HomeTabletView>
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
                     radius: 25,
-                    backgroundColor: AppColorTheme().primary.withValues(
-                      alpha: 0.2,
-                    ),
+                    backgroundColor: AppColorTheme().primary.withValues(alpha: 0.2),
                     child: SvgPicture.asset(AppIcons.navigationIconGreen),
                   ),
-                  title: Text(
-                    "210 Riverside Drive",
-                    style: AppTextTheme().bodyText.copyWith(
-                      color: Colors.black,
-                      fontSize: 16,
-                    ),
-                  ),
-                  subtitle: Text(
-                    "New York, NY 10025",
-                    style: AppTextTheme().lightText.copyWith(
-                      color: AppColorTheme().secondary,
-                    ),
-                  ),
+                  title: Text("210 Riverside Drive", style: AppTextTheme().bodyText.copyWith(color: Colors.black, fontSize: 16)),
+                  subtitle: Text("New York, NY 10025", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
                 ),
                 15.h,
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.transparent,
-                    radius: 25,
-                    child: SvgPicture.asset(AppIcons.weatherIcon),
-                  ),
-                  title: Text(
-                    "24°C",
-                    style: AppTextTheme().bodyText.copyWith(
-                      color: Colors.black,
-                      fontSize: 16,
-                    ),
-                  ),
+                  leading: CircleAvatar(backgroundColor: Colors.transparent, radius: 25, child: SvgPicture.asset(AppIcons.weatherIcon)),
+                  title: Text("24°C", style: AppTextTheme().bodyText.copyWith(color: Colors.black, fontSize: 16)),
                   subtitle: Row(
                     spacing: 4,
                     children: [
-                      Icon(
-                        Icons.warning_rounded,
-                        size: 16,
-                        color: Color(0xffFF4F5B),
-                      ),
-                      Text(
-                        "The light rain next 2 hours",
-                        style: AppTextTheme().lightText.copyWith(
-                          color: AppColorTheme().secondary,
-                        ),
-                      ),
+                      Icon(Icons.warning_rounded, size: 16, color: Color(0xffFF4F5B)),
+                      Text("The light rain next 2 hours", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
                     ],
                   ),
-                  trailing: Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.black,
-                    size: 15,
-                    weight: 30,
-                  ),
+                  trailing: Icon(Icons.arrow_forward_ios, color: Colors.black, size: 15, weight: 30),
                 ),
                 15.h,
                 DashedLine(color: Color(0xffEBEEF2)),
@@ -1963,27 +1406,16 @@ class _HomeTabletViewState extends State<HomeTabletView>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      "Nearby places",
-                      style: AppTextTheme().headingText.copyWith(fontSize: 16),
-                    ),
+                    Text("Nearby places", style: AppTextTheme().headingText.copyWith(fontSize: 16)),
                     TextButton(
                       style: ButtonStyle(
-                        visualDensity: VisualDensity(
-                          vertical: -4.0,
-                          horizontal: -4.0,
-                        ),
+                        visualDensity: VisualDensity(vertical: -4.0, horizontal: -4.0),
                         padding: WidgetStatePropertyAll(EdgeInsets.zero),
                       ),
                       onPressed: () {
                         openDialog();
                       },
-                      child: Text(
-                        "More",
-                        style: AppTextTheme().bodyText.copyWith(
-                          color: AppColorTheme().primary,
-                        ),
-                      ),
+                      child: Text("More", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().primary)),
                     ),
                   ],
                 ),
@@ -1994,10 +1426,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                 }),
                 DashedLine(color: Color(0xffEBEEF2)),
                 15.h,
-                Text(
-                  "Quick Actions",
-                  style: AppTextTheme().headingText.copyWith(fontSize: 16),
-                ),
+                Text("Quick Actions", style: AppTextTheme().headingText.copyWith(fontSize: 16)),
                 15.h,
                 Container(
                   padding: EdgeInsets.symmetric(vertical: 7, horizontal: 10),
@@ -2009,31 +1438,17 @@ class _HomeTabletViewState extends State<HomeTabletView>
                     spacing: 5,
                     children: [
                       Icon(Icons.bookmark_sharp),
-                      Expanded(
-                        child: Text(
-                          "Saved & recent places",
-                          style: AppTextTheme().bodyText.copyWith(fontSize: 16),
-                        ),
-                      ),
-                      Icon(
-                        Icons.arrow_forward_ios,
-                        color: Colors.black,
-                        size: 15,
-                        weight: 30,
-                      ),
+                      Expanded(child: Text("Saved & recent places", style: AppTextTheme().bodyText.copyWith(fontSize: 16))),
+                      Icon(Icons.arrow_forward_ios, color: Colors.black, size: 15, weight: 30),
                     ],
                   ),
                 ),
                 20.h,
               ],
-              if (searchFieldFocusNode.hasFocus &&
-                  searchTextEditController.text.isEmpty) ...[
+              if (searchFieldFocusNode.hasFocus && searchTextEditController.text.isEmpty) ...[
                 15.h,
 
-                CustomTabBarWidget(
-                  options: locationOpt,
-                  tabController: _tabController,
-                ),
+                CustomTabBarWidget(options: locationOpt, tabController: _tabController),
                 15.h,
                 SizedBox(
                   height: context.screenHeight * 0.6,
@@ -2049,39 +1464,20 @@ class _HomeTabletViewState extends State<HomeTabletView>
                             contentPadding: EdgeInsets.zero,
                             leading: CircleAvatar(
                               radius: 25,
-                              backgroundColor: AppColorTheme().primary
-                                  .withValues(alpha: 0.2),
-                              child: SvgPicture.asset(
-                                AppIcons.navigationIconGreen,
-                              ),
+                              backgroundColor: AppColorTheme().primary.withValues(alpha: 0.2),
+                              child: SvgPicture.asset(AppIcons.navigationIconGreen),
                             ),
-                            title: Text(
-                              "My location",
-                              style: AppTextTheme().bodyText.copyWith(
-                                fontSize: 16,
-                              ),
-                            ),
+                            title: Text("My location", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                           ),
                           ...List.generate(
                             4,
                             (index) => ListTile(
                               contentPadding: EdgeInsets.zero,
-                              leading: CircleAvatar(
-                                radius: 25,
-                                backgroundColor: Color(0xffF4F6F8),
-                                child: SvgPicture.asset(AppIcons.frameIcon),
-                              ),
-                              title: Text(
-                                "1600 Amphitheatre Parkway",
-                                style: AppTextTheme().bodyText.copyWith(
-                                  fontSize: 16,
-                                ),
-                              ),
+                              leading: CircleAvatar(radius: 25, backgroundColor: Color(0xffF4F6F8), child: SvgPicture.asset(AppIcons.frameIcon)),
+                              title: Text("1600 Amphitheatre Parkway", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                               subtitle: Text(
                                 "Manhattan, New York, NY, USA",
-                                style: AppTextTheme().lightText.copyWith(
-                                  color: AppColorTheme().secondary,
-                                ),
+                                style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
                               ),
                             ),
                           ),
@@ -2092,24 +1488,17 @@ class _HomeTabletViewState extends State<HomeTabletView>
                         itemBuilder: (context, index) => GestureDetector(
                           onTap: () {
                             setState(() {
-                              searchTextEditController.text =
-                                  places[index].address;
+                              searchTextEditController.text = places[index].address;
                               place = places[index];
                             });
                           },
-                          child: PlaceDisplayWidget(
-                            place: places[index],
-                            isSaved: true,
-                          ),
+                          child: PlaceDisplayWidget(place: places[index], isSaved: true),
                         ),
                         itemCount: places.length,
                       ),
                       ListView.builder(
                         physics: NeverScrollableScrollPhysics(),
-                        itemBuilder: (context, index) => PlaceDisplayWidget(
-                          place: terminals[index],
-                          isSaved: true,
-                        ),
+                        itemBuilder: (context, index) => PlaceDisplayWidget(place: terminals[index], isSaved: true),
                         itemCount: terminals.length,
                       ),
                     ],
@@ -2117,9 +1506,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                 ),
               ],
 
-              if (searchFieldFocusNode.hasFocus &&
-                  searchTextEditController.text.isNotEmpty &&
-                  place != null) ...[
+              if (searchFieldFocusNode.hasFocus && searchTextEditController.text.isNotEmpty && place != null) ...[
                 15.h,
                 ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -2131,10 +1518,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                       image: DecorationImage(image: AssetImage(place!.icon)),
                     ),
                   ),
-                  title: Text(
-                    place!.title,
-                    style: AppTextTheme().headingText.copyWith(fontSize: 20),
-                  ),
+                  title: Text(place!.title, style: AppTextTheme().headingText.copyWith(fontSize: 20)),
                   subtitle: Row(
                     spacing: 3,
                     children: [
@@ -2144,17 +1528,10 @@ class _HomeTabletViewState extends State<HomeTabletView>
                       //       SvgPicture.asset(AppIcons.ratingIcon),
                       // ),
                       CustomRatingIndicator(rating: 5.0),
-                      Text(
-                        place!.rating.toString(),
-                        style: AppTextTheme().lightText.copyWith(
-                          color: Color(0xffFF8800),
-                        ),
-                      ),
+                      Text(place!.rating.toString(), style: AppTextTheme().lightText.copyWith(color: Color(0xffFF8800))),
                       Text(
                         "(${place!.reviewCount})  • ${place!.storeType} • ${place!.distance} mi",
-                        style: AppTextTheme().lightText.copyWith(
-                          color: AppColorTheme().secondary,
-                        ),
+                        style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
                       ),
                     ],
                   ),
@@ -2168,27 +1545,15 @@ class _HomeTabletViewState extends State<HomeTabletView>
                         alignment: Alignment.center,
                         height: 48,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.horizontal(
-                            left: Radius.circular(50),
-                            right: Radius.circular(50),
-                          ),
+                          borderRadius: BorderRadius.horizontal(left: Radius.circular(50), right: Radius.circular(50)),
                           border: Border.all(color: Color(0xffEBEEF2)),
                         ),
                         child: Row(
                           spacing: 5,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              Icons.bookmark_border_outlined,
-                              color: Colors.black,
-                              size: 20,
-                            ),
-                            Text(
-                              "Save",
-                              style: AppTextTheme().bodyText.copyWith(
-                                fontSize: 16,
-                              ),
-                            ),
+                            Icon(Icons.bookmark_border_outlined, color: Colors.black, size: 20),
+                            Text("Save", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                           ],
                         ),
                       ),
@@ -2198,27 +1563,15 @@ class _HomeTabletViewState extends State<HomeTabletView>
                         alignment: Alignment.center,
                         height: 48,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.horizontal(
-                            left: Radius.circular(50),
-                            right: Radius.circular(50),
-                          ),
+                          borderRadius: BorderRadius.horizontal(left: Radius.circular(50), right: Radius.circular(50)),
                           border: Border.all(color: Color(0xffEBEEF2)),
                         ),
                         child: Row(
                           spacing: 5,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              Icons.phone_outlined,
-                              color: Colors.black,
-                              size: 20,
-                            ),
-                            Text(
-                              "Save",
-                              style: AppTextTheme().bodyText.copyWith(
-                                fontSize: 16,
-                              ),
-                            ),
+                            Icon(Icons.phone_outlined, color: Colors.black, size: 20),
+                            Text("Save", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                           ],
                         ),
                       ),
@@ -2229,15 +1582,9 @@ class _HomeTabletViewState extends State<HomeTabletView>
                 DashedLine(),
                 20.h,
                 ListTile(
-                  leading: Icon(
-                    Icons.location_on_outlined,
-                    color: Colors.black,
-                  ),
+                  leading: Icon(Icons.location_on_outlined, color: Colors.black),
                   horizontalTitleGap: 5,
-                  title: Text(
-                    place!.address,
-                    style: AppTextTheme().lightText.copyWith(fontSize: 16),
-                  ),
+                  title: Text(place!.address, style: AppTextTheme().lightText.copyWith(fontSize: 16)),
                 ),
                 ListTile(
                   leading: Icon(Icons.schedule, color: Colors.black),
@@ -2246,28 +1593,17 @@ class _HomeTabletViewState extends State<HomeTabletView>
                     TextSpan(
                       children: [
                         TextSpan(
-                          text: place!.shopStatus == "Open"
-                              ? "Opened"
-                              : "Closed",
+                          text: place!.shopStatus == "Open" ? "Opened" : "Closed",
                           style: AppTextTheme().lightText.copyWith(
                             fontSize: 16,
-                            color: place!.shopStatus == "Open"
-                                ? AppColorTheme().primary
-                                : Colors.red,
+                            color: place!.shopStatus == "Open" ? AppColorTheme().primary : Colors.red,
                           ),
                         ),
                         TextSpan(
                           text: "  •  ", // example extra text
-                          style: AppTextTheme().lightText.copyWith(
-                            fontSize: 16,
-                            color: AppColorTheme().secondary,
-                          ),
+                          style: AppTextTheme().lightText.copyWith(fontSize: 16, color: AppColorTheme().secondary),
                         ),
-                        TextSpan(
-                          text: place!.shopStatus != "Open"
-                              ? "Opens at ${place!.time}"
-                              : "Closes at ${place!.time}",
-                        ),
+                        TextSpan(text: place!.shopStatus != "Open" ? "Opens at ${place!.time}" : "Closes at ${place!.time}"),
                       ],
                     ),
                   ),
@@ -2275,18 +1611,12 @@ class _HomeTabletViewState extends State<HomeTabletView>
                 ListTile(
                   leading: Icon(Icons.phone_outlined, color: Colors.black),
                   horizontalTitleGap: 5,
-                  title: Text(
-                    "(406) 555-0120 ",
-                    style: AppTextTheme().lightText.copyWith(fontSize: 16),
-                  ),
+                  title: Text("(406) 555-0120 ", style: AppTextTheme().lightText.copyWith(fontSize: 16)),
                 ),
                 ListTile(
                   leading: Icon(Icons.language, color: Colors.black),
                   horizontalTitleGap: 5,
-                  title: Text(
-                    "https://www.elizabeth-restaurant.com",
-                    style: AppTextTheme().lightText.copyWith(fontSize: 16),
-                  ),
+                  title: Text("https://www.elizabeth-restaurant.com", style: AppTextTheme().lightText.copyWith(fontSize: 16)),
                 ),
                 10.h,
                 DashedLine(),
@@ -2298,11 +1628,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                     return Chip(
                       padding: EdgeInsets.zero,
                       labelPadding: const EdgeInsets.only(right: 8),
-                      avatar: Icon(
-                        Icons.check_circle_outline,
-                        color: Colors.green,
-                        size: 24,
-                      ),
+                      avatar: Icon(Icons.check_circle_outline, color: Colors.green, size: 24),
                       label: Text(e, style: TextStyle(fontSize: 14)),
                       backgroundColor: const Color(0xffF4F6F8),
                       shape: RoundedRectangleBorder(
@@ -2318,26 +1644,14 @@ class _HomeTabletViewState extends State<HomeTabletView>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      "Q&As",
-                      style: AppTextTheme().headingText.copyWith(fontSize: 16),
-                    ),
+                    Text("Q&As", style: AppTextTheme().headingText.copyWith(fontSize: 16)),
                     TextButton(
                       style: ButtonStyle(
                         padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                        visualDensity: VisualDensity(
-                          horizontal: -4.0,
-                          vertical: -4.0,
-                        ),
+                        visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
                       ),
                       onPressed: () {},
-                      child: Text(
-                        "More",
-                        style: AppTextTheme().headingText.copyWith(
-                          fontSize: 16,
-                          color: AppColorTheme().primary,
-                        ),
-                      ),
+                      child: Text("More", style: AppTextTheme().headingText.copyWith(fontSize: 16, color: AppColorTheme().primary)),
                     ),
                   ],
                 ),
@@ -2361,27 +1675,15 @@ class _HomeTabletViewState extends State<HomeTabletView>
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                "Does Walmart allow overnight truck parking?",
-                                style: AppTextTheme().bodyText.copyWith(
-                                  fontSize: 16,
-                                ),
-                              ),
+                              Text("Does Walmart allow overnight truck parking?", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                               Text(
                                 "Some locations do, but always check with the store first.",
-                                style: AppTextTheme().lightText.copyWith(
-                                  color: AppColorTheme().secondary,
-                                ),
+                                style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
                               ),
                               Row(
                                 spacing: 8,
                                 children: [
-                                  Text(
-                                    "View 7 replies",
-                                    style: AppTextTheme().bodyText.copyWith(
-                                      color: AppColorTheme().primary,
-                                    ),
-                                  ),
+                                  Text("View 7 replies", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().primary)),
                                   Icon(Icons.arrow_forward_ios, size: 15),
                                 ],
                               ),
@@ -2407,10 +1709,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                     Expanded(
                       child: CustomTextfieldWidget(
                         hintText: "Ask the question...",
-                        suffixIcon: CircleAvatar(
-                          backgroundColor: AppColorTheme().primary,
-                          child: Icon(Icons.arrow_upward, size: 18),
-                        ),
+                        suffixIcon: CircleAvatar(backgroundColor: AppColorTheme().primary, child: Icon(Icons.arrow_upward, size: 18)),
                       ),
                     ),
                   ],
@@ -2418,19 +1717,12 @@ class _HomeTabletViewState extends State<HomeTabletView>
                 20.h,
                 DashedLine(),
                 20.h,
-                Text(
-                  "How was your experience here?",
-                  style: AppTextTheme().bodyText.copyWith(
-                    fontSize: 16,
-                    fontWeight: AppFontWeight.semiBold,
-                  ),
-                ),
+                Text("How was your experience here?", style: AppTextTheme().bodyText.copyWith(fontSize: 16, fontWeight: AppFontWeight.semiBold)),
                 20.h,
                 RatingBar.builder(
                   itemPadding: EdgeInsets.all(3),
                   unratedColor: Color(0xffEBEEF2),
-                  itemBuilder: (context, index) =>
-                      SvgPicture.asset(AppIcons.ratingIcon),
+                  itemBuilder: (context, index) => SvgPicture.asset(AppIcons.ratingIcon),
                   onRatingUpdate: (rating) {},
                 ),
               ],
@@ -2445,9 +1737,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
               Expanded(
                 child: ListView(
                   // physics: NeverScrollableScrollPhysics(),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppTheme.horizontalPadding,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: AppTheme.horizontalPadding),
                   children: [
                     Row(
                       spacing: 10,
@@ -2461,20 +1751,10 @@ class _HomeTabletViewState extends State<HomeTabletView>
                           child: CircleAvatar(
                             radius: 25,
                             backgroundColor: AppColorTheme().whiteShade,
-                            child: Icon(
-                              Icons.arrow_back_ios,
-                              color: Colors.black,
-                              size: 18,
-                            ),
+                            child: Icon(Icons.arrow_back_ios, color: Colors.black, size: 18),
                           ),
                         ),
-                        Text(
-                          "Truck Dimensions",
-                          style: AppTextTheme().subHeadingText.copyWith(
-                            fontWeight: AppFontWeight.semiBold,
-                            fontSize: 20,
-                          ),
-                        ),
+                        Text("Truck Dimensions", style: AppTextTheme().subHeadingText.copyWith(fontWeight: AppFontWeight.semiBold, fontSize: 20)),
                       ],
                     ),
                     20.h,
@@ -2484,27 +1764,13 @@ class _HomeTabletViewState extends State<HomeTabletView>
                       spacing: 10,
                       children: [
                         SvgPicture.asset(AppIcons.lengthIcon),
-                        SizedBox(
-                          width: 90,
-                          child: Text(
-                            "Length",
-                            style: AppTextTheme().lightText.copyWith(
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
+                        SizedBox(width: 90, child: Text("Length", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
 
                         Expanded(
-                          child: CustomTextfieldWidget(
-                            hintText: "00'",
-                            keyboardType: TextInputType.number,
-                          ),
+                          child: CustomTextfieldWidget(hintText: "00'", keyboardType: TextInputType.number),
                         ),
                         Expanded(
-                          child: CustomTextfieldWidget(
-                            hintText: "0''",
-                            keyboardType: TextInputType.number,
-                          ),
+                          child: CustomTextfieldWidget(hintText: "0''", keyboardType: TextInputType.number),
                         ),
                       ],
                     ),
@@ -2513,27 +1779,13 @@ class _HomeTabletViewState extends State<HomeTabletView>
                       spacing: 10,
                       children: [
                         SvgPicture.asset(AppIcons.heightIcon),
-                        SizedBox(
-                          width: 90,
-                          child: Text(
-                            "Height",
-                            style: AppTextTheme().lightText.copyWith(
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
+                        SizedBox(width: 90, child: Text("Height", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
 
                         Expanded(
-                          child: CustomTextfieldWidget(
-                            hintText: "00'",
-                            keyboardType: TextInputType.number,
-                          ),
+                          child: CustomTextfieldWidget(hintText: "00'", keyboardType: TextInputType.number),
                         ),
                         Expanded(
-                          child: CustomTextfieldWidget(
-                            hintText: "0''",
-                            keyboardType: TextInputType.number,
-                          ),
+                          child: CustomTextfieldWidget(hintText: "0''", keyboardType: TextInputType.number),
                         ),
                       ],
                     ),
@@ -2542,27 +1794,13 @@ class _HomeTabletViewState extends State<HomeTabletView>
                       spacing: 10,
                       children: [
                         SvgPicture.asset(AppIcons.widthIcon),
-                        SizedBox(
-                          width: 90,
-                          child: Text(
-                            "Width",
-                            style: AppTextTheme().lightText.copyWith(
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
+                        SizedBox(width: 90, child: Text("Width", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
 
                         Expanded(
-                          child: CustomTextfieldWidget(
-                            hintText: "00'",
-                            keyboardType: TextInputType.number,
-                          ),
+                          child: CustomTextfieldWidget(hintText: "00'", keyboardType: TextInputType.number),
                         ),
                         Expanded(
-                          child: CustomTextfieldWidget(
-                            hintText: "0''",
-                            keyboardType: TextInputType.number,
-                          ),
+                          child: CustomTextfieldWidget(hintText: "0''", keyboardType: TextInputType.number),
                         ),
                       ],
                     ),
@@ -2572,26 +1810,12 @@ class _HomeTabletViewState extends State<HomeTabletView>
                       spacing: 10,
                       children: [
                         SvgPicture.asset(AppIcons.axleIcon),
-                        SizedBox(
-                          width: 90,
-                          child: Text(
-                            "Axle Count",
-                            style: AppTextTheme().lightText.copyWith(
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
+                        SizedBox(width: 90, child: Text("Axle Count", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
 
                         Expanded(
                           child: CustomDropDown<int>(
                             placeholderText: "Select Axle",
-                            options: List.generate(
-                              5,
-                              (index) => CustomDropDownOption(
-                                value: index + 1,
-                                displayOption: "${index + 1} Axle",
-                              ),
-                            ),
+                            options: List.generate(5, (index) => CustomDropDownOption(value: index + 1, displayOption: "${index + 1} Axle")),
                             value: 2, // default selected value (optional)
                             onChanged: (selected) {
                               print("Selected axle: $selected");
@@ -2605,21 +1829,10 @@ class _HomeTabletViewState extends State<HomeTabletView>
                       spacing: 10,
                       children: [
                         SvgPicture.asset(AppIcons.weightScaleIcon),
-                        SizedBox(
-                          width: 90,
-                          child: Text(
-                            "Weight",
-                            style: AppTextTheme().lightText.copyWith(
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
+                        SizedBox(width: 90, child: Text("Weight", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
 
                         Expanded(
-                          child: CustomTextfieldWidget(
-                            hintText: "0''",
-                            keyboardType: TextInputType.number,
-                          ),
+                          child: CustomTextfieldWidget(hintText: "0''", keyboardType: TextInputType.number),
                         ),
                       ],
                     ),
@@ -2653,20 +1866,10 @@ class _HomeTabletViewState extends State<HomeTabletView>
                     child: CircleAvatar(
                       radius: 25,
                       backgroundColor: AppColorTheme().whiteShade,
-                      child: const Icon(
-                        Icons.arrow_back_ios,
-                        color: Colors.black,
-                        size: 18,
-                      ),
+                      child: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 18),
                     ),
                   ),
-                  Text(
-                    "Settings",
-                    style: AppTextTheme().subHeadingText.copyWith(
-                      fontWeight: AppFontWeight.semiBold,
-                      fontSize: 20,
-                    ),
-                  ),
+                  Text("Settings", style: AppTextTheme().subHeadingText.copyWith(fontWeight: AppFontWeight.semiBold, fontSize: 20)),
                 ],
               ),
               20.h,
@@ -2674,12 +1877,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
               20.h,
 
               // Vehicle
-              Text(
-                "Vehicle",
-                style: AppTextTheme().lightText.copyWith(
-                  color: AppColorTheme().secondary,
-                ),
-              ),
+              Text("Vehicle", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
               20.h,
               ListTile(
                 onTap: () {
@@ -2688,15 +1886,8 @@ class _HomeTabletViewState extends State<HomeTabletView>
                   });
                 },
                 leading: SvgPicture.asset(AppIcons.localShippingIcon),
-                title: Text(
-                  "My truck",
-                  style: AppTextTheme().lightText.copyWith(fontSize: 16),
-                ),
-                trailing: const Icon(
-                  Icons.play_arrow,
-                  color: Colors.black,
-                  size: 22,
-                ),
+                title: Text("My truck", style: AppTextTheme().lightText.copyWith(fontSize: 16)),
+                trailing: const Icon(Icons.play_arrow, color: Colors.black, size: 22),
                 contentPadding: EdgeInsets.zero,
               ),
 
@@ -2706,16 +1897,11 @@ class _HomeTabletViewState extends State<HomeTabletView>
                 (index) => ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: 20.w,
-                  title: Text(
-                    truckInfo.entries.elementAt(index).key,
-                    style: AppTextTheme().lightText,
-                  ),
+                  title: Text(truckInfo.entries.elementAt(index).key, style: AppTextTheme().lightText),
                   visualDensity: const VisualDensity(vertical: -4.0),
                   trailing: Text(
                     truckInfo.entries.elementAt(index).value,
-                    style: AppTextTheme().lightText.copyWith(
-                      color: AppColorTheme().secondary,
-                    ),
+                    style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
                     textAlign: TextAlign.end,
                   ),
                 ),
@@ -2724,26 +1910,14 @@ class _HomeTabletViewState extends State<HomeTabletView>
               20.h,
 
               // Restrictions
-              Text(
-                "Restrictions",
-                style: AppTextTheme().lightText.copyWith(
-                  color: AppColorTheme().secondary,
-                ),
-              ),
+              Text("Restrictions", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
               20.h,
               ...List.generate(
                 routeRestriction.length,
                 (index) => ListTile(
                   contentPadding: EdgeInsets.zero,
-                  leading: SvgPicture.asset(
-                    _setRestrictionIcon(
-                      routeRestriction.entries.elementAt(index).key,
-                    ),
-                  ),
-                  title: Text(
-                    routeRestriction.entries.elementAt(index).key,
-                    style: AppTextTheme().lightText,
-                  ),
+                  leading: SvgPicture.asset(_setRestrictionIcon(routeRestriction.entries.elementAt(index).key)),
+                  title: Text(routeRestriction.entries.elementAt(index).key, style: AppTextTheme().lightText),
                   visualDensity: const VisualDensity(vertical: -4.0),
                   trailing: Transform.scale(
                     scale: 0.6,
@@ -2751,10 +1925,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                       value: routeRestriction.entries.elementAt(index).value,
                       onChanged: (v) {
                         setState(() {
-                          routeRestriction.update(
-                            routeRestriction.entries.elementAt(index).key,
-                            (c) => v,
-                          );
+                          routeRestriction.update(routeRestriction.entries.elementAt(index).key, (c) => v);
                         });
                       },
                     ),
@@ -2787,43 +1958,25 @@ class _HomeTabletViewState extends State<HomeTabletView>
                           child: CircleAvatar(
                             radius: 25,
                             backgroundColor: AppColorTheme().whiteShade,
-                            child: const Icon(
-                              Icons.arrow_back_ios,
-                              color: Colors.black,
-                              size: 18,
-                            ),
+                            child: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 18),
                           ),
                         ),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text.rich(
-                              style: AppTextTheme().subHeadingText.copyWith(
-                                fontSize: 20,
-                              ),
+                              style: AppTextTheme().subHeadingText.copyWith(fontSize: 20),
                               TextSpan(
                                 children: [
                                   TextSpan(
                                     text: "2h 11m",
-                                    style: TextStyle(
-                                      color: AppColorTheme().primary,
-                                    ),
+                                    style: TextStyle(color: AppColorTheme().primary),
                                   ),
-                                  TextSpan(
-                                    text: " (122 mi 2:10 pm)",
-                                    style: AppTextTheme().bodyText.copyWith(
-                                      fontSize: 16,
-                                    ),
-                                  ),
+                                  TextSpan(text: " (122 mi 2:10 pm)", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                                 ],
                               ),
                             ),
-                            Text(
-                              "via I-20E",
-                              style: AppTextTheme().lightText.copyWith(
-                                color: AppColorTheme().secondary,
-                              ),
-                            ),
+                            Text("via I-20E", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
                           ],
                         ),
                       ],
@@ -2838,10 +1991,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                         Expanded(
                           child: Text(
                             "Times Square, New York, NY, USA",
-                            style: AppTextTheme().bodyText.copyWith(
-                              fontWeight: AppFontWeight.semiBold,
-                              fontSize: 16,
-                            ),
+                            style: AppTextTheme().bodyText.copyWith(fontWeight: AppFontWeight.semiBold, fontSize: 16),
                           ),
                         ),
                       ],
@@ -2858,105 +2008,57 @@ class _HomeTabletViewState extends State<HomeTabletView>
                             Row(
                               spacing: 10,
                               children: [
-                                Text(
-                                  "20 min (25 mi)",
-                                  style: AppTextTheme().bodyText.copyWith(
-                                    color: AppColorTheme().secondary,
-                                  ),
-                                ),
+                                Text("20 min (25 mi)", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
                                 Expanded(child: Divider()),
                               ],
                             ),
                             Row(
                               spacing: 10,
                               children: [
-                                Icon(
-                                  Icons.straight,
-                                  color: AppColorTheme().secondary,
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    "Head west on W 42nd St",
-                                    style: AppTextTheme().lightText.copyWith(
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
+                                Icon(Icons.straight, color: AppColorTheme().secondary),
+                                Expanded(child: Text("Head west on W 42nd St", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
                               ],
                             ),
                             Row(
                               spacing: 10,
                               children: [
                                 24.w,
-                                Text(
-                                  "5 mi",
-                                  style: AppTextTheme().bodyText.copyWith(
-                                    color: AppColorTheme().secondary,
-                                  ),
-                                ),
+                                Text("5 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
                                 Expanded(child: Divider()),
                               ],
                             ),
                             Row(
                               spacing: 10,
                               children: [
-                                Icon(
-                                  Icons.turn_left,
-                                  color: AppColorTheme().secondary,
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    "Turn left onto 9th Ave",
-                                    style: AppTextTheme().lightText.copyWith(
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
+                                Icon(Icons.turn_left, color: AppColorTheme().secondary),
+                                Expanded(child: Text("Turn left onto 9th Ave", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
                               ],
                             ),
                             Row(
                               spacing: 10,
                               children: [
                                 24.w,
-                                Text(
-                                  "20 mi",
-                                  style: AppTextTheme().bodyText.copyWith(
-                                    color: AppColorTheme().secondary,
-                                  ),
-                                ),
+                                Text("20 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
                                 Expanded(child: Divider()),
                               ],
                             ),
                             Row(
                               spacing: 10,
                               children: [
-                                Icon(
-                                  Icons.turn_sharp_right,
-                                  color: AppColorTheme().secondary,
-                                ),
+                                Icon(Icons.turn_sharp_right, color: AppColorTheme().secondary),
                                 Expanded(
-                                  child: Text(
-                                    "Keep right to merge onto Lincoln Tunnel",
-                                    style: AppTextTheme().lightText.copyWith(
-                                      fontSize: 16,
-                                    ),
-                                  ),
+                                  child: Text("Keep right to merge onto Lincoln Tunnel", style: AppTextTheme().lightText.copyWith(fontSize: 16)),
                                 ),
                               ],
                             ),
                             Row(
                               spacing: 10,
                               children: [
-                                Icon(
-                                  Icons.warning_rounded,
-                                  color: Color(0xffFF4F5B),
-                                ),
+                                Icon(Icons.warning_rounded, color: Color(0xffFF4F5B)),
                                 Expanded(
                                   child: Text(
                                     "Toll required at Lincoln Tunnel",
-                                    style: AppTextTheme().bodyText.copyWith(
-                                      color: AppColorTheme().secondary,
-                                    ),
+                                    style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary),
                                   ),
                                 ),
                               ],
@@ -2977,105 +2079,57 @@ class _HomeTabletViewState extends State<HomeTabletView>
                             Row(
                               spacing: 10,
                               children: [
-                                Text(
-                                  "20 min (25 mi)",
-                                  style: AppTextTheme().bodyText.copyWith(
-                                    color: AppColorTheme().secondary,
-                                  ),
-                                ),
+                                Text("20 min (25 mi)", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
                                 Expanded(child: Divider()),
                               ],
                             ),
                             Row(
                               spacing: 10,
                               children: [
-                                Icon(
-                                  Icons.straight,
-                                  color: AppColorTheme().secondary,
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    "Head west on W 42nd St",
-                                    style: AppTextTheme().lightText.copyWith(
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
+                                Icon(Icons.straight, color: AppColorTheme().secondary),
+                                Expanded(child: Text("Head west on W 42nd St", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
                               ],
                             ),
                             Row(
                               spacing: 10,
                               children: [
                                 24.w,
-                                Text(
-                                  "5 mi",
-                                  style: AppTextTheme().bodyText.copyWith(
-                                    color: AppColorTheme().secondary,
-                                  ),
-                                ),
+                                Text("5 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
                                 Expanded(child: Divider()),
                               ],
                             ),
                             Row(
                               spacing: 10,
                               children: [
-                                Icon(
-                                  Icons.turn_left,
-                                  color: AppColorTheme().secondary,
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    "Turn left onto 9th Ave",
-                                    style: AppTextTheme().lightText.copyWith(
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
+                                Icon(Icons.turn_left, color: AppColorTheme().secondary),
+                                Expanded(child: Text("Turn left onto 9th Ave", style: AppTextTheme().lightText.copyWith(fontSize: 16))),
                               ],
                             ),
                             Row(
                               spacing: 10,
                               children: [
                                 24.w,
-                                Text(
-                                  "20 mi",
-                                  style: AppTextTheme().bodyText.copyWith(
-                                    color: AppColorTheme().secondary,
-                                  ),
-                                ),
+                                Text("20 mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
                                 Expanded(child: Divider()),
                               ],
                             ),
                             Row(
                               spacing: 10,
                               children: [
-                                Icon(
-                                  Icons.turn_sharp_right,
-                                  color: AppColorTheme().secondary,
-                                ),
+                                Icon(Icons.turn_sharp_right, color: AppColorTheme().secondary),
                                 Expanded(
-                                  child: Text(
-                                    "Keep right to merge onto Lincoln Tunnel",
-                                    style: AppTextTheme().lightText.copyWith(
-                                      fontSize: 16,
-                                    ),
-                                  ),
+                                  child: Text("Keep right to merge onto Lincoln Tunnel", style: AppTextTheme().lightText.copyWith(fontSize: 16)),
                                 ),
                               ],
                             ),
                             Row(
                               spacing: 10,
                               children: [
-                                Icon(
-                                  Icons.warning_rounded,
-                                  color: Color(0xffFF4F5B),
-                                ),
+                                Icon(Icons.warning_rounded, color: Color(0xffFF4F5B)),
                                 Expanded(
                                   child: Text(
                                     "Toll required at Lincoln Tunnel",
-                                    style: AppTextTheme().bodyText.copyWith(
-                                      color: AppColorTheme().secondary,
-                                    ),
+                                    style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary),
                                   ),
                                 ),
                               ],
@@ -3098,38 +2152,25 @@ class _HomeTabletViewState extends State<HomeTabletView>
                           child: CircleAvatar(
                             radius: 25,
                             backgroundColor: AppColorTheme().whiteShade,
-                            child: const Icon(
-                              Icons.arrow_back_ios,
-                              color: Colors.black,
-                              size: 18,
-                            ),
+                            child: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 18),
                           ),
                         ),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text.rich(
-                              style: AppTextTheme().subHeadingText.copyWith(
-                                fontSize: 20,
-                              ),
+                              style: AppTextTheme().subHeadingText.copyWith(fontSize: 20),
                               TextSpan(
                                 children: [
                                   TextSpan(
                                     text: "2h 11m",
-                                    style: TextStyle(
-                                      color: AppColorTheme().primary,
-                                    ),
+                                    style: TextStyle(color: AppColorTheme().primary),
                                   ),
                                   TextSpan(text: " (122 mi)"),
                                 ],
                               ),
                             ),
-                            Text(
-                              "via I-20E",
-                              style: AppTextTheme().lightText.copyWith(
-                                color: AppColorTheme().secondary,
-                              ),
-                            ),
+                            Text("via I-20E", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
                           ],
                         ),
                       ],
@@ -3145,8 +2186,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                           children: [
                             Icon(Icons.circle_outlined, size: 18),
                             SizedBox(
-                              height:
-                                  30, // match with textfield height + spacing
+                              height: 30, // match with textfield height + spacing
                               child: CustomPaint(painter: DottedLinePainter()),
                             ),
 
@@ -3159,29 +2199,14 @@ class _HomeTabletViewState extends State<HomeTabletView>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                "Times Square, New York, NY, USA",
-                                style: AppTextTheme().bodyText.copyWith(
-                                  fontSize: 16,
-                                ),
-                              ),
+                              Text("Times Square, New York, NY, USA", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                               Row(
                                 children: [
                                   Icon(Icons.u_turn_right),
-                                  Text(
-                                    "20 min (25 mi)",
-                                    style: AppTextTheme().lightText.copyWith(
-                                      color: AppColorTheme().primary,
-                                    ),
-                                  ),
+                                  Text("20 min (25 mi)", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().primary)),
                                 ],
                               ),
-                              Text(
-                                "Centre St, Scranton, PA",
-                                style: AppTextTheme().bodyText.copyWith(
-                                  fontSize: 16,
-                                ),
-                              ),
+                              Text("Centre St, Scranton, PA", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
                             ],
                           ),
                         ),
@@ -3196,7 +2221,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                 bgColor: AppColorTheme().whiteShade,
                 textColor: Colors.black,
                 onPressed: () {
-                  context.read<MapCubit>().startNavigation();
+                  // context.read<MapCubit>().startNavigation();
                   saveDialog();
                 },
                 icon: Icon(Icons.double_arrow, color: Colors.black, size: 18),
@@ -3209,7 +2234,7 @@ class _HomeTabletViewState extends State<HomeTabletView>
                   setState(() {
                     startNavigation = true;
                   });
-                  context.read<MapCubit>().startNavigation();
+                  // context.read<MapCubit>().startNavigation();
                 },
                 icon: Icon(Icons.double_arrow, color: Colors.white, size: 18),
                 isRightSide: true,
