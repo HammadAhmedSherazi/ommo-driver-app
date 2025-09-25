@@ -5,8 +5,8 @@ import 'package:here_sdk/core.dart';
 import 'package:here_sdk/core.engine.dart';
 import 'package:here_sdk/core.errors.dart';
 import 'package:here_sdk/mapview.dart';
-import 'package:ommo/home/view/truck_navigation/cubit/truck_navigation_cubit.dart';
-import 'package:ommo/home/view/truck_navigation/cubit/truck_navigation_state.dart';
+import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
+import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/utils/utils.dart';
 
 class MapView extends StatefulWidget {
@@ -28,9 +28,16 @@ class MapViewState extends State<MapView> with WidgetsBindingObserver {
   handleLowMemory() async {
     print("System is running extremely low on memory!");
     print("Clearing HERE SDK's internal memory caches.");
-    SDKNativeEngine.sharedInstance!.purgeMemoryCaches(SDKNativeEnginePurgeMemoryStrategy.full);
-    AuthenticationMode authenticationMode = AuthenticationMode.withKeySecret(AppKeys().accessKeyId, AppKeys().accessKeySecret);
-    SDKOptions sdkOptions = SDKOptions.withAuthenticationMode(authenticationMode);
+    SDKNativeEngine.sharedInstance!.purgeMemoryCaches(
+      SDKNativeEnginePurgeMemoryStrategy.full,
+    );
+    AuthenticationMode authenticationMode = AuthenticationMode.withKeySecret(
+      AppKeys().accessKeyId,
+      AppKeys().accessKeySecret,
+    );
+    SDKOptions sdkOptions = SDKOptions.withAuthenticationMode(
+      authenticationMode,
+    );
     sdkOptions.lowMemoryMode = true;
 
     try {
@@ -51,20 +58,33 @@ class MapViewState extends State<MapView> with WidgetsBindingObserver {
         context.read<TruckNavigationCubit>().startListeningToLocation();
       }
     });
-    _appLifecycleListener = AppLifecycleListener(onDetach: () => {_disposeHERESDK()});
+    _appLifecycleListener = AppLifecycleListener(
+      onDetach: () => {_disposeHERESDK()},
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    return SizedBox();
     return BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
-      buildWhen: (previous, current) => previous.isMapLoading != current.isMapLoading || previous.mapController != current.mapController,
+      buildWhen: (previous, current) =>
+          previous.isMapLoading != current.isMapLoading ||
+          previous.mapController != current.mapController,
       builder: (context, state) {
         return state.isMapLoading
-            ? Center(child: CircularProgressIndicator(color: AppColorTheme().primary))
+            ? Center(
+                child: CircularProgressIndicator(
+                  color: AppColorTheme().primary,
+                ),
+              )
             : SizedBox(
                 height: context.screenHeight * 0.7,
                 width: context.screenWidth,
-                child: HereMap(onMapCreated: context.read<TruckNavigationCubit>().onMapCreated),
+                child: HereMap(
+                  onMapCreated: context
+                      .read<TruckNavigationCubit>()
+                      .onMapCreated,
+                ),
               );
       },
     );

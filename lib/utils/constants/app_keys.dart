@@ -13,5 +13,6 @@ class AppKeys {
 
   final String accessKeyId = "nD9uaWDaZEmcHFyirUGFZw";
   final bool isSimulation = true;
-  final String accessKeySecret = "3MSg_BDUhi10ssWBhC_69dR5AzIOmttXg7BpgtsOF_XjKU5xO9LHMFdCF4xh7JvBvggBtgIU0X-PhgTgCjN6Eg";
+  final String accessKeySecret =
+      "3MSg_BDUhi10ssWBhC_69dR5AzIOmttXg7BpgtsOF_XjKU5xO9LHMFdCF4xh7JvBvggBtgIU0X-PhgTgCjN6Eg";
 }

@@ -7,10 +7,13 @@ import 'package:here_sdk/mapview.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:ommo/custom_widget/custom_accordion_widget.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
+import 'package:ommo/home/view/edit_truck_specifications_view.dart';
 import 'package:ommo/home/view/home_mobile_view.dart';
-import 'package:ommo/home/view/truck_navigation/cubit/truck_navigation_cubit.dart';
-import 'package:ommo/home/view/truck_navigation/cubit/truck_navigation_state.dart';
+import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
+import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
+import 'package:ommo/logic/cubit/truck_specifications/truck_specification_cubit.dart';
+import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state.dart';
 import 'package:ommo/utils/extension/manuever_extension.dart';
 import 'package:ommo/utils/extension/route_extension.dart';
 import 'package:ommo/utils/extension/section_extension.dart';
@@ -40,7 +43,9 @@ class TruckNavigationUtils {
       context: context,
       builder: (context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           backgroundColor: Colors.white,
           child: StatefulBuilder(
             builder: (context, setState) {
@@ -60,25 +65,49 @@ class TruckNavigationUtils {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text("Add a place", style: AppTextTheme().headingText),
+                              Text(
+                                "Add a place",
+                                style: AppTextTheme().headingText,
+                              ),
                               IconButton(
                                 padding: EdgeInsets.zero,
-                                visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
+                                visualDensity: VisualDensity(
+                                  horizontal: -4.0,
+                                  vertical: -4.0,
+                                ),
                                 onPressed: () {
                                   context.popPage();
                                 },
-                                icon: Icon(Icons.close, color: Color(0xff8C93A4)),
+                                icon: Icon(
+                                  Icons.close,
+                                  color: Color(0xff8C93A4),
+                                ),
                               ),
                             ],
                           ),
                           24.h,
-                          Text("Name", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
+                          Text(
+                            "Name",
+                            style: AppTextTheme().bodyText.copyWith(
+                              fontSize: 16,
+                            ),
+                          ),
                           7.h,
                           CustomTextfieldWidget(hintText: "Enter place name"),
                           24.h,
-                          Text("Address", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
+                          Text(
+                            "Address",
+                            style: AppTextTheme().bodyText.copyWith(
+                              fontSize: 16,
+                            ),
+                          ),
                           7.h,
-                          CustomTextfieldWidget(hintText: "Enter address", suffixIcon: SvgPicture.asset(AppIcons.navigationOutlineIcon)),
+                          CustomTextfieldWidget(
+                            hintText: "Enter address",
+                            suffixIcon: SvgPicture.asset(
+                              AppIcons.navigationOutlineIcon,
+                            ),
+                          ),
                           24.h,
                           SizedBox(
                             height: 200,
@@ -103,62 +132,111 @@ class TruckNavigationUtils {
                           ),
                           if (showMore) ...[
                             24.h,
-                            Text("Phone number", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
-                            7.h,
-                            CustomTextfieldWidget(hintText: "Enter number", keyboardType: TextInputType.phone),
-                            24.h,
-                            Text("Website", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
-                            7.h,
-                            CustomTextfieldWidget(hintText: "Paste link", keyboardType: TextInputType.phone),
-                            24.h,
-                            Text("Opening hours", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
+                            Text(
+                              "Phone number",
+                              style: AppTextTheme().bodyText.copyWith(
+                                fontSize: 16,
+                              ),
+                            ),
                             7.h,
                             CustomTextfieldWidget(
-                              suffixIcon: Icon(Icons.arrow_forward_ios, size: 17),
+                              hintText: "Enter number",
+                              keyboardType: TextInputType.phone,
+                            ),
+                            24.h,
+                            Text(
+                              "Website",
+                              style: AppTextTheme().bodyText.copyWith(
+                                fontSize: 16,
+                              ),
+                            ),
+                            7.h,
+                            CustomTextfieldWidget(
+                              hintText: "Paste link",
+                              keyboardType: TextInputType.phone,
+                            ),
+                            24.h,
+                            Text(
+                              "Opening hours",
+                              style: AppTextTheme().bodyText.copyWith(
+                                fontSize: 16,
+                              ),
+                            ),
+                            7.h,
+                            CustomTextfieldWidget(
+                              suffixIcon: Icon(
+                                Icons.arrow_forward_ios,
+                                size: 17,
+                              ),
                               hintText: "Opening hours ",
                               onTap: () {
                                 openHourDialog(context);
                               },
                             ),
                             24.h,
-                            Text("Brand logo (optional)", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
+                            Text(
+                              "Brand logo (optional)",
+                              style: AppTextTheme().bodyText.copyWith(
+                                fontSize: 16,
+                              ),
+                            ),
                             7.h,
                             GestureDetector(
                               onTap: () async {
                                 final picker = ImagePicker();
 
                                 // Show choice dialog
-                                final source = await showModalBottomSheet<ImageSource>(
-                                  context: context,
-                                  builder: (context) {
-                                    return SafeArea(
-                                      child: Padding(
-                                        padding: EdgeInsets.symmetric(vertical: AppTheme.horizontalPadding),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            ListTile(
-                                              leading: const Icon(Icons.camera_alt),
-                                              title: const Text('Take a photo'),
-                                              onTap: () => Navigator.pop(context, ImageSource.camera),
+                                final source =
+                                    await showModalBottomSheet<ImageSource>(
+                                      context: context,
+                                      builder: (context) {
+                                        return SafeArea(
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              vertical:
+                                                  AppTheme.horizontalPadding,
                                             ),
-                                            ListTile(
-                                              leading: const Icon(Icons.photo_library),
-                                              title: const Text('Choose from gallery'),
-                                              onTap: () => Navigator.pop(context, ImageSource.gallery),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                ListTile(
+                                                  leading: const Icon(
+                                                    Icons.camera_alt,
+                                                  ),
+                                                  title: const Text(
+                                                    'Take a photo',
+                                                  ),
+                                                  onTap: () => Navigator.pop(
+                                                    context,
+                                                    ImageSource.camera,
+                                                  ),
+                                                ),
+                                                ListTile(
+                                                  leading: const Icon(
+                                                    Icons.photo_library,
+                                                  ),
+                                                  title: const Text(
+                                                    'Choose from gallery',
+                                                  ),
+                                                  onTap: () => Navigator.pop(
+                                                    context,
+                                                    ImageSource.gallery,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          ],
-                                        ),
-                                      ),
+                                          ),
+                                        );
+                                      },
                                     );
-                                  },
-                                );
 
                                 // If user canceled dialog
                                 if (source == null) return;
 
                                 // Pick image from selected source
-                                final picked = await picker.pickImage(source: source);
+                                final picked = await picker.pickImage(
+                                  source: source,
+                                );
                                 if (picked != null) {
                                   final imageFile = File(picked.path);
                                   setState(() {
@@ -171,7 +249,13 @@ class TruckNavigationUtils {
                                       spacing: 5,
                                       children: [
                                         Icon(Icons.add),
-                                        Text("Add Logo", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().primary)),
+                                        Text(
+                                          "Add Logo",
+                                          style: AppTextTheme().bodyText
+                                              .copyWith(
+                                                color: AppColorTheme().primary,
+                                              ),
+                                        ),
                                       ],
                                     )
                                   : Row(
@@ -182,11 +266,19 @@ class TruckNavigationUtils {
                                           padding: EdgeInsets.all(3),
                                           alignment: Alignment.topCenter,
                                           decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(5),
-                                            image: DecorationImage(image: FileImage(File(selectedImage!.path)), fit: BoxFit.cover),
+                                            borderRadius: BorderRadius.circular(
+                                              5,
+                                            ),
+                                            image: DecorationImage(
+                                              image: FileImage(
+                                                File(selectedImage!.path),
+                                              ),
+                                              fit: BoxFit.cover,
+                                            ),
                                           ),
                                           child: Row(
-                                            mainAxisAlignment: MainAxisAlignment.end,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
                                             children: [
                                               InkWell(
                                                 onTap: () {
@@ -197,7 +289,11 @@ class TruckNavigationUtils {
                                                 child: CircleAvatar(
                                                   backgroundColor: Colors.white,
                                                   radius: 8,
-                                                  child: Icon(Icons.close, size: 10, color: Colors.black),
+                                                  child: Icon(
+                                                    Icons.close,
+                                                    size: 10,
+                                                    color: Colors.black,
+                                                  ),
                                                 ),
                                               ),
                                             ],
@@ -207,7 +303,12 @@ class TruckNavigationUtils {
                                     ),
                             ),
                             24.h,
-                            Text("Amenities", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
+                            Text(
+                              "Amenities",
+                              style: AppTextTheme().bodyText.copyWith(
+                                fontSize: 16,
+                              ),
+                            ),
                             7.h,
                             ...List.generate(
                               amenitiesList.length,
@@ -218,15 +319,25 @@ class TruckNavigationUtils {
                                     child: Switch.adaptive(
                                       padding: EdgeInsets.zero,
 
-                                      value: amenitiesList.entries.elementAt(index).value,
+                                      value: amenitiesList.entries
+                                          .elementAt(index)
+                                          .value,
                                       onChanged: (v) {
                                         setState(() {
-                                          amenitiesList.update(amenitiesList.entries.elementAt(index).key, (bol) => !bol);
+                                          amenitiesList.update(
+                                            amenitiesList.entries
+                                                .elementAt(index)
+                                                .key,
+                                            (bol) => !bol,
+                                          );
                                         });
                                       },
                                     ),
                                   ),
-                                  Text(amenitiesList.entries.elementAt(index).key, style: AppTextTheme().bodyText),
+                                  Text(
+                                    amenitiesList.entries.elementAt(index).key,
+                                    style: AppTextTheme().bodyText,
+                                  ),
                                 ],
                               ),
                             ),
@@ -242,7 +353,12 @@ class TruckNavigationUtils {
                               child: Row(
                                 spacing: 5,
                                 children: [
-                                  Text("Add more details", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().primary)),
+                                  Text(
+                                    "Add more details",
+                                    style: AppTextTheme().bodyText.copyWith(
+                                      color: AppColorTheme().primary,
+                                    ),
+                                  ),
                                   Icon(Icons.keyboard_arrow_down, size: 17),
                                 ],
                               ),
@@ -252,7 +368,9 @@ class TruckNavigationUtils {
                       ),
                     ),
                     Padding(
-                      padding: EdgeInsetsGeometry.all(AppTheme.horizontalPadding),
+                      padding: EdgeInsetsGeometry.all(
+                        AppTheme.horizontalPadding,
+                      ),
                       child: CustomButtonWidget(
                         title: "Add place",
                         onPressed: () {
@@ -281,15 +399,23 @@ class TruckNavigationUtils {
       "Sunday": true,
     };
 
-    List<TextEditingController> openTextEditController = List.generate(days.length, (index) => TextEditingController());
+    List<TextEditingController> openTextEditController = List.generate(
+      days.length,
+      (index) => TextEditingController(),
+    );
 
-    List<TextEditingController> closeTextEditController = List.generate(days.length, (index) => TextEditingController());
+    List<TextEditingController> closeTextEditController = List.generate(
+      days.length,
+      (index) => TextEditingController(),
+    );
 
     showDialog(
       context: context,
       builder: (context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           backgroundColor: Colors.white,
           child: StatefulBuilder(
             builder: (context, setState) {
@@ -309,16 +435,31 @@ class TruckNavigationUtils {
                             children: [
                               IconButton(
                                 onPressed: () => context.popPage(),
-                                icon: Icon(Icons.arrow_back, color: Colors.black),
+                                icon: Icon(
+                                  Icons.arrow_back,
+                                  color: Colors.black,
+                                ),
                                 padding: EdgeInsets.zero,
-                                visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
+                                visualDensity: VisualDensity(
+                                  horizontal: -4.0,
+                                  vertical: -4.0,
+                                ),
                               ),
-                              Text("Opening hours", style: AppTextTheme().headingText),
+                              Text(
+                                "Opening hours",
+                                style: AppTextTheme().headingText,
+                              ),
                               IconButton(
                                 onPressed: () => context.popPage(),
-                                icon: Icon(Icons.close, color: Color(0xff8C93A4)),
+                                icon: Icon(
+                                  Icons.close,
+                                  color: Color(0xff8C93A4),
+                                ),
                                 padding: EdgeInsets.zero,
-                                visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
+                                visualDensity: VisualDensity(
+                                  horizontal: -4.0,
+                                  vertical: -4.0,
+                                ),
                               ),
                             ],
                           ),
@@ -334,9 +475,15 @@ class TruckNavigationUtils {
                                 SizedBox(height: 24),
                                 Row(
                                   children: [
-                                    Text(dayName, style: AppTextTheme().bodyText),
+                                    Text(
+                                      dayName,
+                                      style: AppTextTheme().bodyText,
+                                    ),
                                     Spacer(),
-                                    Text("Closed", style: AppTextTheme().lightText),
+                                    Text(
+                                      "Closed",
+                                      style: AppTextTheme().lightText,
+                                    ),
                                     Transform.scale(
                                       scale: 0.6,
                                       child: Switch.adaptive(
@@ -356,12 +503,18 @@ class TruckNavigationUtils {
                                       child: CustomTextfieldWidget(
                                         hintText: "--:--",
 
-                                        controller: openTextEditController[index],
+                                        controller:
+                                            openTextEditController[index],
                                         onTap: () async {
-                                          final TimeOfDay? picked = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+                                          final TimeOfDay? picked =
+                                              await showTimePicker(
+                                                context: context,
+                                                initialTime: TimeOfDay.now(),
+                                              );
                                           if (!context.mounted) return;
                                           if (picked != null) {
-                                            openTextEditController[index].text = picked.format(context);
+                                            openTextEditController[index].text =
+                                                picked.format(context);
                                           }
                                         },
                                       ),
@@ -371,12 +524,20 @@ class TruckNavigationUtils {
                                       child: CustomTextfieldWidget(
                                         hintText: "--:--",
 
-                                        controller: closeTextEditController[index],
+                                        controller:
+                                            closeTextEditController[index],
                                         onTap: () async {
-                                          final TimeOfDay? picked = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+                                          final TimeOfDay? picked =
+                                              await showTimePicker(
+                                                context: context,
+                                                initialTime: TimeOfDay.now(),
+                                              );
                                           if (!context.mounted) return;
                                           if (picked != null) {
-                                            closeTextEditController[index].text = picked.format(context);
+                                            closeTextEditController[index]
+                                                .text = picked.format(
+                                              context,
+                                            );
                                           }
                                         },
                                       ),
@@ -414,148 +575,6 @@ class TruckNavigationUtils {
     );
   }
 
-  static void openTruckSetting(BuildContext context) {
-    Helpers.openBottomSheet(
-      context: context,
-      child: SizedBox(
-        height: context.screenHeight * 0.80,
-
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                // physics: NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.symmetric(horizontal: AppTheme.horizontalPadding),
-                children: [
-                  Row(
-                    spacing: 10,
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          context.popPage();
-                        },
-                        child: CircleAvatar(
-                          radius: 25,
-                          backgroundColor: AppColorTheme().whiteShade,
-                          child: Icon(Icons.arrow_back_ios, color: Colors.black, size: 18),
-                        ),
-                      ),
-                      Text("Truck Dimensions", style: AppTextTheme().subHeadingText.copyWith(fontWeight: AppFontWeight.semiBold, fontSize: 20)),
-                    ],
-                  ),
-                  20.h,
-                  DashedLine(),
-                  20.h,
-                  Row(
-                    spacing: 10,
-                    children: [
-                      SvgPicture.asset(AppIcons.lengthIcon),
-                      SizedBox(
-                        width: context.screenWidth * 0.24,
-                        child: Text("Length", style: AppTextTheme().lightText.copyWith(fontSize: 16)),
-                      ),
-
-                      Expanded(
-                        child: CustomTextfieldWidget(hintText: "00'", keyboardType: TextInputType.number),
-                      ),
-                      Expanded(
-                        child: CustomTextfieldWidget(hintText: "0''", keyboardType: TextInputType.number),
-                      ),
-                    ],
-                  ),
-                  5.h,
-                  Row(
-                    spacing: 10,
-                    children: [
-                      SvgPicture.asset(AppIcons.heightIcon),
-                      SizedBox(
-                        width: context.screenWidth * 0.24,
-                        child: Text("Height", style: AppTextTheme().lightText.copyWith(fontSize: 16)),
-                      ),
-
-                      Expanded(
-                        child: CustomTextfieldWidget(hintText: "00'", keyboardType: TextInputType.number),
-                      ),
-                      Expanded(
-                        child: CustomTextfieldWidget(hintText: "0''", keyboardType: TextInputType.number),
-                      ),
-                    ],
-                  ),
-                  5.h,
-                  Row(
-                    spacing: 10,
-                    children: [
-                      SvgPicture.asset(AppIcons.widthIcon),
-                      SizedBox(
-                        width: context.screenWidth * 0.24,
-                        child: Text("Width", style: AppTextTheme().lightText.copyWith(fontSize: 16)),
-                      ),
-
-                      Expanded(
-                        child: CustomTextfieldWidget(hintText: "00'", keyboardType: TextInputType.number),
-                      ),
-                      Expanded(
-                        child: CustomTextfieldWidget(hintText: "0''", keyboardType: TextInputType.number),
-                      ),
-                    ],
-                  ),
-                  5.h,
-
-                  Row(
-                    spacing: 10,
-                    children: [
-                      SvgPicture.asset(AppIcons.axleIcon),
-                      SizedBox(
-                        width: context.screenWidth * 0.24,
-                        child: Text("Axle Count", style: AppTextTheme().lightText.copyWith(fontSize: 16)),
-                      ),
-
-                      Expanded(
-                        child: CustomDropDown<int>(
-                          placeholderText: "Select Axle",
-                          options: List.generate(5, (index) => CustomDropDownOption(value: index + 1, displayOption: "${index + 1} Axle")),
-                          value: 2, // default selected value (optional)
-                          onChanged: (selected) {
-                            print("Selected axle: $selected");
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  5.h,
-                  Row(
-                    spacing: 10,
-                    children: [
-                      SvgPicture.asset(AppIcons.weightScaleIcon),
-                      SizedBox(
-                        width: context.screenWidth * 0.24,
-                        child: Text("Weight", style: AppTextTheme().lightText.copyWith(fontSize: 16)),
-                      ),
-
-                      Expanded(
-                        child: CustomTextfieldWidget(hintText: "0''", keyboardType: TextInputType.number),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.all(AppTheme.horizontalPadding),
-              child: CustomButtonWidget(
-                title: "Save",
-                onPressed: () {
-                  context.popPage();
-                },
-              ),
-            ),
-            30.h,
-          ],
-        ),
-      ),
-    );
-  }
-
   static _setRestrictionIcon(String key) {
     switch (key) {
       case "Avoid Highways":
@@ -582,7 +601,9 @@ class TruckNavigationUtils {
             //   color: Colors.white
             // ),
             child: ListView(
-              padding: EdgeInsets.symmetric(horizontal: AppTheme.horizontalPadding),
+              padding: EdgeInsets.symmetric(
+                horizontal: AppTheme.horizontalPadding,
+              ),
               children: [
                 Row(
                   spacing: 10,
@@ -594,10 +615,20 @@ class TruckNavigationUtils {
                       child: CircleAvatar(
                         radius: 25,
                         backgroundColor: AppColorTheme().whiteShade,
-                        child: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 18),
+                        child: const Icon(
+                          Icons.arrow_back_ios,
+                          color: Colors.black,
+                          size: 18,
+                        ),
                       ),
                     ),
-                    Text("Settings", style: AppTextTheme().subHeadingText.copyWith(fontWeight: AppFontWeight.semiBold, fontSize: 20)),
+                    Text(
+                      "Settings",
+                      style: AppTextTheme().subHeadingText.copyWith(
+                        fontWeight: AppFontWeight.semiBold,
+                        fontSize: 20,
+                      ),
+                    ),
                   ],
                 ),
                 20.h,
@@ -605,56 +636,100 @@ class TruckNavigationUtils {
                 20.h,
 
                 // Vehicle
-                Text("Vehicle", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
+                Text(
+                  "Vehicle",
+                  style: AppTextTheme().lightText.copyWith(
+                    color: AppColorTheme().secondary,
+                  ),
+                ),
                 20.h,
                 ListTile(
-                  onTap: () {
-                    openTruckSetting(context);
-                  },
+                  onTap: () => Helpers.openBottomSheet(
+                    context: context,
+                    child: EditTruckSpecificationsView(),
+                  ),
                   leading: SvgPicture.asset(AppIcons.localShippingIcon),
-                  title: Text("My truck", style: AppTextTheme().lightText.copyWith(fontSize: 16)),
-                  trailing: const Icon(Icons.play_arrow, color: Colors.black, size: 22),
+                  title: Text(
+                    "My truck",
+                    style: AppTextTheme().lightText.copyWith(fontSize: 16),
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios_outlined,
+                    color: Colors.black,
+                    size: 22,
+                  ),
                   contentPadding: EdgeInsets.zero,
                 ),
 
-                // Truck info list
-                ...List.generate(
-                  TruckNavigationStaticDetails.truckInfo.length,
-                  (index) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: 20.w,
-                    title: Text(TruckNavigationStaticDetails.truckInfo.entries.elementAt(index).key, style: AppTextTheme().lightText),
-                    visualDensity: const VisualDensity(vertical: -4.0),
-                    trailing: Text(
-                      TruckNavigationStaticDetails.truckInfo.entries.elementAt(index).value,
-                      style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
-                      textAlign: TextAlign.end,
+                BlocBuilder<TruckSpecificationsCubit, TruckSpecificationState>(
+                  builder: (context, state) => Column(
+                    children: List.generate(
+                      state.truckInfo.length,
+                      (index) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: 20.w,
+                        title: Text(
+                          state.truckInfo.entries.elementAt(index).key,
+                          style: AppTextTheme().lightText,
+                        ),
+                        visualDensity: const VisualDensity(vertical: -4.0),
+                        trailing: Text(
+                          state.truckInfo.entries.elementAt(index).value,
+                          style: AppTextTheme().lightText.copyWith(
+                            color: AppColorTheme().secondary,
+                          ),
+                          textAlign: TextAlign.end,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-
                 20.h,
-
                 // Restrictions
-                Text("Restrictions", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
+                Text(
+                  "Restrictions",
+                  style: AppTextTheme().lightText.copyWith(
+                    color: AppColorTheme().secondary,
+                  ),
+                ),
                 20.h,
                 ...List.generate(
                   TruckNavigationStaticDetails.routeRestriction.length,
                   (index) => ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: SvgPicture.asset(_setRestrictionIcon(TruckNavigationStaticDetails.routeRestriction.entries.elementAt(index).key)),
-                    title: Text(TruckNavigationStaticDetails.routeRestriction.entries.elementAt(index).key, style: AppTextTheme().lightText),
+                    leading: SvgPicture.asset(
+                      _setRestrictionIcon(
+                        TruckNavigationStaticDetails.routeRestriction.entries
+                            .elementAt(index)
+                            .key,
+                      ),
+                    ),
+                    title: Text(
+                      TruckNavigationStaticDetails.routeRestriction.entries
+                          .elementAt(index)
+                          .key,
+                      style: AppTextTheme().lightText,
+                    ),
                     visualDensity: const VisualDensity(vertical: -4.0),
                     trailing: Transform.scale(
                       scale: 0.6,
                       child: Switch.adaptive(
-                        value: TruckNavigationStaticDetails.routeRestriction.entries.elementAt(index).value,
+                        value: TruckNavigationStaticDetails
+                            .routeRestriction
+                            .entries
+                            .elementAt(index)
+                            .value,
                         onChanged: (v) {
                           setState(() {
-                            TruckNavigationStaticDetails.routeRestriction.update(
-                              TruckNavigationStaticDetails.routeRestriction.entries.elementAt(index).key,
-                              (c) => v,
-                            );
+                            TruckNavigationStaticDetails.routeRestriction
+                                .update(
+                                  TruckNavigationStaticDetails
+                                      .routeRestriction
+                                      .entries
+                                      .elementAt(index)
+                                      .key,
+                                  (c) => v,
+                                );
                           });
                         },
                       ),
@@ -695,28 +770,42 @@ class TruckNavigationUtils {
                             child: CircleAvatar(
                               radius: 25,
                               backgroundColor: AppColorTheme().whiteShade,
-                              child: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 18),
+                              child: const Icon(
+                                Icons.arrow_back_ios,
+                                color: Colors.black,
+                                size: 18,
+                              ),
                             ),
                           ),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text.rich(
-                                style: AppTextTheme().subHeadingText.copyWith(fontSize: 20),
+                                style: AppTextTheme().subHeadingText.copyWith(
+                                  fontSize: 20,
+                                ),
                                 TextSpan(
                                   children: [
                                     TextSpan(
-                                      text: state.currentRoute?.formattedDuration,
+                                      text:
+                                          state.currentRoute?.formattedDuration,
                                       // text: "2h 11m",
-                                      style: TextStyle(color: AppColorTheme().primary),
+                                      style: TextStyle(
+                                        color: AppColorTheme().primary,
+                                      ),
                                     ),
-                                    TextSpan(text: " (${state.currentRoute?.distanceInMiles ?? ''})"),
+                                    TextSpan(
+                                      text:
+                                          " (${state.currentRoute?.distanceInMiles ?? ''})",
+                                    ),
                                   ],
                                 ),
                               ),
                               Text(
                                 state.currentRoute?.getRouteName ?? '',
-                                style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
+                                style: AppTextTheme().lightText.copyWith(
+                                  color: AppColorTheme().secondary,
+                                ),
                               ),
                             ],
                           ),
@@ -733,8 +822,11 @@ class TruckNavigationUtils {
                             children: [
                               Icon(Icons.circle_outlined, size: 18),
                               SizedBox(
-                                height: 30, // match with textfield height + spacing
-                                child: CustomPaint(painter: DottedLinePainter()),
+                                height:
+                                    30, // match with textfield height + spacing
+                                child: CustomPaint(
+                                  painter: DottedLinePainter(),
+                                ),
                               ),
 
                               Icon(Icons.location_on, size: 24),
@@ -746,8 +838,16 @@ class TruckNavigationUtils {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text('My Current Location', style: AppTextTheme().bodyText.copyWith(fontSize: 16), maxLines: 2),
-                                TruckNavigationUtils.buildRouteDetails(state.currentRoute!),
+                                Text(
+                                  'My Current Location',
+                                  style: AppTextTheme().bodyText.copyWith(
+                                    fontSize: 16,
+                                  ),
+                                  maxLines: 2,
+                                ),
+                                TruckNavigationUtils.buildRouteDetails(
+                                  state.currentRoute!,
+                                ),
                                 // Text("Times Square, New York, NY, USA", style: AppTextTheme().bodyText.copyWith(fontSize: 16), maxLines: 2),
                                 // Row(
                                 //   children: [
@@ -757,8 +857,15 @@ class TruckNavigationUtils {
                                 // ),
                                 // Text("Centre St, Scranton, PA", style: AppTextTheme().bodyText.copyWith(fontSize: 16), maxLines: 2),
                                 Text(
-                                  state.selectedSuggestion?.place?.address.addressText ?? '',
-                                  style: AppTextTheme().bodyText.copyWith(fontSize: 16),
+                                  state
+                                          .selectedSuggestion
+                                          ?.place
+                                          ?.address
+                                          .addressText ??
+                                      '',
+                                  style: AppTextTheme().bodyText.copyWith(
+                                    fontSize: 16,
+                                  ),
                                   maxLines: 2,
                                 ),
                               ],
@@ -777,7 +884,11 @@ class TruckNavigationUtils {
                       context.popPage();
                       context.read<TruckNavigationCubit>().startNavigation();
                     },
-                    icon: Icon(Icons.double_arrow, color: Colors.white, size: 18),
+                    icon: Icon(
+                      Icons.double_arrow,
+                      color: Colors.white,
+                      size: 18,
+                    ),
                     isRightSide: true,
                   ),
                 ),
@@ -802,13 +913,21 @@ class TruckNavigationUtils {
             Container(
               width: 48,
               height: 48,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: AppColorTheme().primary.withValues(alpha: 0.2)),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColorTheme().primary.withValues(alpha: 0.2),
+              ),
               child: Icon(Icons.bookmark_outline),
             ),
-            Text("Save this route ", style: AppTextTheme().headingText.copyWith(fontSize: 20)),
+            Text(
+              "Save this route ",
+              style: AppTextTheme().headingText.copyWith(fontSize: 20),
+            ),
             Text(
               "Would you like to save this route for future use?",
-              style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
+              style: AppTextTheme().lightText.copyWith(
+                color: AppColorTheme().secondary,
+              ),
               textAlign: TextAlign.center,
             ),
             CustomButtonWidget(
@@ -832,12 +951,19 @@ class TruckNavigationUtils {
   }
 
   static Widget buildRouteDetails(r.Route route) {
-    return Column(children: List.generate(route.sections.length, (i) => buildSectionAccordion(route.sections[i])));
+    return Column(
+      children: List.generate(
+        route.sections.length,
+        (i) => buildSectionAccordion(route.sections[i]),
+      ),
+    );
   }
 
   static Widget buildSectionAccordion(r.Section section) {
     // Title: you can use road names from maneuvers or fallback
-    final String title = section.maneuvers.isNotEmpty ? section.maneuvers.first.text : "Continue route";
+    final String title = section.maneuvers.isNotEmpty
+        ? section.maneuvers.first.text
+        : "Continue route";
 
     return CustomAccordionWidget(
       title: title,
@@ -854,7 +980,9 @@ class TruckNavigationUtils {
               children: [
                 Text(
                   "${section.formattedDuration} (${section.distanceInMiles})",
-                  style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary),
+                  style: AppTextTheme().bodyText.copyWith(
+                    color: AppColorTheme().secondary,
+                  ),
                 ),
                 Expanded(child: Divider()),
               ],
@@ -879,7 +1007,12 @@ class TruckNavigationUtils {
                   spacing: 10,
                   children: [
                     24.w,
-                    Text(maneuver.formattedDistance, style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
+                    Text(
+                      maneuver.formattedDistance,
+                      style: AppTextTheme().bodyText.copyWith(
+                        color: AppColorTheme().secondary,
+                      ),
+                    ),
                     Expanded(child: Divider()),
                   ],
                 ),
@@ -892,7 +1025,12 @@ class TruckNavigationUtils {
                 children: [
                   const Icon(Icons.warning_rounded, color: Color(0xffFF4F5B)),
                   Expanded(
-                    child: Text("Toll required ", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
+                    child: Text(
+                      "Toll required ",
+                      style: AppTextTheme().bodyText.copyWith(
+                        color: AppColorTheme().secondary,
+                      ),
+                    ),
                   ),
                 ],
               ),

@@ -9,8 +9,11 @@ import 'package:here_sdk/routing.dart';
 import 'package:here_sdk/search.dart';
 import 'package:here_sdk/transport.dart';
 import 'package:location/location.dart' as loc;
-import 'package:ommo/home/view/truck_navigation/cubit/get_data.dart';
-import 'package:ommo/home/view/truck_navigation/cubit/truck_navigation_state.dart';
+import 'package:ommo/app/app.dart';
+import 'package:ommo/data/response/get_data.dart';
+import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
+import 'package:ommo/logic/cubit/truck_specifications/truck_specification_cubit.dart';
+import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state.dart';
 import 'package:ommo/map_sdk/HEREPositioningSimulator.dart';
 import 'package:ommo/map_sdk/truck_guidance_example.dart';
 import 'package:ommo/utils/constants/constants.dart';
@@ -47,8 +50,14 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     if (state.startCoordinates != null) {
       setInitialLocation(state.startCoordinates!);
       const double distanceToEarthInMeters = 8000;
-      MapMeasure mapMeasureZoom = MapMeasure(MapMeasureKind.distanceInMeters, distanceToEarthInMeters);
-      controller.camera.lookAtPointWithMeasure(state.startCoordinates!, mapMeasureZoom);
+      MapMeasure mapMeasureZoom = MapMeasure(
+        MapMeasureKind.distanceInMeters,
+        distanceToEarthInMeters,
+      );
+      controller.camera.lookAtPointWithMeasure(
+        state.startCoordinates!,
+        mapMeasureZoom,
+      );
     }
     _visualNavigator = VisualNavigator();
     _navigator = Navigator();
@@ -96,7 +105,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         }),
       );
 
-      _locationEngine?.startWithLocationAccuracy(LocationAccuracy.bestAvailable);
+      _locationEngine?.startWithLocationAccuracy(
+        LocationAccuracy.bestAvailable,
+      );
     }
   }
 
@@ -109,7 +120,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     if (_currentLocationMarker != null) {
       state.mapController?.mapScene.removeMapMarker(_currentLocationMarker!);
     }
-    MapImage userImage = MapImage.withFilePathAndWidthAndHeight(AppIcons.myLocIcon, 40, 40); // add your own icon
+    MapImage userImage = MapImage.withFilePathAndWidthAndHeight(
+      AppIcons.myLocIcon,
+      40,
+      40,
+    ); // add your own icon
     _currentLocationMarker = MapMarker(coords, userImage);
     state.mapController?.mapScene.addMapMarker(_currentLocationMarker!);
 
@@ -136,7 +151,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     if (coords == null || controller == null) return;
 
-    final mapMeasure = MapMeasure(MapMeasureKind.distanceInMeters, distanceInMeters);
+    final mapMeasure = MapMeasure(
+      MapMeasureKind.distanceInMeters,
+      distanceInMeters,
+    );
 
     controller.camera.lookAtPointWithMeasure(coords, mapMeasure);
   }
@@ -151,13 +169,23 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     TextQueryArea queryArea = TextQueryArea.withCenter(state.startCoordinates!);
 
-    _searchEngine.suggestByText(TextQuery.withArea(query, queryArea), searchOptions, (SearchError? searchError, List<Suggestion>? list) {
-      if (list != null) {
-        emit(state.copyWith(destinationSuggestions: FutureData.completed(list)));
-      } else {
-        emit(state.copyWith(destinationSuggestions: FutureData.error(searchError.toString())));
-      }
-    });
+    _searchEngine.suggestByText(
+      TextQuery.withArea(query, queryArea),
+      searchOptions,
+      (SearchError? searchError, List<Suggestion>? list) {
+        if (list != null) {
+          emit(
+            state.copyWith(destinationSuggestions: FutureData.completed(list)),
+          );
+        } else {
+          emit(
+            state.copyWith(
+              destinationSuggestions: FutureData.error(searchError.toString()),
+            ),
+          );
+        }
+      },
+    );
   }
 
   void setDestinationCoordinate(Suggestion suggestion) {
@@ -172,15 +200,25 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       _destinationMarker = null;
     }
 
-    MapImage destIcon = MapImage.withFilePathAndWidthAndHeight(AppImages.greenMarker, 60, 100);
+    MapImage destIcon = MapImage.withFilePathAndWidthAndHeight(
+      AppImages.greenMarker,
+      60,
+      100,
+    );
     _destinationMarker = MapMarker(state.destinationCoordinates!, destIcon);
     state.mapController?.mapScene.addMapMarker(_destinationMarker!);
     focusDestinationWithOffset(state.destinationCoordinates!);
   }
 
-  void focusDestinationWithOffset(GeoCoordinates coords, {double offsetPixels = 90}) {
+  void focusDestinationWithOffset(
+    GeoCoordinates coords, {
+    double offsetPixels = 90,
+  }) {
     const double zoomDistance = 3000;
-    MapMeasure measure = MapMeasure(MapMeasureKind.distanceInMeters, zoomDistance);
+    MapMeasure measure = MapMeasure(
+      MapMeasureKind.distanceInMeters,
+      zoomDistance,
+    );
 
     // Get screen size
     final screenSize = state.mapController!.viewportSize;
@@ -208,7 +246,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     final truckOptions = _createTruckOptions();
 
-    _routingEngine.calculateTruckRoute(waypoints, truckOptions, (RoutingError? error, List<Route>? routes) {
+    _routingEngine.calculateTruckRoute(waypoints, truckOptions, (
+      RoutingError? error,
+      List<Route>? routes,
+    ) {
       if (error != null || routes == null) return;
 
       final route = routes.first;
@@ -222,6 +263,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     truckOptions.routeOptions.enableTolls = true;
 
     AvoidanceOptions avoidanceOptions = AvoidanceOptions();
+
     avoidanceOptions.roadFeatures = [
       RoadFeatures.uTurns,
       RoadFeatures.ferry,
@@ -229,6 +271,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       RoadFeatures.tunnel,
       RoadFeatures.carShuttleTrain,
     ];
+
     // Exclude emission zones to not pollute the air in sensitive inner city areas.
     avoidanceOptions.zoneCategories = [ZoneCategory.environmental];
     truckOptions.avoidanceOptions = avoidanceOptions;
@@ -238,19 +281,24 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   TruckSpecifications _createTruckSpecifications() {
+    TruckSpecificationState? mySpecs = navigatorKey.currentContext!
+        .read<TruckSpecificationsCubit>()
+        .state;
+
     TruckSpecifications truckSpecifications = TruckSpecifications();
     // When weight is not set, possible weight restrictions will not be taken into consideration
     // for route calculation. By default, weight is not set.
     // Specify the weight including trailers and shipped goods (if any).
-    truckSpecifications.grossWeightInKilograms = MyTruckSpecs.grossWeightInKilograms;
-    truckSpecifications.heightInCentimeters = MyTruckSpecs.heightInCentimeters;
-    truckSpecifications.widthInCentimeters = MyTruckSpecs.widthInCentimeters;
+    truckSpecifications.grossWeightInKilograms = mySpecs.grossWeightInKilograms;
+    truckSpecifications.heightInCentimeters = mySpecs.heightInCentimeters;
+    truckSpecifications.widthInCentimeters = mySpecs.widthInCentimeters;
     // The total length including all trailers (if any).
-    truckSpecifications.lengthInCentimeters = MyTruckSpecs.lengthInCentimeters;
-    truckSpecifications.weightPerAxleInKilograms = MyTruckSpecs.weightPerAxleInKilograms;
-    truckSpecifications.axleCount = MyTruckSpecs.axleCount;
-    truckSpecifications.trailerCount = MyTruckSpecs.trailerCount;
-    truckSpecifications.truckType = MyTruckSpecs.truckType;
+    truckSpecifications.lengthInCentimeters = mySpecs.lengthInCentimeters;
+    truckSpecifications.weightPerAxleInKilograms =
+        mySpecs.weightPerAxleInKilograms;
+    truckSpecifications.axleCount = mySpecs.axleCount;
+    truckSpecifications.trailerCount = mySpecs.trailerCount;
+    truckSpecifications.truckType = mySpecs.truckType;
     return truckSpecifications;
   }
 
@@ -260,7 +308,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     mapPolyline = MapPolyline.withRepresentation(
       polyline,
       MapPolylineSolidRepresentation(
-        MapMeasureDependentRenderSize.withSingleSize(RenderSizeUnit.pixels, 30.0),
+        MapMeasureDependentRenderSize.withSingleSize(
+          RenderSizeUnit.pixels,
+          30.0,
+        ),
         AppColorTheme().primary,
         LineCap.round,
       ),
@@ -272,20 +323,25 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
   void _animateToRoute(Route route) {
     Point2D origin = Point2D(50, 50);
-    Size2D sizeInPixels = Size2D(state.mapController!.viewportSize.width - 100, state.mapController!.viewportSize.height - 100);
+    Size2D sizeInPixels = Size2D(
+      state.mapController!.viewportSize.width - 100,
+      state.mapController!.viewportSize.height - 100,
+    );
     Rectangle2D mapViewport = Rectangle2D(origin, sizeInPixels);
 
-    MapCameraUpdate cameraUpdate = MapCameraUpdateFactory.lookAtAreaWithGeoOrientationAndViewRectangle(
-      route.boundingBox,
-      GeoOrientationUpdate(0.0, 0.0),
-      mapViewport,
-    );
+    MapCameraUpdate cameraUpdate =
+        MapCameraUpdateFactory.lookAtAreaWithGeoOrientationAndViewRectangle(
+          route.boundingBox,
+          GeoOrientationUpdate(0.0, 0.0),
+          mapViewport,
+        );
 
-    MapCameraAnimation animation = MapCameraAnimationFactory.createAnimationFromUpdateWithEasing(
-      cameraUpdate,
-      Duration(milliseconds: 2000),
-      Easing(EasingFunction.outInSine),
-    );
+    MapCameraAnimation animation =
+        MapCameraAnimationFactory.createAnimationFromUpdateWithEasing(
+          cameraUpdate,
+          Duration(milliseconds: 2000),
+          Easing(EasingFunction.outInSine),
+        );
 
     state.mapController!.camera.startAnimation(animation);
   }
@@ -300,15 +356,25 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     if (AppKeys().isSimulation) {
       _locationEngine?.stop();
 
-      emit(state.copyWith(isNavigating: true, cameraControlledByNavigator: true));
+      emit(
+        state.copyWith(isNavigating: true, cameraControlledByNavigator: true),
+      );
       _simulator = HEREPositioningSimulator();
 
-      final LocationListener navigatorForwarder = LocationListener((Location location) {
+      final LocationListener navigatorForwarder = LocationListener((
+        Location location,
+      ) {
         _navigator?.onLocationUpdated(location);
       });
-      _simulator?.startLocating(_visualNavigator!, navigatorForwarder, state.currentRoute!);
+      _simulator?.startLocating(
+        _visualNavigator!,
+        navigatorForwarder,
+        state.currentRoute!,
+      );
     } else {
-      emit(state.copyWith(isNavigating: true, cameraControlledByNavigator: true));
+      emit(
+        state.copyWith(isNavigating: true, cameraControlledByNavigator: true),
+      );
     }
   }
 
@@ -322,7 +388,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     emit(state.copyWith(cameraControlledByNavigator: false));
 
     if (_locationEngine != null && !(AppKeys().isSimulation)) {
-      _locationEngine?.startWithLocationAccuracy(LocationAccuracy.bestAvailable);
+      _locationEngine?.startWithLocationAccuracy(
+        LocationAccuracy.bestAvailable,
+      );
     }
 
     // Clear polylines
@@ -358,7 +426,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
   void setupManeuverUpdates() {
     if (_visualNavigator == null) return;
-    _visualNavigator!.routeProgressListener = RouteProgressListener((RouteProgress progress) {
+    _visualNavigator!.routeProgressListener = RouteProgressListener((
+      RouteProgress progress,
+    ) {
       if (progress.maneuverProgress.isEmpty) {
         emit(state.copyWith(maneuverProgress: "null"));
       } else {

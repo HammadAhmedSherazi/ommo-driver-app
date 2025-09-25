@@ -8,8 +8,8 @@ import 'package:here_sdk/mapview.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/home/view/map_view.dart';
-import 'package:ommo/home/view/truck_navigation/cubit/truck_navigation_cubit.dart';
-import 'package:ommo/home/view/truck_navigation/cubit/truck_navigation_state.dart';
+import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
+import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_utils.dart';
 import 'package:ommo/utils/extension/route_extension.dart';
@@ -23,11 +23,15 @@ class HomeMobileView extends StatefulWidget {
   State<HomeMobileView> createState() => _HomeMobileViewState();
 }
 
-class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProviderStateMixin {
-  final TextEditingController searchTextEditController = TextEditingController();
+class _HomeMobileViewState extends State<HomeMobileView>
+    with SingleTickerProviderStateMixin {
+  final TextEditingController searchTextEditController =
+      TextEditingController();
   FocusNode searchFieldFocusNode = FocusNode();
   late final TabController _tabController;
-  final List<TextEditingController> textController = [TextEditingController(text: "Start My Current Location")];
+  final List<TextEditingController> textController = [
+    TextEditingController(text: "Start My Current Location"),
+  ];
   final List<FocusNode> focusNode = [FocusNode()];
   bool showMore = false, changeMapScheme = false;
   int selectIndexMapView = 0;
@@ -38,7 +42,10 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: TruckNavigationStaticDetails.locationOpt.length, vsync: this);
+    _tabController = TabController(
+      length: TruckNavigationStaticDetails.locationOpt.length,
+      vsync: this,
+    );
     textController.add(searchTextEditController);
     focusNode.add(FocusNode());
     searchFieldFocusNode.addListener(() {
@@ -73,36 +80,66 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
         preferredSize: Size.fromHeight(76),
         child: AppBar(
           leadingWidth: context.screenWidth * 0.45,
-          leading: Row(mainAxisSize: MainAxisSize.min, children: [20.w, Image.asset(AppIcons.logo, width: 126, height: 22)]),
+          leading: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              20.w,
+              Image.asset(AppIcons.logo, width: 126, height: 22),
+            ],
+          ),
           actions: [
-            Container(
-              height: 44,
-              width: 44,
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: Color(0xFFEBEEF2), width: 1), // rgba(235, 238, 242, 1)
-                borderRadius: BorderRadius.circular(8), // Optional
-                boxShadow: [
-                  BoxShadow(
-                    color: Color.fromRGBO(0, 0, 0, 0.04), // rgba(0, 0, 0, 0.04)
-                    blurRadius: 6, // Spread of the blur
-                    offset: Offset(0, 2), // X=0, Y=2
-                  ),
-                ],
+            InkWell(
+              onTap: () => TruckNavigationUtils.openSettingBottomSheet(context),
+              child: Container(
+                height: 44,
+                width: 44,
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(
+                    color: Color(0xFFEBEEF2),
+                    width: 1,
+                  ), // rgba(235, 238, 242, 1)
+                  borderRadius: BorderRadius.circular(8), // Optional
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color.fromRGBO(
+                        0,
+                        0,
+                        0,
+                        0.04,
+                      ), // rgba(0, 0, 0, 0.04)
+                      blurRadius: 6, // Spread of the blur
+                      offset: Offset(0, 2), // X=0, Y=2
+                    ),
+                  ],
+                ),
+                child: SvgPicture.asset(
+                  AppIcons.menuIcon,
+                  width: 20,
+                  height: 20,
+                ),
               ),
-              child: SvgPicture.asset(AppIcons.menuIcon, width: 20, height: 20),
             ),
             20.w,
           ],
-          bottom: PreferredSize(preferredSize: Size.fromHeight(0.8), child: Divider()),
+          bottom: PreferredSize(
+            preferredSize: Size.fromHeight(0.8),
+            child: Divider(),
+          ),
         ),
       ),
       body: BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
-        buildWhen: (previous, current) => (previous.isNavigating != current.isNavigating || previous.hasDirection != current.hasDirection),
+        buildWhen: (previous, current) =>
+            (previous.isNavigating != current.isNavigating ||
+            previous.hasDirection != current.hasDirection),
         builder: (context, state) {
           log("home view rebuilding");
-          return Stack(children: !state.isNavigating ? buildInitialUi(context, state.hasDirection) : buildNavigationUi(state));
+          return Stack(
+            children: !state.isNavigating
+                ? buildInitialUi(context, state.hasDirection)
+                : buildNavigationUi(state),
+          );
         },
       ),
     );
@@ -118,14 +155,25 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
             padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
             width: 271,
 
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+            ),
             child: Row(
               spacing: 20,
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(TruckNavigationStaticDetails.mapSchemes.length, (index) {
-                final item = TruckNavigationStaticDetails.mapSchemes[index];
-                return _styleButton(item.label, item.scheme, item.icon, index);
-              }),
+              children: List.generate(
+                TruckNavigationStaticDetails.mapSchemes.length,
+                (index) {
+                  final item = TruckNavigationStaticDetails.mapSchemes[index];
+                  return _styleButton(
+                    item.label,
+                    item.scheme,
+                    item.icon,
+                    index,
+                  );
+                },
+              ),
             ),
           ),
         ),
@@ -145,7 +193,10 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
               child: Container(
                 width: 48,
                 height: 48,
-                decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
 
                 child: Container(
                   width: 48,
@@ -161,11 +212,18 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                       ),
                     ],
                     shape: BoxShape.circle,
-                    color: changeMapScheme ? AppColorTheme().primary.withValues(alpha: 0.2) : Colors.white,
+                    color: changeMapScheme
+                        ? AppColorTheme().primary.withValues(alpha: 0.2)
+                        : Colors.white,
                   ),
                   child: SvgPicture.asset(
                     AppIcons.layerBoxIcon,
-                    colorFilter: changeMapScheme ? ColorFilter.mode(AppColorTheme().primary, BlendMode.srcIn) : null,
+                    colorFilter: changeMapScheme
+                        ? ColorFilter.mode(
+                            AppColorTheme().primary,
+                            BlendMode.srcIn,
+                          )
+                        : null,
                   ),
                 ),
               ),
@@ -175,7 +233,10 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
               // height: 200,
               // padding: EdgeInsets.all(13),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(50), bottom: Radius.circular(50)),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(50),
+                  bottom: Radius.circular(50),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Color(0x0A000000), // same as #0000000A
@@ -190,13 +251,23 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(onPressed: () => context.read<TruckNavigationCubit>().mapZoomIn(context), icon: SvgPicture.asset(AppIcons.zoomInIcon)),
-                  IconButton(onPressed: () => context.read<TruckNavigationCubit>().mapZoomOut(context), icon: SvgPicture.asset(AppIcons.zoomOutIcon)),
+                  IconButton(
+                    onPressed: () =>
+                        context.read<TruckNavigationCubit>().mapZoomIn(context),
+                    icon: SvgPicture.asset(AppIcons.zoomInIcon),
+                  ),
+                  IconButton(
+                    onPressed: () => context
+                        .read<TruckNavigationCubit>()
+                        .mapZoomOut(context),
+                    icon: SvgPicture.asset(AppIcons.zoomOutIcon),
+                  ),
                 ],
               ),
             ),
             InkWell(
-              onTap: () => context.read<TruckNavigationCubit>().focusOnCurrentLocation(),
+              onTap: () =>
+                  context.read<TruckNavigationCubit>().focusOnCurrentLocation(),
               child: Container(
                 width: 48,
                 height: 48,
@@ -213,7 +284,10 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                   shape: BoxShape.circle,
                   color: Colors.white,
                 ),
-                child: SvgPicture.asset(AppIcons.navigationIconGreen, colorFilter: ColorFilter.mode(Colors.black, BlendMode.srcIn)),
+                child: SvgPicture.asset(
+                  AppIcons.navigationIconGreen,
+                  colorFilter: ColorFilter.mode(Colors.black, BlendMode.srcIn),
+                ),
               ),
             ),
           ],
@@ -242,7 +316,9 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                   color: const Color.fromRGBO(235, 238, 242, 1), // border color
                   width: 1, // border width
                 ),
-                borderRadius: BorderRadius.circular(50), // optional rounded corners
+                borderRadius: BorderRadius.circular(
+                  50,
+                ), // optional rounded corners
                 boxShadow: const [
                   BoxShadow(
                     color: Color.fromRGBO(0, 0, 0, 0.04), // shadow color
@@ -257,13 +333,19 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                 children: [
                   CircleAvatar(
                     radius: 14,
-                    backgroundColor: index % 2 == 0 ? Color(0xff4676F6) : Color(0xffFFC300),
+                    backgroundColor: index % 2 == 0
+                        ? Color(0xff4676F6)
+                        : Color(0xffFFC300),
                     child: Text(
-                      TruckNavigationStaticDetails.stationList[index].splitMapJoin('')[0],
+                      TruckNavigationStaticDetails.stationList[index]
+                          .splitMapJoin('')[0],
                       style: AppTextTheme().headingText.copyWith(fontSize: 16),
                     ),
                   ),
-                  Text(TruckNavigationStaticDetails.stationList[index], style: AppTextTheme().bodyText),
+                  Text(
+                    TruckNavigationStaticDetails.stationList[index],
+                    style: AppTextTheme().bodyText,
+                  ),
                 ],
               ),
             ),
@@ -279,13 +361,24 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Create a trip", style: AppTextTheme().subHeadingText.copyWith(fontWeight: AppFontWeight.semiBold, fontSize: 20)),
+                    Text(
+                      "Create a trip",
+                      style: AppTextTheme().subHeadingText.copyWith(
+                        fontWeight: AppFontWeight.semiBold,
+                        fontSize: 20,
+                      ),
+                    ),
 
                     IconButton(
                       padding: EdgeInsets.zero,
-                      visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
+                      visualDensity: VisualDensity(
+                        horizontal: -4.0,
+                        vertical: -4.0,
+                      ),
                       onPressed: () {
-                        context.read<TruckNavigationCubit>().clearCurrentRouteDetail();
+                        context
+                            .read<TruckNavigationCubit>()
+                            .clearCurrentRouteDetail();
                         searchTextEditController.clear();
                         // setState(() {
                         //   hasDirection = false;
@@ -309,7 +402,10 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                 TextButton(
                   style: ButtonStyle(
                     padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                    visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
+                    visualDensity: VisualDensity(
+                      horizontal: -4.0,
+                      vertical: -4.0,
+                    ),
                   ),
                   onPressed: () {
                     setState(() {
@@ -321,7 +417,13 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                     spacing: 5,
                     children: [
                       Icon(Icons.add, size: 25),
-                      Text("Add a stop", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().primary, fontSize: 16)),
+                      Text(
+                        "Add a stop",
+                        style: AppTextTheme().bodyText.copyWith(
+                          color: AppColorTheme().primary,
+                          fontSize: 16,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -331,7 +433,12 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Settings", style: AppTextTheme().subHeadingText.copyWith(fontSize: 16)),
+                    Text(
+                      "Settings",
+                      style: AppTextTheme().subHeadingText.copyWith(
+                        fontSize: 16,
+                      ),
+                    ),
                     IconButton(
                       onPressed: () {
                         TruckNavigationUtils.openSettingBottomSheet(context);
@@ -339,7 +446,10 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                       icon: SvgPicture.asset(AppIcons.settingIcon),
                       style: ButtonStyle(
                         padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                        visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
+                        visualDensity: VisualDensity(
+                          horizontal: -4.0,
+                          vertical: -4.0,
+                        ),
                       ),
                     ),
                   ],
@@ -353,15 +463,21 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                       deleteIconColor: AppColorTheme().secondary,
                       onDeleted: () {
                         setState(() {
-                          TruckNavigationStaticDetails.settingChipsList.removeAt(index);
+                          TruckNavigationStaticDetails.settingChipsList
+                              .removeAt(index);
                         });
                       },
-                      deleteIconBoxConstraints: BoxConstraints(maxHeight: 24, maxWidth: 24),
+                      deleteIconBoxConstraints: BoxConstraints(
+                        maxHeight: 24,
+                        maxWidth: 24,
+                      ),
                       padding: EdgeInsets.symmetric(vertical: 0, horizontal: 3),
                       backgroundColor: Color(0xffF4F6F8),
                       deleteIcon: Icon(Icons.cancel),
 
-                      label: Text(TruckNavigationStaticDetails.settingChipsList[index]),
+                      label: Text(
+                        TruckNavigationStaticDetails.settingChipsList[index],
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(50),
                         side: BorderSide(color: Colors.transparent),
@@ -372,7 +488,10 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                 20.h,
                 DashedLine(),
                 20.h,
-                Text("Available routes", style: AppTextTheme().subHeadingText.copyWith(fontSize: 16)),
+                Text(
+                  "Available routes",
+                  style: AppTextTheme().subHeadingText.copyWith(fontSize: 16),
+                ),
                 BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
                   buildWhen: (p, c) => p.currentRoute != c.currentRoute,
                   builder: (context, state) {
@@ -385,7 +504,11 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                         // }
                       },
                       contentPadding: EdgeInsets.symmetric(vertical: 5),
-                      leading: CircleAvatar(radius: 25, backgroundColor: Color(0xffF4F6F8), child: SvgPicture.asset(AppIcons.truckIcon)),
+                      leading: CircleAvatar(
+                        radius: 25,
+                        backgroundColor: Color(0xffF4F6F8),
+                        child: SvgPicture.asset(AppIcons.truckIcon),
+                      ),
                       title: Text(
                         // "Via I-20E",
                         // "Route",
@@ -396,11 +519,17 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                           ? Row(
                               spacing: 4,
                               children: [
-                                Icon(Icons.warning_rounded, size: 16, color: Color(0xffFF4F5B)),
+                                Icon(
+                                  Icons.warning_rounded,
+                                  size: 16,
+                                  color: Color(0xffFF4F5B),
+                                ),
                                 Expanded(
                                   child: Text(
                                     "This route requires tolls",
-                                    style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
+                                    style: AppTextTheme().lightText.copyWith(
+                                      color: AppColorTheme().secondary,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -416,12 +545,16 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                               Text(
                                 state.currentRoute?.formattedDuration ?? '',
                                 // "2h 11m",
-                                style: AppTextTheme().lightText.copyWith(color: AppColorTheme().primary),
+                                style: AppTextTheme().lightText.copyWith(
+                                  color: AppColorTheme().primary,
+                                ),
                               ),
                               Text(
                                 state.currentRoute?.distanceInMiles ?? '',
                                 //  "145 mi",
-                                style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
+                                style: AppTextTheme().lightText.copyWith(
+                                  color: AppColorTheme().secondary,
+                                ),
                               ),
                             ],
                           ),
@@ -469,7 +602,8 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                 ),
                 15.h,
                 BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
-                  buildWhen: (p, c) => p.selectedSuggestion != c.selectedSuggestion,
+                  buildWhen: (p, c) =>
+                      p.selectedSuggestion != c.selectedSuggestion,
                   builder: (context, state) {
                     return state.selectedSuggestion == null
                         ? const SizedBox()
@@ -477,7 +611,9 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                             title: "Get Direction",
                             onPressed: () {
                               if (searchTextEditController.text.isNotEmpty) {
-                                context.read<TruckNavigationCubit>().calculateRoute();
+                                context
+                                    .read<TruckNavigationCubit>()
+                                    .calculateRoute();
                               }
                             },
                             icon: Icon(Icons.directions, color: Colors.white),
@@ -491,27 +627,64 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                     contentPadding: EdgeInsets.zero,
                     leading: CircleAvatar(
                       radius: 25,
-                      backgroundColor: AppColorTheme().primary.withValues(alpha: 0.2),
+                      backgroundColor: AppColorTheme().primary.withValues(
+                        alpha: 0.2,
+                      ),
                       child: SvgPicture.asset(AppIcons.navigationIconGreen),
                     ),
-                    title: Text("210 Riverside Drive", style: AppTextTheme().bodyText.copyWith(color: Colors.black, fontSize: 16)),
-                    subtitle: Text("New York, NY 10025", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
+                    title: Text(
+                      "210 Riverside Drive",
+                      style: AppTextTheme().bodyText.copyWith(
+                        color: Colors.black,
+                        fontSize: 16,
+                      ),
+                    ),
+                    subtitle: Text(
+                      "New York, NY 10025",
+                      style: AppTextTheme().lightText.copyWith(
+                        color: AppColorTheme().secondary,
+                      ),
+                    ),
                   ),
                   15.h,
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(backgroundColor: Colors.transparent, radius: 25, child: SvgPicture.asset(AppIcons.weatherIcon)),
-                    title: Text("24°C", style: AppTextTheme().bodyText.copyWith(color: Colors.black, fontSize: 16)),
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.transparent,
+                      radius: 25,
+                      child: SvgPicture.asset(AppIcons.weatherIcon),
+                    ),
+                    title: Text(
+                      "24°C",
+                      style: AppTextTheme().bodyText.copyWith(
+                        color: Colors.black,
+                        fontSize: 16,
+                      ),
+                    ),
                     subtitle: Row(
                       spacing: 4,
                       children: [
-                        Icon(Icons.warning_rounded, size: 16, color: Color(0xffFF4F5B)),
+                        Icon(
+                          Icons.warning_rounded,
+                          size: 16,
+                          color: Color(0xffFF4F5B),
+                        ),
                         Expanded(
-                          child: Text("The light rain next 2 hours", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
+                          child: Text(
+                            "The light rain next 2 hours",
+                            style: AppTextTheme().lightText.copyWith(
+                              color: AppColorTheme().secondary,
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    trailing: Icon(Icons.arrow_forward_ios, color: Colors.black, size: 15, weight: 30),
+                    trailing: Icon(
+                      Icons.arrow_forward_ios,
+                      color: Colors.black,
+                      size: 15,
+                      weight: 30,
+                    ),
                   ),
                   15.h,
                   DashedLine(color: Color(0xffEBEEF2)),
@@ -519,27 +692,45 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Nearby places", style: AppTextTheme().headingText.copyWith(fontSize: 16)),
+                      Text(
+                        "Nearby places",
+                        style: AppTextTheme().headingText.copyWith(
+                          fontSize: 16,
+                        ),
+                      ),
                       TextButton(
                         style: ButtonStyle(
-                          visualDensity: VisualDensity(vertical: -4.0, horizontal: -4.0),
+                          visualDensity: VisualDensity(
+                            vertical: -4.0,
+                            horizontal: -4.0,
+                          ),
                           padding: WidgetStatePropertyAll(EdgeInsets.zero),
                         ),
                         onPressed: () {
                           TruckNavigationUtils.openDialog(context);
                         },
-                        child: Text("More", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().primary)),
+                        child: Text(
+                          "More",
+                          style: AppTextTheme().bodyText.copyWith(
+                            color: AppColorTheme().primary,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                   15.h,
-                  ...List.generate(TruckNavigationStaticDetails.places.length, (index) {
+                  ...List.generate(TruckNavigationStaticDetails.places.length, (
+                    index,
+                  ) {
                     final place = TruckNavigationStaticDetails.places[index];
                     return PlaceDisplayWidget(place: place);
                   }),
                   DashedLine(color: Color(0xffEBEEF2)),
                   15.h,
-                  Text("Quick Actions", style: AppTextTheme().headingText.copyWith(fontSize: 16)),
+                  Text(
+                    "Quick Actions",
+                    style: AppTextTheme().headingText.copyWith(fontSize: 16),
+                  ),
                   15.h,
                   Container(
                     padding: EdgeInsets.symmetric(vertical: 7, horizontal: 10),
@@ -551,17 +742,33 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                       spacing: 5,
                       children: [
                         Icon(Icons.bookmark_sharp),
-                        Expanded(child: Text("Saved & recent places", style: AppTextTheme().bodyText.copyWith(fontSize: 16))),
-                        Icon(Icons.arrow_forward_ios, color: Colors.black, size: 15, weight: 30),
+                        Expanded(
+                          child: Text(
+                            "Saved & recent places",
+                            style: AppTextTheme().bodyText.copyWith(
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          color: Colors.black,
+                          size: 15,
+                          weight: 30,
+                        ),
                       ],
                     ),
                   ),
                   20.h,
                 ],
-                if (searchFieldFocusNode.hasFocus && searchTextEditController.text.isEmpty) ...[
+                if (searchFieldFocusNode.hasFocus &&
+                    searchTextEditController.text.isEmpty) ...[
                   15.h,
 
-                  CustomTabBarWidget(options: TruckNavigationStaticDetails.locationOpt, tabController: _tabController),
+                  CustomTabBarWidget(
+                    options: TruckNavigationStaticDetails.locationOpt,
+                    tabController: _tabController,
+                  ),
                   15.h,
                   SizedBox(
                     height: context.screenHeight * 0.6,
@@ -577,20 +784,39 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                               contentPadding: EdgeInsets.zero,
                               leading: CircleAvatar(
                                 radius: 25,
-                                backgroundColor: AppColorTheme().primary.withValues(alpha: 0.2),
-                                child: SvgPicture.asset(AppIcons.navigationIconGreen),
+                                backgroundColor: AppColorTheme().primary
+                                    .withValues(alpha: 0.2),
+                                child: SvgPicture.asset(
+                                  AppIcons.navigationIconGreen,
+                                ),
                               ),
-                              title: Text("My location", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
+                              title: Text(
+                                "My location",
+                                style: AppTextTheme().bodyText.copyWith(
+                                  fontSize: 16,
+                                ),
+                              ),
                             ),
                             ...List.generate(
                               4,
                               (index) => ListTile(
                                 contentPadding: EdgeInsets.zero,
-                                leading: CircleAvatar(radius: 25, backgroundColor: Color(0xffF4F6F8), child: SvgPicture.asset(AppIcons.frameIcon)),
-                                title: Text("1600 Amphitheatre Parkway", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
+                                leading: CircleAvatar(
+                                  radius: 25,
+                                  backgroundColor: Color(0xffF4F6F8),
+                                  child: SvgPicture.asset(AppIcons.frameIcon),
+                                ),
+                                title: Text(
+                                  "1600 Amphitheatre Parkway",
+                                  style: AppTextTheme().bodyText.copyWith(
+                                    fontSize: 16,
+                                  ),
+                                ),
                                 subtitle: Text(
                                   "Manhattan, New York, NY, USA",
-                                  style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
+                                  style: AppTextTheme().lightText.copyWith(
+                                    color: AppColorTheme().secondary,
+                                  ),
                                 ),
                               ),
                             ),
@@ -601,62 +827,95 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                           itemBuilder: (context, index) => GestureDetector(
                             onTap: () {
                               setState(() {
-                                searchTextEditController.text = TruckNavigationStaticDetails.places[index].address;
-                                place = TruckNavigationStaticDetails.places[index];
+                                searchTextEditController.text =
+                                    TruckNavigationStaticDetails
+                                        .places[index]
+                                        .address;
+                                place =
+                                    TruckNavigationStaticDetails.places[index];
                               });
                             },
-                            child: PlaceDisplayWidget(place: TruckNavigationStaticDetails.places[index], isSaved: true),
+                            child: PlaceDisplayWidget(
+                              place: TruckNavigationStaticDetails.places[index],
+                              isSaved: true,
+                            ),
                           ),
                           itemCount: TruckNavigationStaticDetails.places.length,
                         ),
                         ListView.builder(
                           physics: NeverScrollableScrollPhysics(),
-                          itemBuilder: (context, index) => PlaceDisplayWidget(place: TruckNavigationStaticDetails.terminals[index], isSaved: true),
-                          itemCount: TruckNavigationStaticDetails.terminals.length,
+                          itemBuilder: (context, index) => PlaceDisplayWidget(
+                            place:
+                                TruckNavigationStaticDetails.terminals[index],
+                            isSaved: true,
+                          ),
+                          itemCount:
+                              TruckNavigationStaticDetails.terminals.length,
                         ),
                       ],
                     ),
                   ),
                 ],
-                if (searchFieldFocusNode.hasFocus && searchTextEditController.text.isNotEmpty) ...[
+                if (searchFieldFocusNode.hasFocus &&
+                    searchTextEditController.text.isNotEmpty) ...[
                   BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
                     buildWhen: (previous, current) {
-                      return previous.destinationSuggestions?.data != current.destinationSuggestions?.data;
+                      return previous.destinationSuggestions?.data !=
+                          current.destinationSuggestions?.data;
                     },
                     builder: (context, state) {
-                      return (state.destinationSuggestions?.data ?? []).isNotEmpty
+                      return (state.destinationSuggestions?.data ?? [])
+                              .isNotEmpty
                           ? ListView.separated(
                               itemBuilder: (context, index) {
-                                final Suggestion? item = state.destinationSuggestions?.data?[index];
+                                final Suggestion? item =
+                                    state.destinationSuggestions?.data?[index];
 
                                 return item == null
                                     ? SizedBox()
                                     : ListTile(
                                         onTap: () {
-                                          searchTextEditController.text = item.title;
-                                          context.read<TruckNavigationCubit>().setDestinationCoordinate(item);
+                                          searchTextEditController.text =
+                                              item.title;
+                                          context
+                                              .read<TruckNavigationCubit>()
+                                              .setDestinationCoordinate(item);
                                           // context.read<MapCubit>().setDestinationCoordinate(item.place!.geoCoordinates!);
                                         },
                                         contentPadding: EdgeInsets.zero,
                                         leading: CircleAvatar(
                                           radius: 25,
-                                          backgroundColor: AppColorTheme().primary.withValues(alpha: 0.2),
-                                          child: SvgPicture.asset(AppIcons.navigationIconGreen),
+                                          backgroundColor: AppColorTheme()
+                                              .primary
+                                              .withValues(alpha: 0.2),
+                                          child: SvgPicture.asset(
+                                            AppIcons.navigationIconGreen,
+                                          ),
                                         ),
                                         title: Text(
                                           item.title,
                                           maxLines: 1,
-                                          style: AppTextTheme().bodyText.copyWith(color: Colors.black, fontSize: 16),
+                                          style: AppTextTheme().bodyText
+                                              .copyWith(
+                                                color: Colors.black,
+                                                fontSize: 16,
+                                              ),
                                         ),
                                         subtitle: Text(
                                           item.place?.address.addressText ?? '',
                                           maxLines: 2,
-                                          style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
+                                          style: AppTextTheme().lightText
+                                              .copyWith(
+                                                color:
+                                                    AppColorTheme().secondary,
+                                              ),
                                         ),
                                       );
                               },
                               separatorBuilder: (context, index) => Divider(),
-                              itemCount: state.destinationSuggestions?.data?.length ?? 0,
+                              itemCount:
+                                  state.destinationSuggestions?.data?.length ??
+                                  0,
                               shrinkWrap: true,
                               physics: NeverScrollableScrollPhysics(),
                             )
@@ -668,7 +927,9 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                   ),
                 ],
 
-                if (searchFieldFocusNode.hasFocus && searchTextEditController.text.isNotEmpty && place != null) ...[
+                if (searchFieldFocusNode.hasFocus &&
+                    searchTextEditController.text.isNotEmpty &&
+                    place != null) ...[
                   15.h,
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -680,7 +941,10 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                         image: DecorationImage(image: AssetImage(place!.icon)),
                       ),
                     ),
-                    title: Text(place!.title, style: AppTextTheme().headingText.copyWith(fontSize: 20)),
+                    title: Text(
+                      place!.title,
+                      style: AppTextTheme().headingText.copyWith(fontSize: 20),
+                    ),
                     subtitle: Row(
                       spacing: 3,
                       children: [
@@ -690,10 +954,17 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                         //       SvgPicture.asset(AppIcons.ratingIcon),
                         // ),
                         CustomRatingIndicator(rating: 5.0),
-                        Text(place!.rating.toString(), style: AppTextTheme().lightText.copyWith(color: Color(0xffFF8800))),
+                        Text(
+                          place!.rating.toString(),
+                          style: AppTextTheme().lightText.copyWith(
+                            color: Color(0xffFF8800),
+                          ),
+                        ),
                         Text(
                           "(${place!.reviewCount})  • ${place!.storeType} • ${place!.distance} mi",
-                          style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
+                          style: AppTextTheme().lightText.copyWith(
+                            color: AppColorTheme().secondary,
+                          ),
                         ),
                       ],
                     ),
@@ -707,15 +978,27 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                           alignment: Alignment.center,
                           height: 48,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.horizontal(left: Radius.circular(50), right: Radius.circular(50)),
+                            borderRadius: BorderRadius.horizontal(
+                              left: Radius.circular(50),
+                              right: Radius.circular(50),
+                            ),
                             border: Border.all(color: Color(0xffEBEEF2)),
                           ),
                           child: Row(
                             spacing: 5,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.bookmark_border_outlined, color: Colors.black, size: 20),
-                              Text("Save", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
+                              Icon(
+                                Icons.bookmark_border_outlined,
+                                color: Colors.black,
+                                size: 20,
+                              ),
+                              Text(
+                                "Save",
+                                style: AppTextTheme().bodyText.copyWith(
+                                  fontSize: 16,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -725,15 +1008,27 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                           alignment: Alignment.center,
                           height: 48,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.horizontal(left: Radius.circular(50), right: Radius.circular(50)),
+                            borderRadius: BorderRadius.horizontal(
+                              left: Radius.circular(50),
+                              right: Radius.circular(50),
+                            ),
                             border: Border.all(color: Color(0xffEBEEF2)),
                           ),
                           child: Row(
                             spacing: 5,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.phone_outlined, color: Colors.black, size: 20),
-                              Text("Save", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
+                              Icon(
+                                Icons.phone_outlined,
+                                color: Colors.black,
+                                size: 20,
+                              ),
+                              Text(
+                                "Save",
+                                style: AppTextTheme().bodyText.copyWith(
+                                  fontSize: 16,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -744,9 +1039,15 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                   DashedLine(),
                   20.h,
                   ListTile(
-                    leading: Icon(Icons.location_on_outlined, color: Colors.black),
+                    leading: Icon(
+                      Icons.location_on_outlined,
+                      color: Colors.black,
+                    ),
                     horizontalTitleGap: 5,
-                    title: Text(place!.address, style: AppTextTheme().lightText.copyWith(fontSize: 16)),
+                    title: Text(
+                      place!.address,
+                      style: AppTextTheme().lightText.copyWith(fontSize: 16),
+                    ),
                   ),
                   ListTile(
                     leading: Icon(Icons.schedule, color: Colors.black),
@@ -755,17 +1056,28 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                       TextSpan(
                         children: [
                           TextSpan(
-                            text: place!.shopStatus == "Open" ? "Opened" : "Closed",
+                            text: place!.shopStatus == "Open"
+                                ? "Opened"
+                                : "Closed",
                             style: AppTextTheme().lightText.copyWith(
                               fontSize: 16,
-                              color: place!.shopStatus == "Open" ? AppColorTheme().primary : Colors.red,
+                              color: place!.shopStatus == "Open"
+                                  ? AppColorTheme().primary
+                                  : Colors.red,
                             ),
                           ),
                           TextSpan(
                             text: "  •  ", // example extra text
-                            style: AppTextTheme().lightText.copyWith(fontSize: 16, color: AppColorTheme().secondary),
+                            style: AppTextTheme().lightText.copyWith(
+                              fontSize: 16,
+                              color: AppColorTheme().secondary,
+                            ),
                           ),
-                          TextSpan(text: place!.shopStatus != "Open" ? "Opens at ${place!.time}" : "Closes at ${place!.time}"),
+                          TextSpan(
+                            text: place!.shopStatus != "Open"
+                                ? "Opens at ${place!.time}"
+                                : "Closes at ${place!.time}",
+                          ),
                         ],
                       ),
                     ),
@@ -773,12 +1085,18 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                   ListTile(
                     leading: Icon(Icons.phone_outlined, color: Colors.black),
                     horizontalTitleGap: 5,
-                    title: Text("(406) 555-0120 ", style: AppTextTheme().lightText.copyWith(fontSize: 16)),
+                    title: Text(
+                      "(406) 555-0120 ",
+                      style: AppTextTheme().lightText.copyWith(fontSize: 16),
+                    ),
                   ),
                   ListTile(
                     leading: Icon(Icons.language, color: Colors.black),
                     horizontalTitleGap: 5,
-                    title: Text("https://www.elizabeth-restaurant.com", style: AppTextTheme().lightText.copyWith(fontSize: 16)),
+                    title: Text(
+                      "https://www.elizabeth-restaurant.com",
+                      style: AppTextTheme().lightText.copyWith(fontSize: 16),
+                    ),
                   ),
                   10.h,
                   DashedLine(),
@@ -790,7 +1108,11 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                       return Chip(
                         padding: EdgeInsets.zero,
                         labelPadding: const EdgeInsets.only(right: 8),
-                        avatar: Icon(Icons.check_circle_outline, color: Colors.green, size: 24),
+                        avatar: Icon(
+                          Icons.check_circle_outline,
+                          color: Colors.green,
+                          size: 24,
+                        ),
                         label: Text(e, style: TextStyle(fontSize: 14)),
                         backgroundColor: const Color(0xffF4F6F8),
                         shape: RoundedRectangleBorder(
@@ -806,14 +1128,28 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Q&As", style: AppTextTheme().headingText.copyWith(fontSize: 16)),
+                      Text(
+                        "Q&As",
+                        style: AppTextTheme().headingText.copyWith(
+                          fontSize: 16,
+                        ),
+                      ),
                       TextButton(
                         style: ButtonStyle(
                           padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                          visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
+                          visualDensity: VisualDensity(
+                            horizontal: -4.0,
+                            vertical: -4.0,
+                          ),
                         ),
                         onPressed: () {},
-                        child: Text("More", style: AppTextTheme().headingText.copyWith(fontSize: 16, color: AppColorTheme().primary)),
+                        child: Text(
+                          "More",
+                          style: AppTextTheme().headingText.copyWith(
+                            fontSize: 16,
+                            color: AppColorTheme().primary,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -822,7 +1158,10 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
                     itemBuilder: (context, index) => Container(
-                      padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 10,
+                      ),
                       height: 132,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
@@ -837,15 +1176,27 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text("Does Walmart allow overnight truck parking?", style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
+                                Text(
+                                  "Does Walmart allow overnight truck parking?",
+                                  style: AppTextTheme().bodyText.copyWith(
+                                    fontSize: 16,
+                                  ),
+                                ),
                                 Text(
                                   "Some locations do, but always check with the store first.",
-                                  style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
+                                  style: AppTextTheme().lightText.copyWith(
+                                    color: AppColorTheme().secondary,
+                                  ),
                                 ),
                                 Row(
                                   spacing: 8,
                                   children: [
-                                    Text("View 7 replies", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().primary)),
+                                    Text(
+                                      "View 7 replies",
+                                      style: AppTextTheme().bodyText.copyWith(
+                                        color: AppColorTheme().primary,
+                                      ),
+                                    ),
                                     Icon(Icons.arrow_forward_ios, size: 15),
                                   ],
                                 ),
@@ -871,7 +1222,10 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                       Expanded(
                         child: CustomTextfieldWidget(
                           hintText: "Ask the question...",
-                          suffixIcon: CircleAvatar(backgroundColor: AppColorTheme().primary, child: Icon(Icons.arrow_upward, size: 18)),
+                          suffixIcon: CircleAvatar(
+                            backgroundColor: AppColorTheme().primary,
+                            child: Icon(Icons.arrow_upward, size: 18),
+                          ),
                         ),
                       ),
                     ],
@@ -879,12 +1233,19 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                   20.h,
                   DashedLine(),
                   20.h,
-                  Text("How was your experience here?", style: AppTextTheme().bodyText.copyWith(fontSize: 16, fontWeight: AppFontWeight.semiBold)),
+                  Text(
+                    "How was your experience here?",
+                    style: AppTextTheme().bodyText.copyWith(
+                      fontSize: 16,
+                      fontWeight: AppFontWeight.semiBold,
+                    ),
+                  ),
                   20.h,
                   RatingBar.builder(
                     itemPadding: EdgeInsets.all(3),
                     unratedColor: Color(0xffEBEEF2),
-                    itemBuilder: (context, index) => SvgPicture.asset(AppIcons.ratingIcon),
+                    itemBuilder: (context, index) =>
+                        SvgPicture.asset(AppIcons.ratingIcon),
                     onRatingUpdate: (rating) {},
                   ),
                 ],
@@ -898,7 +1259,8 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
       MapView(),
       BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
         buildWhen: (p, c) => p.maneuverProgress != c.maneuverProgress,
-        builder: (context, state) => (state.currentRoute == null || state.maneuverProgress == null)
+        builder: (context, state) =>
+            (state.currentRoute == null || state.maneuverProgress == null)
             ? SizedBox()
             : Positioned(
                 top: 20,
@@ -909,14 +1271,21 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white, // background
-                    borderRadius: BorderRadius.circular(20), // border-radius: 20px
+                    borderRadius: BorderRadius.circular(
+                      20,
+                    ), // border-radius: 20px
                     border: Border.all(
                       color: const Color(0xFFEBEEF2), // #EBEEF2
                       width: 1,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color.fromRGBO(136, 139, 161, 0.18), // rgba(136,139,161,0.18)
+                        color: const Color.fromRGBO(
+                          136,
+                          139,
+                          161,
+                          0.18,
+                        ), // rgba(136,139,161,0.18)
                         offset: const Offset(4, 4), // x:4px, y:4px
                         blurRadius: 24, // blur
                         spreadRadius: -4, // -4px spread
@@ -932,23 +1301,39 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                           CircleAvatar(
                             radius: 20,
                             backgroundColor: AppColorTheme().primary,
-                            child: Icon(state.currentRoute?.maneuverInstructionIcon(state.maneuverProgress?.maneuverIndex)),
+                            child: Icon(
+                              state.currentRoute?.maneuverInstructionIcon(
+                                state.maneuverProgress?.maneuverIndex,
+                              ),
+                            ),
                           ),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  state.currentRoute?.formattedManeuverInstructionWithRemainingDistance(
-                                        state.maneuverProgress?.maneuverIndex,
-                                        state.maneuverProgress?.remainingDistanceInMeters.toDouble(),
-                                      ) ??
+                                  state.currentRoute
+                                          ?.formattedManeuverInstructionWithRemainingDistance(
+                                            state
+                                                .maneuverProgress
+                                                ?.maneuverIndex,
+                                            state
+                                                .maneuverProgress
+                                                ?.remainingDistanceInMeters
+                                                .toDouble(),
+                                          ) ??
                                       '',
-                                  style: AppTextTheme().subHeadingText2.copyWith(fontSize: 16),
+                                  style: AppTextTheme().subHeadingText2
+                                      .copyWith(fontSize: 16),
                                 ),
                                 Text(
-                                  state.currentRoute?.maneuverNextAddress(state.maneuverProgress?.maneuverIndex) ?? '',
-                                  style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
+                                  state.currentRoute?.maneuverNextAddress(
+                                        state.maneuverProgress?.maneuverIndex,
+                                      ) ??
+                                      '',
+                                  style: AppTextTheme().lightText.copyWith(
+                                    color: AppColorTheme().secondary,
+                                  ),
                                 ),
                               ],
                             ),
@@ -956,17 +1341,30 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                           CircleAvatar(
                             radius: 20,
                             backgroundColor: AppColorTheme().whiteShade,
-                            child: Icon(Icons.volume_off_outlined, color: Colors.black),
+                            child: Icon(
+                              Icons.volume_off_outlined,
+                              color: Colors.black,
+                            ),
                           ),
                         ],
                       ),
                       DashedLine(),
                       Expanded(
                         child: Container(
-                          decoration: BoxDecoration(color: AppColorTheme().whiteShade, borderRadius: BorderRadius.circular(12)),
+                          decoration: BoxDecoration(
+                            color: AppColorTheme().whiteShade,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           child: Row(
                             children: List.generate(4, (index) {
-                              return Expanded(child: Icon(_setDirectionIcon(index), color: AppColorTheme().secondary, size: 30, weight: 1.5));
+                              return Expanded(
+                                child: Icon(
+                                  _setDirectionIcon(index),
+                                  color: AppColorTheme().secondary,
+                                  size: 30,
+                                  weight: 1.5,
+                                ),
+                              );
                             }),
                           ),
                         ),
@@ -995,7 +1393,12 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color.fromRGBO(136, 139, 161, 0.18), // rgba(136,139,161,0.18)
+                    color: const Color.fromRGBO(
+                      136,
+                      139,
+                      161,
+                      0.18,
+                    ), // rgba(136,139,161,0.18)
                     offset: const Offset(4, 4), // x:4px, y:4px
                     blurRadius: 24, // blur
                     spreadRadius: -4, // -4px spread
@@ -1013,7 +1416,12 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: Colors.black, width: 2),
                       ),
-                      child: Text("50", style: AppTextTheme().subHeadingText.copyWith(fontSize: 28)),
+                      child: Text(
+                        "50",
+                        style: AppTextTheme().subHeadingText.copyWith(
+                          fontSize: 28,
+                        ),
+                      ),
                     ),
                   ),
                   Expanded(
@@ -1026,7 +1434,12 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text("5", style: AppTextTheme().subHeadingText.copyWith(fontSize: 28)),
+                          Text(
+                            "5",
+                            style: AppTextTheme().subHeadingText.copyWith(
+                              fontSize: 28,
+                            ),
+                          ),
                           Text("mph"),
                         ],
                       ),
@@ -1070,7 +1483,11 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                 child: CircleAvatar(
                   radius: 25,
                   backgroundColor: AppColorTheme().whiteShade,
-                  child: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 18),
+                  child: const Icon(
+                    Icons.arrow_back_ios,
+                    color: Colors.black,
+                    size: 18,
+                  ),
                 ),
               ),
               Column(
@@ -1085,11 +1502,21 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                           //  "2h 11m",
                           style: TextStyle(color: AppColorTheme().primary),
                         ),
-                        TextSpan(text: state.currentRoute?.formattedSummary(context) ?? '', style: AppTextTheme().bodyText.copyWith(fontSize: 16)),
+                        TextSpan(
+                          text:
+                              state.currentRoute?.formattedSummary(context) ??
+                              '',
+                          style: AppTextTheme().bodyText.copyWith(fontSize: 16),
+                        ),
                       ],
                     ),
                   ),
-                  Text(state.currentRoute?.getRouteName ?? '', style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
+                  Text(
+                    state.currentRoute?.getRouteName ?? '',
+                    style: AppTextTheme().lightText.copyWith(
+                      color: AppColorTheme().secondary,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -1105,7 +1532,10 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
                 child: Text(
                   'My Current Location',
                   // "Times Square, New York, NY, USA",
-                  style: AppTextTheme().bodyText.copyWith(fontWeight: AppFontWeight.semiBold, fontSize: 16),
+                  style: AppTextTheme().bodyText.copyWith(
+                    fontWeight: AppFontWeight.semiBold,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ],
@@ -1119,10 +1549,14 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
               Icon(Icons.location_on),
               Expanded(
                 child: Text(
-                  state.selectedSuggestion?.place?.address.addressText ?? searchTextEditController.text,
+                  state.selectedSuggestion?.place?.address.addressText ??
+                      searchTextEditController.text,
                   // searchTextEditController.text,
                   // "Times Square, New York, NY, USA",
-                  style: AppTextTheme().bodyText.copyWith(fontWeight: AppFontWeight.semiBold, fontSize: 16),
+                  style: AppTextTheme().bodyText.copyWith(
+                    fontWeight: AppFontWeight.semiBold,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ],
@@ -1152,11 +1586,23 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
               height: 69,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(6),
-                border: isSelect ? Border.all(color: AppColorTheme().primary) : null,
-                image: DecorationImage(image: AssetImage(icon), fit: BoxFit.cover),
+                border: isSelect
+                    ? Border.all(color: AppColorTheme().primary)
+                    : null,
+                image: DecorationImage(
+                  image: AssetImage(icon),
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-            Text(label, style: AppTextTheme().bodyText.copyWith(color: isSelect ? AppColorTheme().primary : AppColorTheme().secondary)),
+            Text(
+              label,
+              style: AppTextTheme().bodyText.copyWith(
+                color: isSelect
+                    ? AppColorTheme().primary
+                    : AppColorTheme().secondary,
+              ),
+            ),
           ],
         ),
       ),
@@ -1166,7 +1612,11 @@ class _HomeMobileViewState extends State<HomeMobileView> with SingleTickerProvid
 
 class PlaceDisplayWidget extends StatelessWidget {
   final bool? isSaved;
-  const PlaceDisplayWidget({super.key, required this.place, this.isSaved = false});
+  const PlaceDisplayWidget({
+    super.key,
+    required this.place,
+    this.isSaved = false,
+  });
 
   final PlaceDataModel place;
 
@@ -1179,7 +1629,10 @@ class PlaceDisplayWidget extends StatelessWidget {
         CircleAvatar(
           radius: 25,
           backgroundColor: Color(0xffF4F6F8),
-          child: CircleAvatar(radius: 13, backgroundImage: AssetImage(place.icon)),
+          child: CircleAvatar(
+            radius: 13,
+            backgroundImage: AssetImage(place.icon),
+          ),
         ),
         Expanded(
           child: Column(
@@ -1188,18 +1641,31 @@ class PlaceDisplayWidget extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text(place.title, style: AppTextTheme().headingText.copyWith(fontSize: 16))),
+                  Expanded(
+                    child: Text(
+                      place.title,
+                      style: AppTextTheme().headingText.copyWith(fontSize: 16),
+                    ),
+                  ),
                   Container(
                     width: 28,
                     height: 28,
                     // padding: EdgeInsets.all(5),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      border: Border.all(color: Color(0xFFEBEEF2), width: 1), // rgba(235, 238, 242, 1)
+                      border: Border.all(
+                        color: Color(0xFFEBEEF2),
+                        width: 1,
+                      ), // rgba(235, 238, 242, 1)
                       borderRadius: BorderRadius.circular(8), // Optional
                       boxShadow: [
                         BoxShadow(
-                          color: Color.fromRGBO(0, 0, 0, 0.04), // rgba(0, 0, 0, 0.04)
+                          color: Color.fromRGBO(
+                            0,
+                            0,
+                            0,
+                            0.04,
+                          ), // rgba(0, 0, 0, 0.04)
                           blurRadius: 6, // Spread of the blur
                           offset: Offset(0, 2), // X=0, Y=2
                         ),
@@ -1218,21 +1684,45 @@ class PlaceDisplayWidget extends StatelessWidget {
                 children: [
                   // Icon(Icons.star, color: Color(0xffFF8800), size: 15,),
                   SvgPicture.asset(AppIcons.ratingIcon),
-                  Text(place.rating.toString(), style: AppTextTheme().bodyText.copyWith(color: Color(0xffFF8800))),
-                  Text("(${place.reviewCount})", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
-                  Text("  • ${place.storeType} • ${place.distance} mi", style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary)),
+                  Text(
+                    place.rating.toString(),
+                    style: AppTextTheme().bodyText.copyWith(
+                      color: Color(0xffFF8800),
+                    ),
+                  ),
+                  Text(
+                    "(${place.reviewCount})",
+                    style: AppTextTheme().bodyText.copyWith(
+                      color: AppColorTheme().secondary,
+                    ),
+                  ),
+                  Text(
+                    "  • ${place.storeType} • ${place.distance} mi",
+                    style: AppTextTheme().bodyText.copyWith(
+                      color: AppColorTheme().secondary,
+                    ),
+                  ),
                 ],
               ),
-              Text(place.address == 'null' ? '' : place.address, style: AppTextTheme().bodyText),
+              Text(
+                place.address == 'null' ? '' : place.address,
+                style: AppTextTheme().bodyText,
+              ),
               Row(
                 children: [
                   Text(
                     place.shopStatus == "Open" ? "Opened" : "Closed",
-                    style: AppTextTheme().bodyText.copyWith(color: place.shopStatus == "Open" ? AppColorTheme().primary : Colors.redAccent),
+                    style: AppTextTheme().bodyText.copyWith(
+                      color: place.shopStatus == "Open"
+                          ? AppColorTheme().primary
+                          : Colors.redAccent,
+                    ),
                   ),
                   Text(
                     "  • ${place.shopStatus == "Open" ? "Closes" : "Opens"} at ${place.time} ",
-                    style: AppTextTheme().bodyText.copyWith(color: AppColorTheme().secondary),
+                    style: AppTextTheme().bodyText.copyWith(
+                      color: AppColorTheme().secondary,
+                    ),
                   ),
                 ],
               ),

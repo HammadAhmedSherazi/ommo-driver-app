@@ -4,7 +4,7 @@ import 'package:here_sdk/mapview.dart';
 import 'package:here_sdk/navigation.dart';
 import 'package:here_sdk/routing.dart';
 import 'package:here_sdk/search.dart';
-import 'package:ommo/home/view/truck_navigation/cubit/get_data.dart';
+import 'package:ommo/data/response/get_data.dart';
 
 class TruckNavigationState extends Equatable {
   final HereMapController? mapController;

@@ -24,7 +24,10 @@ typedef ShowDialogFunction = void Function(String title, String message);
 /// navigation and listen for speed limit and restriction updates.
 class TruckGuidanceExample {
   static final String tag = 'TruckGuidanceExample';
-  static final GeoCoordinates myStartCoordinadtes = GeoCoordinates(40.712778, -74.006111);
+  static final GeoCoordinates myStartCoordinadtes = GeoCoordinates(
+    40.712778,
+    -74.006111,
+  );
   // static final GeoCoordinates myStartCoordinadtes = GeoCoordinates(40.8530408,-73.8377071);
   UICallback? uiCallback;
   List<MapMarker> mapMarkers = [];
@@ -51,14 +54,22 @@ class TruckGuidanceExample {
   final HereMapController _hereMapController;
   final ShowDialogFunction _showDialog;
 
-  TruckGuidanceExample(ShowDialogFunction showDialogCallback, HereMapController hereMapController)
-    : _showDialog = showDialogCallback,
+  TruckGuidanceExample(
+    ShowDialogFunction showDialogCallback,
+    HereMapController hereMapController,
+  ) : _showDialog = showDialogCallback,
       _hereMapController = hereMapController {
     MapCamera camera = _hereMapController.camera;
     // Center map in Berlin.
     double distanceToEarthInMeters = 1000 * 90;
-    MapMeasure mapMeasureZoom = MapMeasure(MapMeasureKind.distanceInMeters, distanceToEarthInMeters);
-    camera.lookAtPointWithMeasure(startGeoCoordinates ?? TruckGuidanceExample.myStartCoordinadtes, mapMeasureZoom);
+    MapMeasure mapMeasureZoom = MapMeasure(
+      MapMeasureKind.distanceInMeters,
+      distanceToEarthInMeters,
+    );
+    camera.lookAtPointWithMeasure(
+      startGeoCoordinates ?? TruckGuidanceExample.myStartCoordinadtes,
+      mapMeasureZoom,
+    );
 
     try {
       // We use the search engine to find places along a route.
@@ -111,7 +122,10 @@ class TruckGuidanceExample {
     // _destinationMapMarker = _addPOIMapMarker(destinationGeoCoordinates ?? TruckGuidanceExample.myStartCoordinadtes, AppIcons.pinLocIcon);
 
     _setLongPressGestureHandler(_hereMapController);
-    _showDialog("Note", "Do a long press to change start and destination coordinates. Map icons are pickable.");
+    _showDialog(
+      "Note",
+      "Do a long press to change start and destination coordinates. Map icons are pickable.",
+    );
     // Initialize HERE SDK components, map view gestures, etc.
     // For now, this is a stub.
   }
@@ -142,7 +156,8 @@ class TruckGuidanceExample {
     vehicleProfile.truckType = MyTruckSpecs.truckType;
     vehicleProfile.trailerCount = MyTruckSpecs.trailerCount;
     vehicleProfile.axleCount = MyTruckSpecs.axleCount;
-    vehicleProfile.weightPerAxleInKilograms = MyTruckSpecs.weightPerAxleInKilograms;
+    vehicleProfile.weightPerAxleInKilograms =
+        MyTruckSpecs.weightPerAxleInKilograms;
     return vehicleProfile;
   }
 
@@ -152,12 +167,14 @@ class TruckGuidanceExample {
     // When weight is not set, possible weight restrictions will not be taken into consideration
     // for route calculation. By default, weight is not set.
     // Specify the weight including trailers and shipped goods (if any).
-    truckSpecifications.grossWeightInKilograms = MyTruckSpecs.grossWeightInKilograms;
+    truckSpecifications.grossWeightInKilograms =
+        MyTruckSpecs.grossWeightInKilograms;
     truckSpecifications.heightInCentimeters = MyTruckSpecs.heightInCentimeters;
     truckSpecifications.widthInCentimeters = MyTruckSpecs.widthInCentimeters;
     // The total length including all trailers (if any).
     truckSpecifications.lengthInCentimeters = MyTruckSpecs.lengthInCentimeters;
-    truckSpecifications.weightPerAxleInKilograms = MyTruckSpecs.weightPerAxleInKilograms;
+    truckSpecifications.weightPerAxleInKilograms =
+        MyTruckSpecs.weightPerAxleInKilograms;
     truckSpecifications.axleCount = MyTruckSpecs.axleCount;
     truckSpecifications.trailerCount = MyTruckSpecs.trailerCount;
     truckSpecifications.truckType = MyTruckSpecs.truckType;
@@ -215,14 +232,18 @@ class TruckGuidanceExample {
       final pickedMapContent = mapPickResult.mapContent;
       final cartoPOIList = pickedMapContent?.pickedPlaces;
       final trafficPOIList = pickedMapContent?.trafficIncidents;
-      final vehicleRestrictionResultList = pickedMapContent?.vehicleRestrictions;
+      final vehicleRestrictionResultList =
+          pickedMapContent?.vehicleRestrictions;
 
       // Note that pick here only the top most icon and ignore others that may be underneath.
       if (cartoPOIList!.isNotEmpty) {
         final pickedPlace = cartoPOIList.first;
 
         // Optionally, you can now use the SearchEngine or the OfflineSearchEngine to retrieve more details.
-        _searchEngine?.searchByPickedPlace(pickedPlace, LanguageCode.enUs, (searchError, place) {
+        _searchEngine?.searchByPickedPlace(pickedPlace, LanguageCode.enUs, (
+          searchError,
+          place,
+        ) {
           if (searchError == null && place != null) {
             final address = place.address.addressText;
             String categories = "";
@@ -240,7 +261,10 @@ class TruckGuidanceExample {
       // Handle traffic incidents.
       if (trafficPOIList!.isNotEmpty) {
         final topmostContent = trafficPOIList.first;
-        _showDialog("Traffic incident picked", "Type: ${topmostContent.type.name}");
+        _showDialog(
+          "Traffic incident picked",
+          "Type: ${topmostContent.type.name}",
+        );
         // Optionally, use the TrafficEngine to retrieve more details.
       }
 
@@ -248,15 +272,21 @@ class TruckGuidanceExample {
       if (vehicleRestrictionResultList!.isNotEmpty) {
         final topmostContent = vehicleRestrictionResultList.first;
         // Note that the text property may be empty for general truck restrictions.
-        _showDialog("Vehicle restriction picked:", "Location: ${topmostContent.coordinates.latitude}, ${topmostContent.coordinates.longitude}.");
+        _showDialog(
+          "Vehicle restriction picked:",
+          "Location: ${topmostContent.coordinates.latitude}, ${topmostContent.coordinates.longitude}.",
+        );
       }
     });
   }
 
   void _setupListeners() {
     // Notifies on the current map-matched location and other useful information while driving.
-    _visualNavigator?.navigableLocationListener = NavigableLocationListener((NavigableLocation currentNavigableLocation) {
-      final drivingSpeed = currentNavigableLocation.originalLocation.speedInMetersPerSecond;
+    _visualNavigator?.navigableLocationListener = NavigableLocationListener((
+      NavigableLocation currentNavigableLocation,
+    ) {
+      final drivingSpeed =
+          currentNavigableLocation.originalLocation.speedInMetersPerSecond;
       // Note that we ignore speedAccuracyInMetersPerSecond here for simplicity.
       if (drivingSpeed == null) {
         uiCallback!.onDrivingSpeed("n/a");
@@ -272,13 +302,16 @@ class TruckGuidanceExample {
       // For simplicity, we use here the effective legal speed limit. More differentiated speed values,
       // for example, due to weather conditions or school zones are also available.
       // See our Developer's Guide for more details.
-      final currentSpeedLimit = speedLimit.effectiveSpeedLimitInMetersPerSecond();
+      final currentSpeedLimit = speedLimit
+          .effectiveSpeedLimitInMetersPerSecond();
       if (currentSpeedLimit == null) {
         uiCallback!.onTruckSpeedLimit("n/a");
       } else if (currentSpeedLimit == 0) {
         uiCallback!.onTruckSpeedLimit("NSL");
       } else {
-        final kmh = metersPerSecondToKilometersPerHour(currentSpeedLimit).toInt();
+        final kmh = metersPerSecondToKilometersPerHour(
+          currentSpeedLimit,
+        ).toInt();
         uiCallback!.onTruckSpeedLimit("$kmh");
       }
     });
@@ -287,13 +320,16 @@ class TruckGuidanceExample {
     // Note that this navigator instance is running in tracking mode without following a route.
     // It receives the same location updates as the visual navigator.
     _navigator?.speedLimitListener = SpeedLimitListener((speedLimit) {
-      final currentSpeedLimit = speedLimit.effectiveSpeedLimitInMetersPerSecond();
+      final currentSpeedLimit = speedLimit
+          .effectiveSpeedLimitInMetersPerSecond();
       if (currentSpeedLimit == null) {
         uiCallback!.onCarSpeedLimit("n/a");
       } else if (currentSpeedLimit == 0) {
         uiCallback!.onCarSpeedLimit("NSL");
       } else {
-        final kmh = metersPerSecondToKilometersPerHour(currentSpeedLimit).toInt();
+        final kmh = metersPerSecondToKilometersPerHour(
+          currentSpeedLimit,
+        ).toInt();
         uiCallback!.onCarSpeedLimit("$kmh");
       }
     });
@@ -304,10 +340,14 @@ class TruckGuidanceExample {
     // This event notifies on truck restrictions in general,
     // so it will also deliver events, when the transport type was set to a non-truck transport type.
     // The given restrictions are based on the HERE database of the road network ahead.
-    _visualNavigator?.truckRestrictionsWarningListener = TruckRestrictionsWarningListener((List<TruckRestrictionWarning> list) {
+    _visualNavigator
+        ?.truckRestrictionsWarningListener = TruckRestrictionsWarningListener((
+      List<TruckRestrictionWarning> list,
+    ) {
       // The list is guaranteed to be non-empty.
       for (final truckRestrictionWarning in list) {
-        if (truckRestrictionWarning.timeRule != null && !truckRestrictionWarning.timeRule!.appliesTo(DateTime.now())) {
+        if (truckRestrictionWarning.timeRule != null &&
+            !truckRestrictionWarning.timeRule!.appliesTo(DateTime.now())) {
           // For example, during a specific time period of a day, some truck restriction warnings do not apply.
           // If truckRestrictionWarning.timeRule is null, the warning applies at anytime.
           // Note: For this example, we do not skip any restriction.
@@ -320,7 +360,8 @@ class TruckGuidanceExample {
         if (truckRestrictionWarning.trailerCount != null) {
           final min = truckRestrictionWarning.trailerCount!.min;
           final max = truckRestrictionWarning.trailerCount!.max; // may be null.
-          if (min > MyTruckSpecs.trailerCount || (max != null && max < MyTruckSpecs.trailerCount)) {
+          if (min > MyTruckSpecs.trailerCount ||
+              (max != null && max < MyTruckSpecs.trailerCount)) {
             // The restriction is not valid for this truck.
             // (For this example, we do not skip any restriction.)
           }
@@ -336,9 +377,15 @@ class TruckGuidanceExample {
         // One of the following restrictions applies, if more restrictions apply at the same time,
         // they are part of another TruckRestrictionWarning element contained in the list.
         if (truckRestrictionWarning.weightRestriction != null) {
-          _handleWeightTruckWarning(truckRestrictionWarning.weightRestriction!, distanceType);
+          _handleWeightTruckWarning(
+            truckRestrictionWarning.weightRestriction!,
+            distanceType,
+          );
         } else if (truckRestrictionWarning.dimensionRestriction != null) {
-          _handleDimensionTruckWarning(truckRestrictionWarning.dimensionRestriction!, distanceType);
+          _handleDimensionTruckWarning(
+            truckRestrictionWarning.dimensionRestriction!,
+            distanceType,
+          );
         } else {
           _handleTruckRestrictions("No Trucks.", distanceType);
         }
@@ -346,7 +393,10 @@ class TruckGuidanceExample {
     });
 
     // Notifies on environmental zone warnings.
-    _visualNavigator?.environmentalZoneWarningListener = EnvironmentalZoneWarningListener((List<EnvironmentalZoneWarning> list) {
+    _visualNavigator
+        ?.environmentalZoneWarningListener = EnvironmentalZoneWarningListener((
+      List<EnvironmentalZoneWarning> list,
+    ) {
       // The list is guaranteed to be non-empty.
       for (final environmentalZoneWarning in list) {
         final distanceType = environmentalZoneWarning.distanceType;
@@ -365,7 +415,10 @@ class TruckGuidanceExample {
     // For more warners and events during guidance, please check the Navigation example app, available on GitHub.
   }
 
-  void _handleWeightTruckWarning(WeightRestriction weightRestriction, DistanceType distanceType) {
+  void _handleWeightTruckWarning(
+    WeightRestriction weightRestriction,
+    DistanceType distanceType,
+  ) {
     WeightRestrictionType type = weightRestriction.type;
     int value = weightRestriction.valueInKilograms;
 
@@ -381,7 +434,10 @@ class TruckGuidanceExample {
     _handleTruckRestrictions(description, distanceType);
   }
 
-  void _handleDimensionTruckWarning(DimensionRestriction dimensionRestriction, DistanceType distanceType) {
+  void _handleDimensionTruckWarning(
+    DimensionRestriction dimensionRestriction,
+    DistanceType distanceType,
+  ) {
     // Can be either a length, width or height restriction for a truck. For example, a height
     // restriction can apply for a tunnel.
     DimensionRestrictionType type = dimensionRestriction.type;
@@ -405,7 +461,10 @@ class TruckGuidanceExample {
   // For this example, we always show only the next restriction ahead.
   // In case there are multiple restrictions ahead,
   // the nearest one will be shown after the current one has passed by.
-  void _handleTruckRestrictions(String newDescription, DistanceType distanceType) {
+  void _handleTruckRestrictions(
+    String newDescription,
+    DistanceType distanceType,
+  ) {
     if (distanceType == DistanceType.passed) {
       if (activeTruckRestrictionWarnings.isNotEmpty) {
         // Remove the oldest entry from the list that equals the description.
@@ -418,7 +477,9 @@ class TruckGuidanceExample {
         return;
       } else {
         // Show the next restriction ahead which will be the first item in the list.
-        uiCallback!.onTruckRestrictionWarning(activeTruckRestrictionWarnings.first);
+        uiCallback!.onTruckRestrictionWarning(
+          activeTruckRestrictionWarnings.first,
+        );
         return;
       }
     }
@@ -466,7 +527,10 @@ class TruckGuidanceExample {
   // Use a LongPress handler to define start / destination waypoints.
   void _setLongPressGestureHandler(HereMapController hereMapController) {
     // Use a long-press listener to define start/destination waypoints.
-    hereMapController.gestures.longPressListener = LongPressListener((GestureState gestureState, Point2D touchPoint) {
+    hereMapController.gestures.longPressListener = LongPressListener((
+      GestureState gestureState,
+      Point2D touchPoint,
+    ) {
       final geoCoordinates = hereMapController.viewToGeoCoordinates(touchPoint);
       if (geoCoordinates == null) {
         _showDialog("Note", "Invalid GeoCoordinates.");
@@ -487,7 +551,10 @@ class TruckGuidanceExample {
     });
   }
 
-  List<Waypoint> _getCurrentWaypoints(GeoCoordinates start, GeoCoordinates end) {
+  List<Waypoint> _getCurrentWaypoints(
+    GeoCoordinates start,
+    GeoCoordinates end,
+  ) {
     final startWaypoint = Waypoint(start);
     final destinationWaypoint = Waypoint(end);
     final waypoints = [startWaypoint, destinationWaypoint];
@@ -495,17 +562,29 @@ class TruckGuidanceExample {
     return waypoints;
   }
 
-  void onShowRouteButtonClicked(GeoCoordinates start, GeoCoordinates end, void Function(List<Route>?) onGetAllRoute) {
-    _routingEngine?.calculateTruckRoute(_getCurrentWaypoints(start, end), _createTruckOptions(), (routingError, routes) {
-      onGetAllRoute(routes);
-      _handleTruckRouteResults(routingError, routes!);
-    });
+  void onShowRouteButtonClicked(
+    GeoCoordinates start,
+    GeoCoordinates end,
+    void Function(List<Route>?) onGetAllRoute,
+  ) {
+    _routingEngine?.calculateTruckRoute(
+      _getCurrentWaypoints(start, end),
+      _createTruckOptions(),
+      (routingError, routes) {
+        onGetAllRoute(routes);
+        _handleTruckRouteResults(routingError, routes!);
+      },
+    );
   }
 
   void _startRendering() {
     _visualNavigator?.startRendering(_hereMapController);
     _herePositioningSimulator?.setSpeedFactor(_simulationSpeedFactor);
-    _herePositioningSimulator?.startLocating(_visualNavigator!, _navigator!, lastCalculatedTruckRoute!);
+    _herePositioningSimulator?.startLocating(
+      _visualNavigator!,
+      _navigator!,
+      lastCalculatedTruckRoute!,
+    );
   }
 
   void setupAndStartNavigation(Route route) {
@@ -542,18 +621,29 @@ class TruckGuidanceExample {
   void _unTiltUnRotateMap() {
     final bearingInDegrees = 0.0;
     final tiltInDegrees = 0.0;
-    _hereMapController.camera.setOrientationAtTarget(GeoOrientationUpdate(bearingInDegrees, tiltInDegrees));
+    _hereMapController.camera.setOrientationAtTarget(
+      GeoOrientationUpdate(bearingInDegrees, tiltInDegrees),
+    );
   }
 
   void onSpeedButtonClicked() {
     // Toggle simulation speed factor.
     _simulationSpeedFactor = (_simulationSpeedFactor == 1) ? 8 : 1;
-    _showDialog("Note", "Changed simulation speed factor to $_simulationSpeedFactor. Start again to use the new value.");
+    _showDialog(
+      "Note",
+      "Changed simulation speed factor to $_simulationSpeedFactor. Start again to use the new value.",
+    );
   }
 
-  void _handleTruckRouteResults(RoutingError? routingError, List<Route> routes) {
+  void _handleTruckRouteResults(
+    RoutingError? routingError,
+    List<Route> routes,
+  ) {
     if (routingError != null) {
-      _showDialog("Error while calculating a truck route: ", routingError.toString());
+      _showDialog(
+        "Error while calculating a truck route: ",
+        routingError.toString(),
+      );
       return;
     }
 
@@ -581,9 +671,14 @@ class TruckGuidanceExample {
     // Search along the route for truck amenities.
     _searchAlongARoute(lastCalculatedTruckRoute!);
     // Create a truck route color (RGBA). Adjust as needed for your Flutter color class.
-    final truckRouteColor = AppColorTheme().primary; // For example, a shade of blue.
+    final truckRouteColor =
+        AppColorTheme().primary; // For example, a shade of blue.
     const truckRouteWidthInPixels = 30.0;
-    _showRouteOnMap(lastCalculatedTruckRoute!, truckRouteColor, truckRouteWidthInPixels);
+    _showRouteOnMap(
+      lastCalculatedTruckRoute!,
+      truckRouteColor,
+      truckRouteWidthInPixels,
+    );
   }
 
   void onStartStopButtonClicked() {
@@ -656,7 +751,8 @@ class TruckGuidanceExample {
   // A route may contain several warnings, for example, when a certain route option could not be fulfilled.
   // An implementation may decide to reject a route if one or more violations are detected.
   void _logRouteViolations(Route route) {
-    List<Section> sections = route.sections; // Assuming route.sections returns a List<Section>.
+    List<Section> sections =
+        route.sections; // Assuming route.sections returns a List<Section>.
     // int sectionNr = -1;
     for (Section section in sections) {
       // sectionNr++;
@@ -671,7 +767,8 @@ class TruckGuidanceExample {
       // }
       // }
       for (SectionNotice sectionNotice in section.sectionNotices) {
-        for (ViolatedRestriction violatedRestriction in sectionNotice.violatedRestrictions) {
+        for (ViolatedRestriction violatedRestriction
+            in sectionNotice.violatedRestrictions) {
           // String cause = violatedRestriction.cause;
           // bool timeDependent = violatedRestriction.timeDependent;
           var details = violatedRestriction.details;
@@ -725,8 +822,12 @@ class TruckGuidanceExample {
     // For example, while travelling, you can set the current location of the user.
     GeoCoordinates areaCenter = routeVertices.first;
     GeoCorridor routeCorridor = GeoCorridor(routeVertices, halfWidthInMeters);
-    CategoryQueryArea categoryQueryArea = CategoryQueryArea.withCorridorAndCenter(routeCorridor, areaCenter);
-    CategoryQuery categoryQuery = CategoryQuery.withCategoriesInArea(placeCategoryList, categoryQueryArea);
+    CategoryQueryArea categoryQueryArea =
+        CategoryQueryArea.withCorridorAndCenter(routeCorridor, areaCenter);
+    CategoryQuery categoryQuery = CategoryQuery.withCategoriesInArea(
+      placeCategoryList,
+      categoryQueryArea,
+    );
 
     SearchOptions searchOptions = SearchOptions();
     searchOptions.languageCode = LanguageCode.enUs;
@@ -739,7 +840,10 @@ class TruckGuidanceExample {
     // Otherwise, a SearchError.FORBIDDEN will occur.
     _searchEngine?.setCustomOption("show", "truck");
 
-    _searchEngine?.searchByCategory(categoryQuery, searchOptions, (searchError, items) {
+    _searchEngine?.searchByCategory(categoryQuery, searchOptions, (
+      searchError,
+      items,
+    ) {
       if (searchError != null) {
         return;
       }
@@ -751,7 +855,8 @@ class TruckGuidanceExample {
   }
 
   Future<List<Suggestion>?> searchLocation(String text) async {
-    GeoCoordinates centerGeoCoordinates = startGeoCoordinates ?? TruckGuidanceExample.myStartCoordinadtes;
+    GeoCoordinates centerGeoCoordinates =
+        startGeoCoordinates ?? TruckGuidanceExample.myStartCoordinadtes;
 
     SearchOptions searchOptions = SearchOptions();
     searchOptions.languageCode = LanguageCode.enUs;
@@ -761,15 +866,22 @@ class TruckGuidanceExample {
 
     final completer = Completer<List<Suggestion>?>();
 
-    _searchEngine!.suggestByText(TextQuery.withArea(text, queryArea), searchOptions, (SearchError? searchError, List<Suggestion>? list) {
-      final result = _handleSuggestionResults(searchError, list);
-      completer.complete(result);
-    });
+    _searchEngine!.suggestByText(
+      TextQuery.withArea(text, queryArea),
+      searchOptions,
+      (SearchError? searchError, List<Suggestion>? list) {
+        final result = _handleSuggestionResults(searchError, list);
+        completer.complete(result);
+      },
+    );
 
     return await completer.future;
   }
 
-  List<Suggestion>? _handleSuggestionResults(SearchError? searchError, List<Suggestion>? list) {
+  List<Suggestion>? _handleSuggestionResults(
+    SearchError? searchError,
+    List<Suggestion>? list,
+  ) {
     if (searchError != null) {
       return null;
     }
@@ -793,7 +905,14 @@ class TruckGuidanceExample {
     try {
       routeMapPolyline = MapPolyline.withRepresentation(
         routeGeoPolyline,
-        MapPolylineSolidRepresentation(MapMeasureDependentRenderSize.withSingleSize(RenderSizeUnit.pixels, widthInPixels), color, LineCap.round),
+        MapPolylineSolidRepresentation(
+          MapMeasureDependentRenderSize.withSingleSize(
+            RenderSizeUnit.pixels,
+            widthInPixels,
+          ),
+          color,
+          LineCap.round,
+        ),
       );
     } catch (e) {
       throw Exception(e);
@@ -809,19 +928,24 @@ class TruckGuidanceExample {
   // Animates the map camera to show the route with a padding of 50 pixels.
   void _animateToRoute(Route route) {
     Point2D origin = Point2D(50, 50);
-    Size2D sizeInPixels = Size2D(_hereMapController.viewportSize.width - 100, _hereMapController.viewportSize.height - 100);
+    Size2D sizeInPixels = Size2D(
+      _hereMapController.viewportSize.width - 100,
+      _hereMapController.viewportSize.height - 100,
+    );
     Rectangle2D mapViewport = Rectangle2D(origin, sizeInPixels);
 
-    MapCameraUpdate cameraUpdate = MapCameraUpdateFactory.lookAtAreaWithGeoOrientationAndViewRectangle(
-      route.boundingBox,
-      GeoOrientationUpdate(0.0, 0.0),
-      mapViewport,
-    );
-    MapCameraAnimation animation = MapCameraAnimationFactory.createAnimationFromUpdateWithEasing(
-      cameraUpdate,
-      Duration(milliseconds: 2000),
-      Easing(EasingFunction.outInSine),
-    );
+    MapCameraUpdate cameraUpdate =
+        MapCameraUpdateFactory.lookAtAreaWithGeoOrientationAndViewRectangle(
+          route.boundingBox,
+          GeoOrientationUpdate(0.0, 0.0),
+          mapViewport,
+        );
+    MapCameraAnimation animation =
+        MapCameraAnimationFactory.createAnimationFromUpdateWithEasing(
+          cameraUpdate,
+          Duration(milliseconds: 2000),
+          Easing(EasingFunction.outInSine),
+        );
 
     _hereMapController.camera.startAnimation(animation);
   }
@@ -829,7 +953,10 @@ class TruckGuidanceExample {
   // Called when the user clicks the "Clear Map" button.
   void onClearMapButtonClicked() {
     if (_isGuidance) {
-      _showDialog("Note", "Turn-by-turn navigation must be stopped before clearing.");
+      _showDialog(
+        "Note",
+        "Turn-by-turn navigation must be stopped before clearing.",
+      );
       return;
     }
     clearRoute();
@@ -858,7 +985,11 @@ class TruckGuidanceExample {
     int imageHeight = 60;
     // Note that you can reuse the same mapImage instance for other MapMarker instances
     // to save resources.
-    MapImage mapImage = MapImage.withFilePathAndWidthAndHeight(imageName, imageWidth, imageHeight);
+    MapImage mapImage = MapImage.withFilePathAndWidthAndHeight(
+      imageName,
+      imageWidth,
+      imageHeight,
+    );
     MapMarker mapMarker = MapMarker(geoCoordinates, mapImage);
     _hereMapController.mapScene.addMapMarker(mapMarker);
     return mapMarker;
@@ -870,7 +1001,6 @@ class MyTruckSpecs {
   static final int grossWeightInKilograms = 17000; // 17 tons
   static final int heightInCentimeters = 3 * 100; // 3 meters
   static final int widthInCentimeters = 4 * 100; // 4 meters
-  // The total length including all trailers (if any).
   static final int lengthInCentimeters = 8 * 100; // 8 meters
   static const int weightPerAxleInKilograms = 2 * 1000; // 2kilograms
   static final int axleCount = 4;
