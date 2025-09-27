@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:ommo/app/views/app_view.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/home/view/home_mobile_view.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specification_cubit.dart';
-import 'package:ommo/utils/extension/num_extension.dart';
+import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state.dart';
+import 'package:ommo/utils/helpers/validation.dart';
 import 'package:ommo/utils/utils.dart';
 
 class EditTruckSpecificationsView extends StatefulWidget {
@@ -29,32 +31,44 @@ class _EditTruckSpecificationsViewState
   late TextEditingController weightController;
   late TextEditingController weightPerAxleController;
 
+  late ValueNotifier<String?> axleCount;
+
   @override
   void initState() {
     super.initState();
+    context.read<TruckSpecificationsCubit>().initEditState();
+    final initialState = context.read<TruckSpecificationsCubit>().initialState;
 
-    final state = context.read<TruckSpecificationsCubit>().state;
+    lengthFeetController = TextEditingController(
+      text: initialState['lengthInFeet'] ?? '',
+    );
+    lengthInchController = TextEditingController(
+      text: initialState['lengthInInches'] ?? '',
+    );
 
-    final length = state.lengthInCentimeters.cmToFeetInches;
-    final height = state.heightInCentimeters.cmToFeetInches;
-    final width = state.widthInCentimeters.cmToFeetInches;
+    heightFeetController = TextEditingController(
+      text: initialState['heightInFeet'] ?? '',
+    );
+    heightInchController = TextEditingController(
+      text: initialState['heightInInches'] ?? '',
+    );
 
-    lengthFeetController = TextEditingController(text: "${length['feet']}");
-    lengthInchController = TextEditingController(text: "${length['inches']}");
-
-    heightFeetController = TextEditingController(text: "${height['feet']}");
-    heightInchController = TextEditingController(text: "${height['inches']}");
-
-    widthFeetController = TextEditingController(text: "${width['feet']}");
-    widthInchController = TextEditingController(text: "${width['inches']}");
+    widthFeetController = TextEditingController(
+      text: initialState['widthInFeet'] ?? '',
+    );
+    widthInchController = TextEditingController(
+      text: initialState['widthInInches'] ?? '',
+    );
 
     weightController = TextEditingController(
-      text: state.grossWeightInKilograms.kgToLbsFormattedString,
+      text: initialState['weightInLbs'] ?? '',
     );
 
     weightPerAxleController = TextEditingController(
-      text: state.weightPerAxleInKilograms.kgToLbsFormattedString,
+      text: initialState['weightPerAxleInLbs'] ?? '',
     );
+
+    axleCount = ValueNotifier(initialState['axleCount']);
   }
 
   @override
@@ -67,11 +81,15 @@ class _EditTruckSpecificationsViewState
     widthInchController.dispose();
     weightController.dispose();
     weightPerAxleController.dispose();
+    navigatorKey.currentContext
+        ?.read<TruckSpecificationsCubit>()
+        .clearEditState();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final truckSpecsCubit = context.read<TruckSpecificationsCubit>();
     return SizedBox(
       height: context.screenHeight * 0.80,
 
@@ -90,6 +108,7 @@ class _EditTruckSpecificationsViewState
                     GestureDetector(
                       onTap: () {
                         context.popPage();
+                        truckSpecsCubit.editTruckSpecs();
                       },
                       child: CircleAvatar(
                         radius: 25,
@@ -129,12 +148,25 @@ class _EditTruckSpecificationsViewState
                       child: CustomTextfieldWidget(
                         hintText: "00'",
                         keyboardType: TextInputType.number,
+                        controller: lengthFeetController,
+                        validator: Validation.validateFeet,
+                        onChanged: (newLength) => truckSpecsCubit.setEditState(
+                          'lengthInFeet',
+                          newLength,
+                        ),
                       ),
                     ),
                     Expanded(
                       child: CustomTextfieldWidget(
                         hintText: "0''",
                         keyboardType: TextInputType.number,
+                        controller: lengthInchController,
+
+                        validator: Validation.validateInches,
+                        onChanged: (newLength) => truckSpecsCubit.setEditState(
+                          'lengthInInches',
+                          newLength,
+                        ),
                       ),
                     ),
                   ],
@@ -156,12 +188,27 @@ class _EditTruckSpecificationsViewState
                       child: CustomTextfieldWidget(
                         hintText: "00'",
                         keyboardType: TextInputType.number,
+
+                        controller: heightFeetController,
+
+                        validator: Validation.validateFeet,
+                        onChanged: (newLength) => truckSpecsCubit.setEditState(
+                          'heightInFeet',
+                          newLength,
+                        ),
                       ),
                     ),
                     Expanded(
                       child: CustomTextfieldWidget(
                         hintText: "0''",
                         keyboardType: TextInputType.number,
+                        controller: heightInchController,
+
+                        validator: Validation.validateInches,
+                        onChanged: (newLength) => truckSpecsCubit.setEditState(
+                          'heightInInches',
+                          newLength,
+                        ),
                       ),
                     ),
                   ],
@@ -183,12 +230,25 @@ class _EditTruckSpecificationsViewState
                       child: CustomTextfieldWidget(
                         hintText: "00'",
                         keyboardType: TextInputType.number,
+                        controller: widthFeetController,
+                        validator: Validation.validateFeet,
+                        onChanged: (newLength) => truckSpecsCubit.setEditState(
+                          'widthInFeet',
+                          newLength,
+                        ),
                       ),
                     ),
                     Expanded(
                       child: CustomTextfieldWidget(
                         hintText: "0''",
                         keyboardType: TextInputType.number,
+                        controller: widthInchController,
+
+                        validator: Validation.validateInches,
+                        onChanged: (newLength) => truckSpecsCubit.setEditState(
+                          'widthInInches',
+                          newLength,
+                        ),
                       ),
                     ),
                   ],
@@ -208,18 +268,27 @@ class _EditTruckSpecificationsViewState
                     ),
 
                     Expanded(
-                      child: CustomDropDown<int>(
-                        placeholderText: "Select Axle",
-                        options: List.generate(
-                          5,
-                          (index) => CustomDropDownOption(
-                            value: index + 1,
-                            displayOption: "${index + 1} Axle",
-                          ),
-                        ),
-                        value: 2, // default selected value (optional)
-                        onChanged: (selected) {
-                          print("Selected axle: $selected");
+                      child: ValueListenableBuilder(
+                        valueListenable: axleCount,
+                        builder: (_, count, c) {
+                          return CustomDropDown<String>(
+                            placeholderText: "Select Axle",
+                            options: List.generate(
+                              5,
+                              (index) => CustomDropDownOption(
+                                value: '${index + 1}',
+                                displayOption: "${index + 1} Axle",
+                              ),
+                            ),
+                            value: count,
+                            onChanged: (selected) {
+                              axleCount.value = selected;
+                              truckSpecsCubit.setEditState(
+                                'axleCount',
+                                selected,
+                              );
+                            },
+                          );
                         },
                       ),
                     ),
@@ -240,8 +309,51 @@ class _EditTruckSpecificationsViewState
 
                     Expanded(
                       child: CustomTextfieldWidget(
-                        hintText: "0''",
+                        hintText: "0",
                         keyboardType: TextInputType.number,
+                        controller: weightController,
+                        validator: (value) {
+                          if ((value ?? '').isEmpty) {
+                            return 'Please enter weight';
+                          }
+                          return null;
+                        },
+                        onChanged: (newLength) => truckSpecsCubit.setEditState(
+                          'weightInLbs',
+                          newLength,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                5.h,
+                Row(
+                  spacing: 10,
+                  children: [
+                    SvgPicture.asset(AppIcons.weightScaleIcon),
+                    SizedBox(
+                      width: context.screenWidth * 0.24,
+                      child: Text(
+                        "Weight Per Axle",
+                        style: AppTextTheme().lightText.copyWith(fontSize: 16),
+                      ),
+                    ),
+
+                    Expanded(
+                      child: CustomTextfieldWidget(
+                        hintText: "0",
+                        keyboardType: TextInputType.number,
+                        controller: weightPerAxleController,
+                        validator: (value) {
+                          if ((value ?? '').isEmpty) {
+                            return 'Please enter weight';
+                          }
+                          return null;
+                        },
+                        onChanged: (newLength) => truckSpecsCubit.setEditState(
+                          'weightPerAxleInLbs',
+                          newLength,
+                        ),
                       ),
                     ),
                   ],
@@ -251,12 +363,17 @@ class _EditTruckSpecificationsViewState
           ),
           Padding(
             padding: EdgeInsets.all(AppTheme.horizontalPadding),
-            child: CustomButtonWidget(
-              title: "Save",
-              onPressed: () {
-                context.popPage();
-              },
-            ),
+            child:
+                BlocBuilder<TruckSpecificationsCubit, TruckSpecificationState>(
+                  builder: (context, state) => CustomButtonWidget(
+                    title: "Save",
+                    enabled: state.hasChanges,
+                    onPressed: () {
+                      truckSpecsCubit.editTruckSpecs();
+                      context.popPage();
+                    },
+                  ),
+                ),
           ),
           30.h,
         ],

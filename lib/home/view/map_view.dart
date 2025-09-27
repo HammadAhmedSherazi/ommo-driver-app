@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:here_sdk/core.dart';
@@ -65,7 +64,7 @@ class MapViewState extends State<MapView> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox();
+    // return SizedBox();
     return BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
       buildWhen: (previous, current) =>
           previous.isMapLoading != current.isMapLoading ||

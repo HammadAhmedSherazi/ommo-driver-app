@@ -261,23 +261,44 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   TruckOptions _createTruckOptions() {
     TruckOptions truckOptions = TruckOptions();
     truckOptions.routeOptions.enableTolls = true;
-
-    AvoidanceOptions avoidanceOptions = AvoidanceOptions();
-
-    avoidanceOptions.roadFeatures = [
-      RoadFeatures.uTurns,
-      RoadFeatures.ferry,
-      RoadFeatures.dirtRoad,
-      RoadFeatures.tunnel,
-      RoadFeatures.carShuttleTrain,
-    ];
-
-    // Exclude emission zones to not pollute the air in sensitive inner city areas.
-    avoidanceOptions.zoneCategories = [ZoneCategory.environmental];
-    truckOptions.avoidanceOptions = avoidanceOptions;
+    truckOptions.avoidanceOptions = _createTruckAvoidanceOptions();
     truckOptions.truckSpecifications = _createTruckSpecifications();
 
     return truckOptions;
+  }
+
+  AvoidanceOptions _createTruckAvoidanceOptions() {
+    final myState = navigatorKey.currentContext!
+        .read<TruckSpecificationsCubit>()
+        .state;
+
+    final avoidance = myState.avoidance;
+
+    AvoidanceOptions avoidanceOptions = AvoidanceOptions();
+
+    List<RoadFeatures> roadFeatures = [];
+
+    if (avoidance['ferries'] == true) {
+      roadFeatures.add(RoadFeatures.ferry);
+    }
+    if (avoidance['unpaved_roads'] == true) {
+      roadFeatures.add(RoadFeatures.dirtRoad);
+    }
+    if (avoidance['tunnels'] == true) {
+      roadFeatures.add(RoadFeatures.tunnel);
+    }
+    if (avoidance['highways'] == true) {
+      roadFeatures.add(RoadFeatures.controlledAccessHighway);
+    }
+    if (avoidance['tolls'] == true) {
+      roadFeatures.add(RoadFeatures.tollRoad);
+    }
+
+    avoidanceOptions.roadFeatures = roadFeatures;
+
+    avoidanceOptions.zoneCategories = [ZoneCategory.environmental];
+
+    return avoidanceOptions;
   }
 
   TruckSpecifications _createTruckSpecifications() {

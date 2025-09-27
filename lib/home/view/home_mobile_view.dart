@@ -8,6 +8,7 @@ import 'package:here_sdk/mapview.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/home/view/map_view.dart';
+import 'package:ommo/home/view/truck_specification/truck_specification_utils.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
@@ -89,7 +90,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
           ),
           actions: [
             InkWell(
-              onTap: () => TruckNavigationUtils.openSettingBottomSheet(context),
+              onTap: () =>
+                  TruckSpecificationUtils.openSettingBottomSheet(context),
               child: Container(
                 height: 44,
                 width: 44,
@@ -441,7 +443,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     ),
                     IconButton(
                       onPressed: () {
-                        TruckNavigationUtils.openSettingBottomSheet(context);
+                        TruckSpecificationUtils.openSettingBottomSheet(context);
                       },
                       icon: SvgPicture.asset(AppIcons.settingIcon),
                       style: ButtonStyle(
