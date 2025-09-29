@@ -87,6 +87,6 @@ class TruckSpecificationState extends Equatable {
     truckType,
     materialType,
     hasChanges,
-    avoidance
+    avoidance,
   ];
 }

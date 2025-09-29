@@ -40,6 +40,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
   int selectLocationOpt = 0;
   // bool isSetDirection = false;
 
+  final DraggableScrollableController sheetScrollController =
+      DraggableScrollableController();
+
   @override
   void initState() {
     super.initState();
@@ -51,6 +54,19 @@ class _HomeMobileViewState extends State<HomeMobileView>
     focusNode.add(FocusNode());
     searchFieldFocusNode.addListener(() {
       setState(() {});
+      if (searchFieldFocusNode.hasFocus) {
+        sheetScrollController.animateTo(
+          0.95,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      } else {
+        sheetScrollController.animateTo(
+          0.26,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     });
   }
 
@@ -358,6 +374,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
       ),
 
       CustomDragableWidget(
+        scrollController: sheetScrollController,
         childrens: hasDirection
             ? [
                 Row(
@@ -1378,7 +1395,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
       ),
 
       Positioned(
-        bottom: 250,
+        bottom: 220,
         left: 20,
         right: 20,
         child: Row(
@@ -1448,6 +1465,58 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+
+      Positioned(
+        bottom: 220,
+        right: 20,
+        child: Row(
+          children: [
+            InkWell(
+              onTap: () =>
+                  context.read<TruckNavigationCubit>().toggleCameraControll(),
+              child: Container(
+                width: 48,
+                height: 48,
+                padding: EdgeInsets.all(13),
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x0A000000), // same as #0000000A
+                      offset: Offset(0, 2), // x=0, y=2
+                      blurRadius: 6, // blur radius
+                      spreadRadius: 0, // spread
+                    ),
+                  ],
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+                child: BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+                  buildWhen: (p, c) =>
+                      p.cameraControlledByNavigator !=
+                      c.cameraControlledByNavigator,
+                  builder: (context, state) {
+                    if (state.cameraControlledByNavigator) {
+                      return Icon(
+                        Icons.pan_tool_rounded,
+                        color: Colors.black,
+                        size: 20,
+                      );
+                    } else {
+                      return SvgPicture.asset(
+                        AppIcons.navigationIconGreen,
+                        colorFilter: ColorFilter.mode(
+                          Colors.black,
+                          BlendMode.srcIn,
+                        ),
+                      );
+                    }
+                  },
+                ),
               ),
             ),
           ],

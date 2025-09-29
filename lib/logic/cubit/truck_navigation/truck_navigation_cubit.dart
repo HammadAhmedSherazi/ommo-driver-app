@@ -399,6 +399,24 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     }
   }
 
+  void showRouteDisableCameraControlByNavigator() {
+    _visualNavigator?.cameraBehavior = null;
+    emit(state.copyWith(cameraControlledByNavigator: false));
+  }
+
+  void resumeCameraControlByNavigator() {
+    _visualNavigator?.cameraBehavior = DynamicCameraBehavior();
+    emit(state.copyWith(cameraControlledByNavigator: true));
+  }
+
+  void toggleCameraControll() {
+    if (state.cameraControlledByNavigator) {
+      showRouteDisableCameraControlByNavigator();
+    } else {
+      resumeCameraControlByNavigator();
+    }
+  }
+
   void stopNavigation() {
     _visualNavigator?.stopRendering();
 
