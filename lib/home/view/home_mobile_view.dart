@@ -151,6 +151,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
         buildWhen: (previous, current) =>
             (previous.isNavigating != current.isNavigating ||
             previous.hasDirection != current.hasDirection),
+
         builder: (context, state) {
           log("home view rebuilding");
           return Stack(
@@ -1525,7 +1526,6 @@ class _HomeMobileViewState extends State<HomeMobileView>
 
       CustomDragableWidget(
         initialSize: 0.24,
-
         bottomWidget: Padding(
           padding: EdgeInsets.all(20),
           child: CustomButtonWidget(
@@ -1536,7 +1536,6 @@ class _HomeMobileViewState extends State<HomeMobileView>
 
             title: "Finish Trip",
             onPressed: () {
-              // context.read<MapCubit>().startNavigation();
               context.read<TruckNavigationCubit>().stopNavigation();
               searchTextEditController.clear();
               TruckNavigationUtils.saveDialog(context);

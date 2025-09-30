@@ -1,4 +1,7 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart' as material;
+import 'package:flutter/widgets.dart' as widgets;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:here_sdk/animation.dart';
 import 'package:here_sdk/core.dart';
@@ -15,7 +18,6 @@ import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specification_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state.dart';
 import 'package:ommo/map_sdk/HEREPositioningSimulator.dart';
-import 'package:ommo/map_sdk/truck_guidance_example.dart';
 import 'package:ommo/utils/constants/constants.dart';
 import 'package:ommo/utils/generics/generics.dart';
 import 'package:ommo/utils/theme/theme.dart';
@@ -25,6 +27,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
   final RoutingEngine _routingEngine = RoutingEngine();
   final SearchEngine _searchEngine = SearchEngine();
+
+  final widgets.DraggableScrollableController navigationSheetScrollController =
+      widgets.DraggableScrollableController();
 
   VisualNavigator? _visualNavigator;
   Navigator? _navigator;
@@ -95,6 +100,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       _locationEngine?.addLocationListener(
         LocationListener((Location location) {
           final GeoCoordinates coords = location.coordinates;
+          log("Location recieved $coords");
           if (!state.isNavigating) {
             _updateCurrentLocationMarker(coords);
           }
@@ -128,10 +134,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _currentLocationMarker = MapMarker(coords, userImage);
     state.mapController?.mapScene.addMapMarker(_currentLocationMarker!);
 
-    // Center camera
-    if (!state.cameraControlledByNavigator) {
-      state.mapController?.camera.lookAtPoint(coords);
-    }
+    // // Center camera
+    // if (!state.cameraControlledByNavigator) {
+    //   state.mapController?.camera.lookAtPoint(coords);
+    // }
     emit(state.copyWith(startCoordinates: coords));
   }
 
@@ -396,6 +402,18 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       emit(
         state.copyWith(isNavigating: true, cameraControlledByNavigator: true),
       );
+    }
+  }
+
+  minimizeNavigationSheetOn() {
+    if (navigationSheetScrollController.isAttached) {
+      navigationSheetScrollController.animateTo(
+        0.26,
+        duration: const Duration(milliseconds: 300),
+        curve: widgets.Curves.easeOut,
+      );
+    } else {
+      log("navigationSheetScrollController is not attached");
     }
   }
 
