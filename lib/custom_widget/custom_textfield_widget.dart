@@ -12,8 +12,11 @@ class CustomTextfieldWidget extends StatelessWidget {
   final FocusNode? focusNode;
   final void Function(String)? onChanged;
   final VoidCallback? onTap;
+  final bool readOnly;
   const CustomTextfieldWidget({
     super.key,
+  this.readOnly = false, 
+
     this.controller,
     required this.hintText,
     this.prefixIcon,

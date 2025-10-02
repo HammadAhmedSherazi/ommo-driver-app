@@ -412,6 +412,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 VerticalStepWithTextField(
                   focusNode: focusNode,
                   textControllers: textController,
+                  readOnly: true,
                   removeFieldTap: () {
                     setState(() {
                       textController.removeLast();

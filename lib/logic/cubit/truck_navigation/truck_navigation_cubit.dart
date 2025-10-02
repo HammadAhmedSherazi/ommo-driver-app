@@ -27,23 +27,25 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
   final RoutingEngine _routingEngine = RoutingEngine();
   final SearchEngine _searchEngine = SearchEngine();
-
   final widgets.DraggableScrollableController navigationSheetScrollController =
       widgets.DraggableScrollableController();
-
   VisualNavigator? _visualNavigator;
   Navigator? _navigator;
-
   LocationEngine? _locationEngine;
   HEREPositioningSimulator? _simulator;
-
   MapPolyline? _currentRoutePolyline;
   MapMarker? _currentLocationMarker;
   MapMarker? _startMarker;
   MapMarker? _destinationMarker;
-
   final loc.Location _location = loc.Location();
 
+  // Setters
+  void setInitialLocation(GeoCoordinates coords) {
+    emit(state.copyWith(isMapLoading: false, startCoordinates: coords));
+    _updateCurrentLocationMarker(coords);
+  }
+
+  // Map Functions
   void onMapCreated(HereMapController controller) {
     emit(state.copyWith(mapController: controller));
     controller.mapScene.loadSceneForMapScheme(MapScheme.normalDay, (error) {
@@ -68,6 +70,50 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _navigator = Navigator();
   }
 
+  void _updateCurrentLocationMarker(GeoCoordinates coords) {
+    if (_currentLocationMarker != null) {
+      state.mapController?.mapScene.removeMapMarker(_currentLocationMarker!);
+    }
+    MapImage userImage = MapImage.withFilePathAndWidthAndHeight(
+      AppIcons.myLocIcon,
+      40,
+      40,
+    ); // add your own icon
+    _currentLocationMarker = MapMarker(coords, userImage);
+    state.mapController?.mapScene.addMapMarker(_currentLocationMarker!);
+
+    // // Center camera
+    // if (!state.cameraControlledByNavigator) {
+    //   state.mapController?.camera.lookAtPoint(coords);
+    // }
+    emit(state.copyWith(startCoordinates: coords));
+  }
+
+  void mapZoomIn(material.BuildContext context) {
+    Point2D center = Point2D(context.screenWidth / 2, context.screenHeight / 2);
+    state.mapController?.camera.zoomBy(2.0, center);
+  }
+
+  void mapZoomOut(material.BuildContext context) {
+    Point2D center = Point2D(context.screenWidth / 2, context.screenHeight / 2);
+    state.mapController?.camera.zoomBy(0.5, center);
+  }
+
+  void focusOnCurrentLocation({double distanceInMeters = 1000}) {
+    final coords = state.startCoordinates;
+    final controller = state.mapController;
+
+    if (coords == null || controller == null) return;
+
+    final mapMeasure = MapMeasure(
+      MapMeasureKind.distanceInMeters,
+      distanceInMeters,
+    );
+
+    controller.camera.lookAtPointWithMeasure(coords, mapMeasure);
+  }
+
+  // Location Handlers
   Future<GeoCoordinates?> _getCurrentLocation() async {
     bool serviceEnabled = await _location.serviceEnabled();
     if (!serviceEnabled) {
@@ -117,56 +163,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     }
   }
 
-  void setInitialLocation(GeoCoordinates coords) {
-    emit(state.copyWith(isMapLoading: false, startCoordinates: coords));
-    _updateCurrentLocationMarker(coords);
-  }
-
-  void _updateCurrentLocationMarker(GeoCoordinates coords) {
-    if (_currentLocationMarker != null) {
-      state.mapController?.mapScene.removeMapMarker(_currentLocationMarker!);
-    }
-    MapImage userImage = MapImage.withFilePathAndWidthAndHeight(
-      AppIcons.myLocIcon,
-      40,
-      40,
-    ); // add your own icon
-    _currentLocationMarker = MapMarker(coords, userImage);
-    state.mapController?.mapScene.addMapMarker(_currentLocationMarker!);
-
-    // // Center camera
-    // if (!state.cameraControlledByNavigator) {
-    //   state.mapController?.camera.lookAtPoint(coords);
-    // }
-    emit(state.copyWith(startCoordinates: coords));
-  }
-
-  void mapZoomIn(material.BuildContext context) {
-    Point2D center = Point2D(context.screenWidth / 2, context.screenHeight / 2);
-    state.mapController?.camera.zoomBy(2.0, center);
-  }
-
-  void mapZoomOut(material.BuildContext context) {
-    Point2D center = Point2D(context.screenWidth / 2, context.screenHeight / 2);
-    state.mapController?.camera.zoomBy(0.5, center);
-  }
-
-  void focusOnCurrentLocation({double distanceInMeters = 1000}) {
-    final coords = state.startCoordinates;
-    final controller = state.mapController;
-
-    if (coords == null || controller == null) return;
-
-    final mapMeasure = MapMeasure(
-      MapMeasureKind.distanceInMeters,
-      distanceInMeters,
-    );
-
-    controller.camera.lookAtPointWithMeasure(coords, mapMeasure);
-  }
-
   /// Routing and Navigation Functions
-
   void searchPlaces(String query) {
     if (state.startCoordinates == null) return;
     SearchOptions searchOptions = SearchOptions();
@@ -450,26 +447,19 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       );
     }
 
-    // Clear polylines
-    if (_currentRoutePolyline != null) {
-      state.mapController?.mapScene.removeMapPolyline(_currentRoutePolyline!);
-      _currentRoutePolyline = null;
-    }
-
-    // Clear markers
-    if (_startMarker != null) {
-      state.mapController?.mapScene.removeMapMarker(_startMarker!);
-      _startMarker = null;
-    }
-    if (_destinationMarker != null) {
-      state.mapController?.mapScene.removeMapMarker(_destinationMarker!);
-      _destinationMarker = null;
-    }
-
     clearCurrentRouteDetail();
   }
 
   void clearCurrentRouteDetail() {
+    // Clear polylines
+    if (_destinationMarker != null) {
+      state.mapController?.mapScene.removeMapMarker(_destinationMarker!);
+      _destinationMarker = null;
+    }
+    if (_currentRoutePolyline != null) {
+      state.mapController?.mapScene.removeMapPolyline(_currentRoutePolyline!);
+      _currentRoutePolyline = null;
+    }
     emit(
       state.copyWith(
         destinationSuggestions: FutureData<List<Suggestion>>.initial(),

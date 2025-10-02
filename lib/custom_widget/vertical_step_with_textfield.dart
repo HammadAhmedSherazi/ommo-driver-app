@@ -4,7 +4,11 @@ class VerticalStepWithTextField extends StatefulWidget {
   final List<TextEditingController> textControllers;
   final List<FocusNode> focusNode;
   final VoidCallback removeFieldTap;
-  const VerticalStepWithTextField({super.key, required this.textControllers, required this.removeFieldTap, required this.focusNode});
+  final bool readOnly;
+
+  const VerticalStepWithTextField({super.key,
+  this.readOnly = false, 
+  required this.textControllers, required this.removeFieldTap, required this.focusNode});
 
   @override
   State<VerticalStepWithTextField> createState() => _VerticalStepWithTextFieldState();
@@ -67,11 +71,13 @@ class _VerticalStepWithTextFieldState extends State<VerticalStepWithTextField> {
               return   CustomTextfieldWidget(
                 focusNode: widget.focusNode[index],
                 controller: widget.textControllers[index],
+                readOnly:  widget.readOnly,
                 // onTap: (){
                 //   setState(() {
                     
                 //   });
                 // },
+                
                 hintText: "Enter a location",
                 suffixIcon: widget.focusNode[index].hasFocus ? IconButton(onPressed: widget.removeFieldTap, icon: Icon(Icons.cancel), style: ButtonStyle(
                   padding: WidgetStatePropertyAll(EdgeInsets.zero),
