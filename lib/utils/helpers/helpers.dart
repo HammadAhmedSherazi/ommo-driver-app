@@ -13,42 +13,60 @@ class Helpers {
     String year = date.year.toString();
     return '$day/$month/$year';
   }
-   static String formatDate2(DateTime? date) {
-  if (date == null) return "";
 
-  final day = date.day.toString().padLeft(2, '0');
-  final month = date.month.toString().padLeft(2, '0');
-  final year = date.year.toString().substring(2); // Get last 2 digits
+  static String formatDate2(DateTime? date) {
+    if (date == null) return "";
 
-  return '$day/$month/$year'; // e.g., 17/06/25
-}
-static String formatTime12Hour(DateTime dateTime) {
-  final hour = dateTime.hour;
-  final minute = dateTime.minute.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString().substring(2); // Get last 2 digits
 
-  final hour12 = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
-  final period = hour < 12 ? 'AM' : 'PM';
+    return '$day/$month/$year'; // e.g., 17/06/25
+  }
 
-  return '$hour12:$minute $period';
-}
-static String formatFullDate(DateTime date) {
-  const weekdays = [
-    'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-    'Friday', 'Saturday', 'Sunday'
-  ];
+  static String formatTime12Hour(DateTime dateTime) {
+    final hour = dateTime.hour;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
 
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+    final hour12 = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+    final period = hour < 12 ? 'AM' : 'PM';
 
-  final weekday = weekdays[date.weekday - 1];
-  final month = months[date.month - 1];
-  final day = date.day;
-  final year = date.year;
+    return '$hour12:$minute $period';
+  }
 
-  return '$weekday, $month $day, $year';
-}
+  static String formatFullDate(DateTime date) {
+    const weekdays = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    final weekday = weekdays[date.weekday - 1];
+    final month = months[date.month - 1];
+    final day = date.day;
+    final year = date.year;
+
+    return '$weekday, $month $day, $year';
+  }
 
   static String formatDateLong(DateTime date) {
     const List<String> monthNames = [
@@ -88,93 +106,109 @@ static String formatFullDate(DateTime date) {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => child,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(
+            context,
+          ).viewInsets.bottom, // moves up with keyboard
+        ),
+        child: child,
+      ),
     );
   }
 
- static void showCustomBottomSheet(BuildContext context, Widget child) {
-  showGeneralDialog(
-    context: context,
-    barrierDismissible: true,
-    fullscreenDialog: false,
-    
-    barrierLabel: "Dismiss",
-    barrierColor: Colors.transparent, // dim background
-    transitionDuration: const Duration(milliseconds: 300),
-    pageBuilder: (context, animation, secondaryAnimation) {
-      return Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: Scaffold(body: child),
-      );
-    },
-    // transitionBuilder: (context, animation, secondaryAnimation, child) {
-    //   return SlideTransition(
-    //     position: Tween<Offset>(
-    //       begin: const Offset(0, 1), // from bottom
-    //       end: Offset.zero,
-    //     ).animate(animation),
-    //     child: child,
-    //   );
-    // },
-  );
-}
+  static void showCustomBottomSheet(BuildContext context, Widget child) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      fullscreenDialog: false,
 
-
+      barrierLabel: "Dismiss",
+      barrierColor: Colors.transparent, // dim background
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Scaffold(body: child),
+        );
+      },
+      // transitionBuilder: (context, animation, secondaryAnimation, child) {
+      //   return SlideTransition(
+      //     position: Tween<Offset>(
+      //       begin: const Offset(0, 1), // from bottom
+      //       end: Offset.zero,
+      //     ).animate(animation),
+      //     child: child,
+      //   );
+      // },
+    );
+  }
 
   static String getDateLabel(DateTime date) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final yesterday = today.subtract(const Duration(days: 1));
-  final inputDate = DateTime(date.year, date.month, date.day);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final inputDate = DateTime(date.year, date.month, date.day);
 
-  if (isSameDay(inputDate, today)) return "Today";
-  if (isSameDay(inputDate, yesterday)) return "Yesterday";
+    if (isSameDay(inputDate, today)) return "Today";
+    if (isSameDay(inputDate, yesterday)) return "Yesterday";
 
-  return formatDateLong(date); // e.g., June 20, 2025
-}
+    return formatDateLong(date); // e.g., June 20, 2025
+  }
 
-static bool isSameDay(DateTime a, DateTime b) {
-  return a.year == b.year && a.month == b.month && a.day == b.day;
-}
+  static bool isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
 
-  static Color setTextColor(String text){
+  static Color setTextColor(String text) {
     switch (text.toLowerCase()) {
       case 'awaiting approval':
-      return AppColorTheme().primary;
+        return AppColorTheme().primary;
       case 'approved':
-      return AppColorTheme().approvedTextColor;
+        return AppColorTheme().approvedTextColor;
       case 'declined':
-      return AppColorTheme().cancelTextColor;
-        
-       
+        return AppColorTheme().cancelTextColor;
+
       default:
         return AppColorTheme().primary;
     }
   }
- static String getTimeAgo(DateTime date) {
-  final now = DateTime.now();
-  final difference = now.difference(date);
 
-  if (difference.inSeconds < 60) {
-    return "Just now";
-  } else if (difference.inMinutes < 60) {
-    return "${difference.inMinutes} m${difference.inMinutes == 1 ? '' : 's'} ago";
-  } else if (difference.inHours < 24) {
-    return "${difference.inHours} hr${difference.inHours == 1 ? '' : 's'} ago";
-  } else if (difference.inDays == 1) {
-    return "Yesterday";
-  } else if (difference.inDays < 7) {
-    return "${difference.inDays} d${difference.inDays == 1 ? '' : 's'} ago";
-  } else {
-    return "${date.day}/${date.month}/${date.year}";
+  static String getTimeAgo(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inSeconds < 60) {
+      return "Just now";
+    } else if (difference.inMinutes < 60) {
+      return "${difference.inMinutes} m${difference.inMinutes == 1 ? '' : 's'} ago";
+    } else if (difference.inHours < 24) {
+      return "${difference.inHours} hr${difference.inHours == 1 ? '' : 's'} ago";
+    } else if (difference.inDays == 1) {
+      return "Yesterday";
+    } else if (difference.inDays < 7) {
+      return "${difference.inDays} d${difference.inDays == 1 ? '' : 's'} ago";
+    } else {
+      return "${date.day}/${date.month}/${date.year}";
+    }
   }
-}
-static String formatDateTime(DateTime date) {
-  final weekday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][date.weekday % 7];
-  final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
-  final period = date.hour >= 12 ? 'PM' : 'AM';
-  final minute = date.minute.toString().padLeft(2, '0');
 
-  return '$weekday – $hour:$minute $period';
-}
+  static String formatDateTime(DateTime date) {
+    final weekday = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ][date.weekday % 7];
+    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+    final period = date.hour >= 12 ? 'PM' : 'AM';
+    final minute = date.minute.toString().padLeft(2, '0');
+
+    return '$weekday – $hour:$minute $period';
+  }
 }

@@ -262,12 +262,53 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   TruckOptions _createTruckOptions() {
+    TruckSpecificationState mySpecs = navigatorKey.currentContext!
+        .read<TruckSpecificationsCubit>()
+        .state;
     TruckOptions truckOptions = TruckOptions();
     truckOptions.routeOptions.enableTolls = true;
     truckOptions.avoidanceOptions = _createTruckAvoidanceOptions();
-    truckOptions.truckSpecifications = _createTruckSpecifications();
+    truckOptions.truckSpecifications = _createTruckSpecifications(mySpecs);
+
+    truckOptions.hazardousMaterials = mapHazardousMaterial(
+      mySpecs.hazardousMaterial,
+    );
 
     return truckOptions;
+  }
+
+  List<HazardousMaterial> mapHazardousMaterial(String selected) {
+    switch (selected) {
+      case "Explosives":
+        return [HazardousMaterial.explosive];
+
+      case "Gases":
+        return [HazardousMaterial.gas];
+
+      case "Flammable Liquids":
+        return [HazardousMaterial.flammable];
+
+      case "Flammable Solids":
+        return [HazardousMaterial.combustible];
+
+      case "Organic":
+        return [HazardousMaterial.organic];
+
+      case "Poison & Toxic":
+        return [HazardousMaterial.poison];
+
+      case "Radioactive":
+        return [HazardousMaterial.radioactive];
+
+      case "Corrosive":
+        return [HazardousMaterial.corrosive];
+
+      case "Misc. Dangerous":
+        return [HazardousMaterial.other];
+
+      default:
+        return [];
+    }
   }
 
   AvoidanceOptions _createTruckAvoidanceOptions() {
@@ -304,11 +345,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     return avoidanceOptions;
   }
 
-  TruckSpecifications _createTruckSpecifications() {
-    TruckSpecificationState? mySpecs = navigatorKey.currentContext!
-        .read<TruckSpecificationsCubit>()
-        .state;
-
+  TruckSpecifications _createTruckSpecifications(
+    TruckSpecificationState mySpecs,
+  ) {
     TruckSpecifications truckSpecifications = TruckSpecifications();
     // When weight is not set, possible weight restrictions will not be taken into consideration
     // for route calculation. By default, weight is not set.
@@ -323,6 +362,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     truckSpecifications.axleCount = mySpecs.axleCount;
     truckSpecifications.trailerCount = mySpecs.trailerCount;
     truckSpecifications.truckType = mySpecs.truckType;
+
     return truckSpecifications;
   }
 

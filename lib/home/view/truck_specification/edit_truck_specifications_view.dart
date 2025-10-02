@@ -32,6 +32,19 @@ class _EditTruckSpecificationsViewState
   late TextEditingController weightPerAxleController;
 
   late ValueNotifier<String?> axleCount;
+  late ValueNotifier<String?> selectHazardousMaterial;
+
+  final hazardousMaterials = [
+    "Explosives",
+    "Gases",
+    "Flammable Liquids",
+    "Flammable Solids",
+    "Organic",
+    "Poison & Toxic",
+    "Radioactive",
+    "Corrosive",
+    "Misc. Dangerous",
+  ];
 
   @override
   void initState() {
@@ -69,6 +82,7 @@ class _EditTruckSpecificationsViewState
     );
 
     axleCount = ValueNotifier(initialState['axleCount']);
+    selectHazardousMaterial = ValueNotifier(initialState['hazardousMaterial']);
   }
 
   @override
@@ -295,6 +309,7 @@ class _EditTruckSpecificationsViewState
                   ],
                 ),
                 5.h,
+
                 Row(
                   spacing: 10,
                   children: [
@@ -358,6 +373,47 @@ class _EditTruckSpecificationsViewState
                     ),
                   ],
                 ),
+                5.h,
+                Row(
+                  spacing: 10,
+                  children: [
+                    Icon(Icons.warning_rounded, color: Colors.black),
+                    SizedBox(
+                      width: context.screenWidth * 0.24,
+                      child: Text(
+                        "Hazardous Materials",
+                        style: AppTextTheme().lightText.copyWith(fontSize: 16),
+                      ),
+                    ),
+
+                    Expanded(
+                      child: ValueListenableBuilder(
+                        valueListenable: selectHazardousMaterial,
+                        builder: (_, value, c) {
+                          return CustomDropDown<String>(
+                            placeholderText: "Select material",
+                            options: List.generate(
+                              hazardousMaterials.length,
+                              (i) => CustomDropDownOption(
+                                value: hazardousMaterials[i],
+                                displayOption: hazardousMaterials[i],
+                              ),
+                            ),
+                            value: value,
+                            onChanged: (selected) {
+                              selectHazardousMaterial.value = selected;
+                              truckSpecsCubit.setEditState(
+                                'hazardousMaterial',
+                                selected,
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                5.h,
               ],
             ),
           ),

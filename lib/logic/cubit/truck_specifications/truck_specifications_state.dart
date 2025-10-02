@@ -11,11 +11,12 @@ class TruckSpecificationState extends Equatable {
   final int axleCount;
   final TruckType truckType;
   final int trailerCount;
-  final String materialType;
+  final String hazardousMaterial;
   final bool hasChanges;
   final Map<String, bool> avoidance;
 
   const TruckSpecificationState({
+    this.hazardousMaterial = "Flammable Liquids",
     this.grossWeightInKilograms = 17000,
     this.heightInCentimeters = 3 * 100,
     this.widthInCentimeters = 4 * 100,
@@ -24,7 +25,6 @@ class TruckSpecificationState extends Equatable {
     this.axleCount = 4,
     this.trailerCount = 2,
     this.truckType = TruckType.straight,
-    this.materialType = "Flammable",
     this.hasChanges = false,
     this.avoidance = const {
       'highways': false,
@@ -42,7 +42,7 @@ class TruckSpecificationState extends Equatable {
     "Total Weight": grossWeightInKilograms.kgToLbsFormattedString,
     "Axle Count": axleCount.toString(),
     "Weight per Axle Group": weightPerAxleInKilograms.kgToLbsFormattedString,
-    "Hazardous Materials": materialType,
+    "Hazardous Materials": hazardousMaterial,
   };
 
   TruckSpecificationState copyWith({
@@ -54,7 +54,7 @@ class TruckSpecificationState extends Equatable {
     int? axleCount,
     int? trailerCount,
     TruckType? truckType,
-    String? materialType,
+    String? hazardousMaterial,
     bool? hasChanges,
     Map<String, bool>? avoidance,
   }) {
@@ -69,7 +69,7 @@ class TruckSpecificationState extends Equatable {
       axleCount: axleCount ?? this.axleCount,
       trailerCount: trailerCount ?? this.trailerCount,
       truckType: truckType ?? this.truckType,
-      materialType: materialType ?? this.materialType,
+      hazardousMaterial: hazardousMaterial ?? this.hazardousMaterial,
       hasChanges: hasChanges ?? this.hasChanges,
       avoidance: avoidance ?? this.avoidance,
     );
@@ -85,7 +85,7 @@ class TruckSpecificationState extends Equatable {
     axleCount,
     trailerCount,
     truckType,
-    materialType,
+    hazardousMaterial,
     hasChanges,
     avoidance,
   ];

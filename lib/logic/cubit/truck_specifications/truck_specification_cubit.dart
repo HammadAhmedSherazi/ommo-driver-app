@@ -40,6 +40,7 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
       'weightInLbs': "${state.grossWeightInKilograms.kgToLbs}",
       'weightPerAxleInLbs': "${state.weightPerAxleInKilograms.kgToLbs}",
       'axleCount': "${state.axleCount}",
+      'hazardousMaterial': state.hazardousMaterial,
     };
     setHasChanges(false);
   }
@@ -72,6 +73,7 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
         num? updateWeightKgs;
         num? updateWeightPerAxleKgs;
         num? updateAxleCount;
+        String? updateHazardousMaterial;
 
         for (var entry in editState.entries) {
           checkAndCalculateTheFeetAndInchesField(entry, 'length', (value) {
@@ -96,6 +98,9 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
             final axleCount = int.tryParse(entry.value);
             updateAxleCount = axleCount;
           }
+          if (entry.key == 'hazardousMaterial') {
+            updateHazardousMaterial = entry.value;
+          }
         }
 
         emit(
@@ -106,6 +111,7 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
             grossWeightInKilograms: updateWeightKgs?.toInt(),
             weightPerAxleInKilograms: updateWeightPerAxleKgs?.toInt(),
             axleCount: updateAxleCount?.toInt(),
+            hazardousMaterial: updateHazardousMaterial,
           ),
         );
       }
@@ -132,7 +138,7 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
         editState['${field}InFeet'] ?? initialState['${field}InFeet'] ?? '',
       );
       final inches = int.tryParse(
-        editState['${field}Inches'] ?? initialState['${field}InInches'] ?? '',
+        editState['${field}InInches'] ?? initialState['${field}InInches'] ?? '',
       );
       if (feet != null && inches != null) {
         final totalInches = (feet * 12) + inches;
