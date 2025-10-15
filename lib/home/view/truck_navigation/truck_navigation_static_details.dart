@@ -3,7 +3,14 @@ import 'package:ommo/home/home.dart';
 import 'package:ommo/utils/constants/constants.dart';
 
 class TruckNavigationStaticDetails {
-  static const List<String> stationList = ["Truck stops", "Weight stations", "Parking", "Rest areas", "Truck washes", "Dealership"];
+  static const List<String> stationList = [
+    "Truck stops",
+    "Weight stations",
+    "Parking",
+    "Rest areas",
+    "Truck washes",
+    "Dealership",
+  ];
 
   static const Map<String, String> truckInfo = {
     "Height": "12ft 10in",
@@ -105,11 +112,24 @@ class TruckNavigationStaticDetails {
     ),
   ];
 
-  static const List<String> settingChipsList = ["Avoid unpaved roads", "Avoid tunnels", "Avoid ferries", "Avoid restriction Areas"];
+  static const List<String> settingChipsList = [
+    "Avoid unpaved roads",
+    "Avoid tunnels",
+    "Avoid ferries",
+    "Avoid restriction Areas",
+  ];
   static const List<String> locationOpt = ["Recent", "Saved", "Terminals"];
   static final List<MapViewModel> mapSchemes = [
-    MapViewModel(label: "Default", icon: AppImages.defaultMapImg, scheme: MapScheme.normalDay),
-    MapViewModel(label: "Satellite", icon: AppImages.satelliteMapImg, scheme: MapScheme.satellite),
-    MapViewModel(label: "Hybrid", icon: AppImages.satelliteMapImg, scheme: MapScheme.hybridDay),
+    MapViewModel(
+      label: "Default",
+      icon: AppImages.defaultMapImg,
+      scheme: MapScheme.normalDay,
+    ),
+    MapViewModel(
+      label: "Satellite",
+      icon: AppImages.satelliteMapImg,
+      scheme: MapScheme.satellite,
+    ),
+    // MapViewModel(label: "Hybrid", icon: AppImages.satelliteMapImg, scheme: MapScheme.hybridDay),
   ];
 }

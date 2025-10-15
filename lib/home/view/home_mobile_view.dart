@@ -35,7 +35,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
   ];
   final List<FocusNode> focusNode = [FocusNode()];
   bool showMore = false, changeMapScheme = false;
-  int selectIndexMapView = 0;
+  ValueNotifier<int> selectIndexMapView = ValueNotifier(0);
   PlaceDataModel? place;
   int selectLocationOpt = 0;
   // bool isSetDirection = false;
@@ -68,12 +68,6 @@ class _HomeMobileViewState extends State<HomeMobileView>
         );
       }
     });
-  }
-
-  void startNavigation() {}
-
-  void cancelNavigation() {
-    //  openRouteDialogSheet();
   }
 
   _setDirectionIcon(int index) {
@@ -644,29 +638,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 15.h,
                 DashedLine(color: Color(0xffEBEEF2)),
                 if (!searchFieldFocusNode.hasFocus) ...[
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      radius: 25,
-                      backgroundColor: AppColorTheme().primary.withValues(
-                        alpha: 0.2,
-                      ),
-                      child: SvgPicture.asset(AppIcons.navigationIconGreen),
-                    ),
-                    title: Text(
-                      "210 Riverside Drive",
-                      style: AppTextTheme().bodyText.copyWith(
-                        color: Colors.black,
-                        fontSize: 16,
-                      ),
-                    ),
-                    subtitle: Text(
-                      "New York, NY 10025",
-                      style: AppTextTheme().lightText.copyWith(
-                        color: AppColorTheme().secondary,
-                      ),
-                    ),
-                  ),
+                  currentLocationTile(context),
                   15.h,
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -1549,7 +1521,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
             children: [
               GestureDetector(
                 onTap: () {
-                  cancelNavigation();
+                  // cancelNavigation();
                 },
                 child: CircleAvatar(
                   radius: 25,
@@ -1639,42 +1611,74 @@ class _HomeMobileViewState extends State<HomeMobileView>
   }
 
   Widget _styleButton(String label, MapScheme scheme, String icon, int index) {
-    bool isSelect = selectIndexMapView == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          // context.read<MapCubit>().setMapViewScheme(scheme);
-          setState(() {
-            selectIndexMapView = index;
-          });
-        },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          spacing: 5,
-          children: [
-            Container(
-              width: double.infinity,
-              height: 69,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(6),
-                border: isSelect
-                    ? Border.all(color: AppColorTheme().primary)
-                    : null,
-                image: DecorationImage(
-                  image: AssetImage(icon),
-                  fit: BoxFit.cover,
+    return ValueListenableBuilder(
+      valueListenable: selectIndexMapView,
+      builder: (_, v, c) {
+        bool isSelect = v == index;
+        return Expanded(
+          child: GestureDetector(
+            onTap: () {
+              context.read<TruckNavigationCubit>().changeMapScheme(scheme);
+              selectIndexMapView.value = index;
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              spacing: 5,
+              children: [
+                Container(
+                  width: double.infinity,
+                  height: 69,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(6),
+                    border: isSelect
+                        ? Border.all(color: AppColorTheme().primary)
+                        : null,
+                    image: DecorationImage(
+                      image: AssetImage(icon),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
-              ),
+                Text(
+                  label,
+                  style: AppTextTheme().bodyText.copyWith(
+                    color: isSelect
+                        ? AppColorTheme().primary
+                        : AppColorTheme().secondary,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              label,
-              style: AppTextTheme().bodyText.copyWith(
-                color: isSelect
-                    ? AppColorTheme().primary
-                    : AppColorTheme().secondary,
-              ),
-            ),
-          ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget currentLocationTile(BuildContext context) {
+    return BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+      buildWhen: (p, c) => p.currentPlace != c.currentPlace,
+      builder: (context, state) => ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: CircleAvatar(
+          radius: 25,
+          backgroundColor: AppColorTheme().primary.withValues(alpha: 0.2),
+          child: SvgPicture.asset(AppIcons.navigationIconGreen),
+        ),
+        title: Text(
+          state.currentPlace?.title ?? "",
+          //  "210 Riverside Drive",
+          style: AppTextTheme().bodyText.copyWith(
+            color: Colors.black,
+            fontSize: 16,
+          ),
+        ),
+        subtitle: Text(
+          state.currentPlace?.address.addressText ?? "",
+          // "New York, NY 10025",
+          style: AppTextTheme().lightText.copyWith(
+            color: AppColorTheme().secondary,
+          ),
         ),
       ),
     );

@@ -10,6 +10,7 @@ class TruckNavigationState extends Equatable {
   final HereMapController? mapController;
   final FutureData<List<Suggestion>>? destinationSuggestions;
   final GeoCoordinates? startCoordinates;
+  final Place? currentPlace;
   final Suggestion? selectedSuggestion;
   final Route? currentRoute;
   final bool isNavigating;
@@ -20,6 +21,7 @@ class TruckNavigationState extends Equatable {
 
   const TruckNavigationState({
     this.mapController,
+    this.currentPlace,
     this.startCoordinates,
     this.maneuverProgress,
     this.selectedSuggestion,
@@ -32,10 +34,12 @@ class TruckNavigationState extends Equatable {
     this.destinationSuggestions,
   });
 
-  GeoCoordinates? get destinationCoordinates => selectedSuggestion?.place?.geoCoordinates;
+  GeoCoordinates? get destinationCoordinates =>
+      selectedSuggestion?.place?.geoCoordinates;
 
   TruckNavigationState copyWith({
     HereMapController? mapController,
+    dynamic currentPlace,
     GeoCoordinates? startCoordinates,
     dynamic selectedSuggestion,
     FutureData<List<Suggestion>>? destinationSuggestions,
@@ -47,15 +51,26 @@ class TruckNavigationState extends Equatable {
     dynamic maneuverProgress,
   }) {
     return TruckNavigationState(
-      destinationSuggestions: destinationSuggestions ?? this.destinationSuggestions,
+      destinationSuggestions:
+          destinationSuggestions ?? this.destinationSuggestions,
       mapController: mapController ?? this.mapController,
+      currentPlace: currentPlace == 'null'
+          ? null
+          : (currentPlace ?? this.currentPlace),
       startCoordinates: startCoordinates ?? this.startCoordinates,
-      selectedSuggestion: selectedSuggestion == 'null' ? null : (selectedSuggestion ?? this.selectedSuggestion),
-      currentRoute: currentRoute == 'null' ? null : (currentRoute ?? this.currentRoute),
-      maneuverProgress: maneuverProgress == 'null' ? null : (maneuverProgress ?? this.maneuverProgress),
+      selectedSuggestion: selectedSuggestion == 'null'
+          ? null
+          : (selectedSuggestion ?? this.selectedSuggestion),
+      currentRoute: currentRoute == 'null'
+          ? null
+          : (currentRoute ?? this.currentRoute),
+      maneuverProgress: maneuverProgress == 'null'
+          ? null
+          : (maneuverProgress ?? this.maneuverProgress),
       isNavigating: isNavigating ?? this.isNavigating,
       isMapLoading: isMapLoading ?? this.isMapLoading,
-      cameraControlledByNavigator: cameraControlledByNavigator ?? this.cameraControlledByNavigator,
+      cameraControlledByNavigator:
+          cameraControlledByNavigator ?? this.cameraControlledByNavigator,
       hasDirection: hasDirection ?? this.hasDirection,
     );
   }
@@ -64,6 +79,7 @@ class TruckNavigationState extends Equatable {
   List<Object?> get props => [
     destinationSuggestions,
     mapController,
+    currentPlace,
     startCoordinates,
     selectedSuggestion,
     currentRoute,

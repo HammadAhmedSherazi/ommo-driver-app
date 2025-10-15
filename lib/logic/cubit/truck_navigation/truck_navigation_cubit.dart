@@ -70,6 +70,18 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _navigator = Navigator();
   }
 
+  void changeMapScheme(MapScheme scheme) {
+    if (state.mapController == null) return;
+
+    state.mapController?.mapScene.loadSceneForMapScheme(scheme, (error) {
+      if (error != null) {
+        print("Failed to change map scheme: $error");
+        return;
+      }
+      print("Map scheme changed to $scheme");
+    });
+  }
+
   void _updateCurrentLocationMarker(GeoCoordinates coords) {
     if (_currentLocationMarker != null) {
       state.mapController?.mapScene.removeMapMarker(_currentLocationMarker!);
@@ -86,7 +98,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     // if (!state.cameraControlledByNavigator) {
     //   state.mapController?.camera.lookAtPoint(coords);
     // }
-    emit(state.copyWith(startCoordinates: coords));
+    emit(state.copyWith(startCoordinates: coords, currentPlace: 'null'));
+    getCurrentLocationPlace();
   }
 
   void mapZoomIn(material.BuildContext context) {
@@ -161,6 +174,29 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         LocationAccuracy.bestAvailable,
       );
     }
+  }
+
+  Future<void> getCurrentLocationPlace() async {
+    if (state.startCoordinates == null) return;
+    final GeoCoordinates currentCoords = state.startCoordinates!;
+    final SearchOptions options = SearchOptions()
+      ..languageCode = LanguageCode.enUs
+      ..maxItems = 1;
+
+    _searchEngine.searchByCoordinates(currentCoords, options, (
+      SearchError? error,
+      List<Place>? places,
+    ) {
+      if (error != null) {
+        log("Reverse geocoding failed: $error");
+        return;
+      }
+      if (places != null && places.isNotEmpty) {
+        emit(state.copyWith(currentPlace: places.first));
+      } else {
+        emit(state.copyWith(currentPlace: "null"));
+      }
+    });
   }
 
   /// Routing and Navigation Functions
