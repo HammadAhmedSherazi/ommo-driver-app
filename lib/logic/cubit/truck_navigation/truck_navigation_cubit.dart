@@ -35,7 +35,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   HEREPositioningSimulator? _simulator;
   MapPolyline? _currentRoutePolyline;
   MapMarker? _currentLocationMarker;
-  MapMarker? _startMarker;
   MapMarker? _destinationMarker;
   final loc.Location _location = loc.Location();
 
@@ -50,7 +49,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     emit(state.copyWith(mapController: controller));
     controller.mapScene.loadSceneForMapScheme(MapScheme.normalDay, (error) {
       if (error != null) {
-        print("Map scene not loaded. Error: ${error.toString()}");
+        log("Map scene not loaded. Error: ${error.toString()}");
         return;
       }
     });
@@ -98,8 +97,14 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     // if (!state.cameraControlledByNavigator) {
     //   state.mapController?.camera.lookAtPoint(coords);
     // }
-    emit(state.copyWith(startCoordinates: coords, currentPlace: 'null'));
+    emit(
+      state.copyWith(
+        startCoordinates: coords,
+        currentPlace: FutureData.loading(),
+      ),
+    );
     getCurrentLocationPlace();
+    getNearbyTruckStops();
   }
 
   void mapZoomIn(material.BuildContext context) {
@@ -144,6 +149,68 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     return GeoCoordinates(locationData.latitude!, locationData.longitude!);
   }
 
+  Future getNearbyTruckStops() async {
+    // emit(state.copyWith(nearbyTruckStops: FutureData.loading()));
+    // return;
+    if (state.startCoordinates == null) {
+      emit(
+        state.copyWith(
+          nearbyTruckStops: FutureData.error(
+            "Unable to retrieve nearby places because the current location could not be determined.",
+          ),
+        ),
+      );
+      return;
+    }
+
+    final SearchEngine searchEngine = SearchEngine();
+
+    final SearchOptions options = SearchOptions()
+      ..languageCode = LanguageCode.enUs
+      ..maxItems = 3;
+
+    TextQueryArea queryArea = TextQueryArea.withCenter(state.startCoordinates!);
+
+    final TextQuery query = TextQuery.withArea("truck stop", queryArea);
+
+    searchEngine.searchByText(query, options, (
+      SearchError? error,
+      List<Place>? places,
+    ) {
+      if (error != null) {
+        emit(
+          state.copyWith(
+            nearbyTruckStops: FutureData.error(
+              "Unable to retrieve nearby places because $error",
+            ),
+          ),
+        );
+
+        return;
+      }
+
+      if (places != null && places.isNotEmpty) {
+        final List<Place> _list = [];
+
+        for (final place in places) {
+          // log("place images length ${place.details.images.length}");
+          // for (var e in place.details.images) {
+          //   log("place image ${e.source.href}");
+          // }
+
+          _list.add(place);
+        }
+        emit(state.copyWith(nearbyTruckStops: FutureData.completed(_list)));
+      } else {
+        emit(
+          state.copyWith(
+            nearbyTruckStops: FutureData.error("No nearby places found"),
+          ),
+        );
+      }
+    });
+  }
+
   void startListeningToLocation() async {
     if (AppKeys().isSimulation) {
       setInitialLocation(GeoCoordinates(40.7064783, -74.00585));
@@ -177,7 +244,17 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   Future<void> getCurrentLocationPlace() async {
-    if (state.startCoordinates == null) return;
+    if (state.startCoordinates == null) {
+      emit(
+        state.copyWith(
+          nearbyTruckStops: FutureData.error(
+            "Unable to retrieve details because the current location could not be determined.",
+          ),
+        ),
+      );
+      return;
+    }
+
     final GeoCoordinates currentCoords = state.startCoordinates!;
     final SearchOptions options = SearchOptions()
       ..languageCode = LanguageCode.enUs
@@ -192,9 +269,15 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         return;
       }
       if (places != null && places.isNotEmpty) {
-        emit(state.copyWith(currentPlace: places.first));
+        emit(state.copyWith(currentPlace: FutureData.completed(places.first)));
       } else {
-        emit(state.copyWith(currentPlace: "null"));
+        emit(
+          state.copyWith(
+            currentPlace: FutureData.error(
+              "No details available of current location",
+            ),
+          ),
+        );
       }
     });
   }

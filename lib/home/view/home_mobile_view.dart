@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -7,14 +8,17 @@ import 'package:here_sdk/core.dart' hide Location;
 import 'package:here_sdk/mapview.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
+import 'package:ommo/custom_widget/future_data_builder.dart';
 import 'package:ommo/home/view/map_view.dart';
 import 'package:ommo/home/view/truck_specification/truck_specification_utils.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_utils.dart';
+import 'package:ommo/utils/extension/place_extension.dart';
 import 'package:ommo/utils/extension/route_extension.dart';
 import 'package:ommo/utils/utils.dart';
+import 'package:shimmer_animation/shimmer_animation.dart';
 import '../home.dart';
 
 class HomeMobileView extends StatefulWidget {
@@ -712,12 +716,13 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     ],
                   ),
                   15.h,
-                  ...List.generate(TruckNavigationStaticDetails.places.length, (
-                    index,
-                  ) {
-                    final place = TruckNavigationStaticDetails.places[index];
-                    return PlaceDisplayWidget(place: place);
-                  }),
+                  buildNearbyTruckStops(context),
+                  // ...List.generate(TruckNavigationStaticDetails.places.length, (
+                  //   index,
+                  // ) {
+                  //   final place = TruckNavigationStaticDetails.places[index];
+                  //   return PlaceDisplayWidget(place: place);
+                  // }),
                   DashedLine(color: Color(0xffEBEEF2)),
                   15.h,
                   Text(
@@ -822,19 +827,22 @@ class _HomeMobileViewState extends State<HomeMobileView>
                               setState(() {
                                 searchTextEditController.text =
                                     TruckNavigationStaticDetails
-                                        .places[index]
+                                        .placess[index]
                                         .address;
                                 place =
-                                    TruckNavigationStaticDetails.places[index];
+                                    TruckNavigationStaticDetails.placess[index];
                               });
                             },
                             child: PlaceDisplayWidget(
-                              place: TruckNavigationStaticDetails.places[index],
+                              place:
+                                  TruckNavigationStaticDetails.placess[index],
                               isSaved: true,
                             ),
                           ),
-                          itemCount: TruckNavigationStaticDetails.places.length,
+                          itemCount:
+                              TruckNavigationStaticDetails.placess.length,
                         ),
+
                         ListView.builder(
                           physics: NeverScrollableScrollPhysics(),
                           itemBuilder: (context, index) => PlaceDisplayWidget(
@@ -1049,12 +1057,12 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       TextSpan(
                         children: [
                           TextSpan(
-                            text: place!.shopStatus == "Open"
+                            text: place!.shopStatus == true
                                 ? "Opened"
                                 : "Closed",
                             style: AppTextTheme().lightText.copyWith(
                               fontSize: 16,
-                              color: place!.shopStatus == "Open"
+                              color: place!.shopStatus == true
                                   ? AppColorTheme().primary
                                   : Colors.red,
                             ),
@@ -1067,7 +1075,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                             ),
                           ),
                           TextSpan(
-                            text: place!.shopStatus != "Open"
+                            text: place!.shopStatus != true
                                 ? "Opens at ${place!.time}"
                                 : "Closes at ${place!.time}",
                           ),
@@ -1658,26 +1666,66 @@ class _HomeMobileViewState extends State<HomeMobileView>
   Widget currentLocationTile(BuildContext context) {
     return BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
       buildWhen: (p, c) => p.currentPlace != c.currentPlace,
-      builder: (context, state) => ListTile(
-        contentPadding: EdgeInsets.zero,
-        leading: CircleAvatar(
-          radius: 25,
-          backgroundColor: AppColorTheme().primary.withValues(alpha: 0.2),
-          child: SvgPicture.asset(AppIcons.navigationIconGreen),
-        ),
-        title: Text(
-          state.currentPlace?.title ?? "",
-          //  "210 Riverside Drive",
-          style: AppTextTheme().bodyText.copyWith(
-            color: Colors.black,
-            fontSize: 16,
+      builder: (context, state) => FutureDataBuilder(
+        future: state.currentPlace,
+        onSuccess: (place) => ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: CircleAvatar(
+            radius: 25,
+            backgroundColor: AppColorTheme().primary.withValues(alpha: 0.2),
+            child: SvgPicture.asset(AppIcons.navigationIconGreen),
+          ),
+          title: Text(
+            place?.title ?? "",
+            //  "210 Riverside Drive",
+            style: AppTextTheme().bodyText.copyWith(
+              color: Colors.black,
+              fontSize: 16,
+            ),
+          ),
+          subtitle: Text(
+            place?.address.addressText ?? "",
+            // "New York, NY 10025",
+            style: AppTextTheme().lightText.copyWith(
+              color: AppColorTheme().secondary,
+            ),
           ),
         ),
-        subtitle: Text(
-          state.currentPlace?.address.addressText ?? "",
-          // "New York, NY 10025",
-          style: AppTextTheme().lightText.copyWith(
-            color: AppColorTheme().secondary,
+
+        loader: ClipRRect(
+          borderRadius: BorderRadiusGeometry.circular(10),
+          child: Shimmer(
+            color: Colors.greenAccent,
+            child: SizedBox(width: double.infinity, height: 80),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget buildNearbyTruckStops(BuildContext context) {
+    return BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+      buildWhen: (p, c) => p.nearbyTruckStops != c.nearbyTruckStops,
+      builder: (context, state) => FutureDataBuilder(
+        future: state.nearbyTruckStops,
+        onSuccess: (places) => Column(
+          children: List.generate(
+            places?.length ?? 0,
+            (index) =>
+                PlaceDisplayWidget(place: places?[index].toPlaceDataModel),
+          ),
+        ),
+        loader: Column(
+          spacing: 10,
+          children: List.generate(
+            3,
+            (i) => ClipRRect(
+              borderRadius: BorderRadiusGeometry.circular(10),
+              child: Shimmer(
+                color: Colors.greenAccent,
+                child: SizedBox(width: double.infinity, height: 80),
+              ),
+            ),
           ),
         ),
       ),
@@ -1687,16 +1735,14 @@ class _HomeMobileViewState extends State<HomeMobileView>
 
 class PlaceDisplayWidget extends StatelessWidget {
   final bool? isSaved;
-  const PlaceDisplayWidget({
-    super.key,
-    required this.place,
-    this.isSaved = false,
-  });
+  const PlaceDisplayWidget({super.key, this.place, this.isSaved = false});
 
-  final PlaceDataModel place;
+  final PlaceDataModel? place;
 
   @override
   Widget build(BuildContext context) {
+    log("network image ${place?.networkImage.toString()}");
+
     return Row(
       spacing: 10,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1706,7 +1752,11 @@ class PlaceDisplayWidget extends StatelessWidget {
           backgroundColor: Color(0xffF4F6F8),
           child: CircleAvatar(
             radius: 13,
-            backgroundImage: AssetImage(place.icon),
+            backgroundImage: (place?.networkImage ?? '').isNotEmpty
+                ? CachedNetworkImageProvider(place?.networkImage ?? '')
+                : (place?.icon ?? '').isNotEmpty
+                ? AssetImage(place?.icon ?? '')
+                : null,
           ),
         ),
         Expanded(
@@ -1718,14 +1768,13 @@ class PlaceDisplayWidget extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      place.title,
+                      place?.title ?? '',
                       style: AppTextTheme().headingText.copyWith(fontSize: 16),
                     ),
                   ),
                   Container(
                     width: 28,
                     height: 28,
-                    // padding: EdgeInsets.all(5),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       border: Border.all(
@@ -1760,41 +1809,44 @@ class PlaceDisplayWidget extends StatelessWidget {
                   // Icon(Icons.star, color: Color(0xffFF8800), size: 15,),
                   SvgPicture.asset(AppIcons.ratingIcon),
                   Text(
-                    place.rating.toString(),
+                    place?.rating.toString() ?? '',
                     style: AppTextTheme().bodyText.copyWith(
                       color: Color(0xffFF8800),
                     ),
                   ),
                   Text(
-                    "(${place.reviewCount})",
+                    "(${place?.reviewCount ?? ''})",
                     style: AppTextTheme().bodyText.copyWith(
                       color: AppColorTheme().secondary,
                     ),
                   ),
                   Text(
-                    "  • ${place.storeType} • ${place.distance} mi",
+                    "  • ${place?.storeType ?? ''} • ${place?.distance ?? '0'} mi",
                     style: AppTextTheme().bodyText.copyWith(
                       color: AppColorTheme().secondary,
                     ),
                   ),
                 ],
               ),
-              Text(
-                place.address == 'null' ? '' : place.address,
-                style: AppTextTheme().bodyText,
-              ),
+              Text(place?.address ?? '', style: AppTextTheme().bodyText),
               Row(
                 children: [
                   Text(
-                    place.shopStatus == "Open" ? "Opened" : "Closed",
+                    place?.shopStatus == true
+                        ? "Opened"
+                        : place?.shopStatus == false
+                        ? "Closed"
+                        : 'N/A',
+                    // place?.shopStatus == "Open" ? "Opened" : "Closed",
                     style: AppTextTheme().bodyText.copyWith(
-                      color: place.shopStatus == "Open"
+                      color: place?.shopStatus == true
                           ? AppColorTheme().primary
                           : Colors.redAccent,
                     ),
                   ),
                   Text(
-                    "  • ${place.shopStatus == "Open" ? "Closes" : "Opens"} at ${place.time} ",
+                    // "  • ${place?.shopStatus == true ? "Closes" : "Opens"} at ${place?.time} ",
+                    "  • ${place?.time}",
                     style: AppTextTheme().bodyText.copyWith(
                       color: AppColorTheme().secondary,
                     ),

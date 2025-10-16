@@ -1,12 +1,12 @@
 part of 'models.dart';
 
-
 class PlaceDataModel {
   final String title;
   final String icon;
+  final String networkImage;
   final String address;
   final String time;
-  final String shopStatus;
+  final bool shopStatus;
   final num distance;
   final double rating;
   final int reviewCount;
@@ -15,6 +15,7 @@ class PlaceDataModel {
   const PlaceDataModel({
     required this.title,
     required this.icon,
+    this.networkImage = '',
     required this.address,
     required this.time,
     required this.shopStatus,
@@ -28,16 +29,17 @@ class PlaceDataModel {
   factory PlaceDataModel.fromJson(Map<String, dynamic> json) {
     return PlaceDataModel(
       title: json['title'] ?? '',
-      icon: json['icon'] ?? '', // ✅ Added
+      icon: json['icon'] ?? '',
+      networkImage: json['networkImage'] ?? '',
       address: json['address'] ?? '',
       time: json['time'] ?? '',
-      shopStatus: json['shopStatus'] ?? '',
+      shopStatus: json['shopStatus'] ?? false,
       distance: (json['distance'] ?? 0) is num
-          ? json['distance']
-          : num.tryParse(json['distance'].toString()) ?? 0, // safer
+          ? (json['distance'] ?? 0.0)
+          : num.tryParse(json['distance'].toString()) ?? 0,
       rating: (json['rating'] ?? 0).toDouble(),
       reviewCount: (json['reviewCount'] ?? 0) is int
-          ? json['reviewCount']
+          ? (json['reviewCount'] ?? 0)
           : int.tryParse(json['reviewCount'].toString()) ?? 0,
       storeType: json['storeType'] ?? '',
     );
@@ -47,8 +49,9 @@ class PlaceDataModel {
   Map<String, dynamic> toJson() {
     return {
       'title': title,
-      'icon': icon, // ✅ Added
+      'icon': icon,
       'address': address,
+      'networkImage': networkImage,
       'time': time,
       'shopStatus': shopStatus,
       'distance': distance,
@@ -63,8 +66,9 @@ class PlaceDataModel {
     String? title,
     String? icon,
     String? address,
+    String? networkImage,
     String? time,
-    String? shopStatus,
+    bool? shopStatus,
     num? distance,
     double? rating,
     int? reviewCount,
@@ -72,7 +76,8 @@ class PlaceDataModel {
   }) {
     return PlaceDataModel(
       title: title ?? this.title,
-      icon: icon ?? this.icon, // ✅ Added
+      icon: icon ?? this.icon,
+      networkImage: networkImage ?? this.networkImage,
       address: address ?? this.address,
       time: time ?? this.time,
       shopStatus: shopStatus ?? this.shopStatus,
@@ -95,6 +100,7 @@ class PlaceDataModel {
     return other is PlaceDataModel &&
         other.title == title &&
         other.icon == icon && // ✅ Added
+        other.networkImage == networkImage && // ✅ Added
         other.address == address &&
         other.time == time &&
         other.shopStatus == shopStatus &&
@@ -107,8 +113,9 @@ class PlaceDataModel {
   @override
   int get hashCode {
     return title.hashCode ^
-        icon.hashCode ^ // ✅ Added
+        icon.hashCode ^
         address.hashCode ^
+        networkImage.hashCode ^
         time.hashCode ^
         shopStatus.hashCode ^
         distance.hashCode ^

@@ -9,8 +9,9 @@ import 'package:ommo/data/response/get_data.dart';
 class TruckNavigationState extends Equatable {
   final HereMapController? mapController;
   final FutureData<List<Suggestion>>? destinationSuggestions;
+  final FutureData<List<Place>>? nearbyTruckStops;
   final GeoCoordinates? startCoordinates;
-  final Place? currentPlace;
+  final FutureData<Place>? currentPlace;
   final Suggestion? selectedSuggestion;
   final Route? currentRoute;
   final bool isNavigating;
@@ -25,6 +26,7 @@ class TruckNavigationState extends Equatable {
     this.startCoordinates,
     this.maneuverProgress,
     this.selectedSuggestion,
+    this.nearbyTruckStops,
     // this.destinationCoordinates,
     this.currentRoute,
     this.isMapLoading = true,
@@ -39,10 +41,11 @@ class TruckNavigationState extends Equatable {
 
   TruckNavigationState copyWith({
     HereMapController? mapController,
-    dynamic currentPlace,
+    FutureData<Place>? currentPlace,
     GeoCoordinates? startCoordinates,
     dynamic selectedSuggestion,
     FutureData<List<Suggestion>>? destinationSuggestions,
+    FutureData<List<Place>>? nearbyTruckStops,
     dynamic currentRoute,
     bool? isNavigating,
     bool? isMapLoading,
@@ -53,10 +56,9 @@ class TruckNavigationState extends Equatable {
     return TruckNavigationState(
       destinationSuggestions:
           destinationSuggestions ?? this.destinationSuggestions,
+      nearbyTruckStops: nearbyTruckStops ?? this.nearbyTruckStops,
       mapController: mapController ?? this.mapController,
-      currentPlace: currentPlace == 'null'
-          ? null
-          : (currentPlace ?? this.currentPlace),
+      currentPlace: currentPlace ?? this.currentPlace,
       startCoordinates: startCoordinates ?? this.startCoordinates,
       selectedSuggestion: selectedSuggestion == 'null'
           ? null
@@ -80,6 +82,7 @@ class TruckNavigationState extends Equatable {
     destinationSuggestions,
     mapController,
     currentPlace,
+    nearbyTruckStops,
     startCoordinates,
     selectedSuggestion,
     currentRoute,

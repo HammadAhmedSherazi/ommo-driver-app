@@ -12,7 +12,7 @@ class AppKeys {
   static const String onboardingCacheKey = '__onboarding_cache_key__';
 
   final String accessKeyId = "nD9uaWDaZEmcHFyirUGFZw";
-  final bool isSimulation = true;
+  final bool isSimulation = false;
   final String accessKeySecret =
       "3MSg_BDUhi10ssWBhC_69dR5AzIOmttXg7BpgtsOF_XjKU5xO9LHMFdCF4xh7JvBvggBtgIU0X-PhgTgCjN6Eg";
 }
