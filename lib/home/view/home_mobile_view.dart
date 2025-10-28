@@ -7,6 +7,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:here_sdk/core.dart' hide Location;
 import 'package:here_sdk/mapview.dart';
 import 'package:here_sdk/search.dart';
+import 'package:ommo/app/app.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/custom_widget/future_data_builder.dart';
 import 'package:ommo/home/view/map_view.dart';
@@ -17,6 +18,7 @@ import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.
 import 'package:ommo/home/view/truck_navigation/truck_navigation_utils.dart';
 import 'package:ommo/utils/extension/place_extension.dart';
 import 'package:ommo/utils/extension/route_extension.dart';
+import 'package:ommo/utils/snacks/snackbar_utils.dart';
 import 'package:ommo/utils/utils.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
 import '../home.dart';
@@ -32,8 +34,10 @@ class _HomeMobileViewState extends State<HomeMobileView>
     with SingleTickerProviderStateMixin {
   final TextEditingController searchTextEditController =
       TextEditingController();
+
   FocusNode searchFieldFocusNode = FocusNode();
   late final TabController _tabController;
+
   final List<TextEditingController> textController = [
     TextEditingController(text: "Start My Current Location"),
   ];
@@ -99,7 +103,16 @@ class _HomeMobileViewState extends State<HomeMobileView>
             mainAxisSize: MainAxisSize.min,
             children: [
               20.w,
-              Image.asset(AppIcons.logo, width: 126, height: 22),
+              GestureDetector(
+                onTap: () {
+                  // context.read<TruckNavigationCubit>().testingWarningMarker();
+                  // SnackbarUtils.showWarningSnackBar(
+                  //   navigatorKey.currentContext!,
+                  //   " e.g. show in a snackbar, toast, or banner",
+                  // );
+                },
+                child: Image.asset(AppIcons.logo, width: 126, height: 22),
+              ),
             ],
           ),
           actions: [
@@ -1730,6 +1743,11 @@ class _HomeMobileViewState extends State<HomeMobileView>
         ),
       ),
     );
+  }
+
+  @override
+  void onTruckRestrictionWarning(String message) {
+    SnackbarUtils.showWarningSnackBar(context, message);
   }
 }
 

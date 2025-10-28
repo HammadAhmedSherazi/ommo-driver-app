@@ -1,10 +1,11 @@
 import 'dart:developer';
-
+import 'dart:math' as m;
 import 'package:flutter/material.dart' as material;
 import 'package:flutter/widgets.dart' as widgets;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:here_sdk/animation.dart';
 import 'package:here_sdk/core.dart';
+import 'package:here_sdk/gestures.dart';
 import 'package:here_sdk/location.dart';
 import 'package:here_sdk/mapview.dart';
 import 'package:here_sdk/navigation.dart';
@@ -20,6 +21,7 @@ import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state
 import 'package:ommo/map_sdk/HEREPositioningSimulator.dart';
 import 'package:ommo/utils/constants/constants.dart';
 import 'package:ommo/utils/generics/generics.dart';
+import 'package:ommo/utils/snacks/snackbar_utils.dart';
 import 'package:ommo/utils/theme/theme.dart';
 
 class TruckNavigationCubit extends Cubit<TruckNavigationState> {
@@ -36,6 +38,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   MapPolyline? _currentRoutePolyline;
   MapMarker? _currentLocationMarker;
   MapMarker? _destinationMarker;
+  List<MapMarker> _truckRestrictionMarkers = [];
   final loc.Location _location = loc.Location();
 
   // Setters
@@ -52,7 +55,45 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         log("Map scene not loaded. Error: ${error.toString()}");
         return;
       }
+
+      controller.gestures.tapListener = TapListener((Point2D touchPoint) {
+        const double pickRadius = 2;
+        final Rectangle2D pickArea = Rectangle2D(
+          Point2D(touchPoint.x - pickRadius, touchPoint.y - pickRadius),
+          Size2D(pickRadius * 2, pickRadius * 2),
+        );
+
+        final filter = MapSceneMapPickFilter([
+          MapSceneMapPickFilterContentType.mapItems,
+        ]);
+
+        controller.pick(filter, pickArea, (MapPickResult? result) {
+          if ((result?.mapItems?.markers ?? []).isEmpty) {
+            log(
+              "result?.mapItems?.markers ?? [] is ${result?.mapItems?.markers ?? []}",
+            );
+            return;
+          }
+
+          final MapMarker? pickedMarker = result?.mapItems?.markers.firstOrNull;
+
+          if (pickedMarker == null) {
+            log("pickedMarker is null");
+            return;
+          }
+          // Get metadata message if available
+          final String message =
+              pickedMarker.metadata?.getString("warning_message") ?? '';
+          if (message.isNotEmpty) {
+            SnackbarUtils.showWarningSnackBar(
+              navigatorKey.currentContext!,
+              message,
+            );
+          }
+        });
+      });
     });
+
     if (state.startCoordinates != null) {
       setInitialLocation(state.startCoordinates!);
       const double distanceToEarthInMeters = 8000;
@@ -81,6 +122,31 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     });
   }
 
+  double calculateDistanceInMeters(
+    double startLat,
+    double startLng,
+    double endLat,
+    double endLng,
+  ) {
+    const double earthRadius = 6371000; // meters
+
+    final double dLat = _degreesToRadians(endLat - startLat);
+    final double dLng = _degreesToRadians(endLng - startLng);
+
+    final double a =
+        m.sin(dLat / 2) * m.sin(dLat / 2) +
+        m.cos(_degreesToRadians(startLat)) *
+            m.cos(_degreesToRadians(endLat)) *
+            m.sin(dLng / 2) *
+            m.sin(dLng / 2);
+
+    final double c = 2 * m.atan2(m.sqrt(a), m.sqrt(1 - a));
+
+    return earthRadius * c; // in meters
+  }
+
+  double _degreesToRadians(double degree) => degree * m.pi / 180.0;
+
   void _updateCurrentLocationMarker(GeoCoordinates coords) {
     if (_currentLocationMarker != null) {
       state.mapController?.mapScene.removeMapMarker(_currentLocationMarker!);
@@ -100,7 +166,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     emit(
       state.copyWith(
         startCoordinates: coords,
-        currentPlace: FutureData.loading(),
+        // currentPlace: FutureData.loading(),
       ),
     );
     getCurrentLocationPlace();
@@ -150,8 +216,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   Future getNearbyTruckStops() async {
-    // emit(state.copyWith(nearbyTruckStops: FutureData.loading()));
-    // return;
     if (state.startCoordinates == null) {
       emit(
         state.copyWith(
@@ -193,11 +257,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         final List<Place> _list = [];
 
         for (final place in places) {
-          // log("place images length ${place.details.images.length}");
-          // for (var e in place.details.images) {
-          //   log("place image ${e.source.href}");
-          // }
-
           _list.add(place);
         }
         emit(state.copyWith(nearbyTruckStops: FutureData.completed(_list)));
@@ -228,7 +287,21 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
           final GeoCoordinates coords = location.coordinates;
           log("Location recieved $coords");
           if (!state.isNavigating) {
-            _updateCurrentLocationMarker(coords);
+            if (state.startCoordinates != null) {
+              final double distance = calculateDistanceInMeters(
+                state.startCoordinates!.latitude,
+                state.startCoordinates!.longitude,
+                coords.latitude,
+                coords.longitude,
+              );
+              print("has Distance of ${distance} > 10 ${distance > 10}");
+              if (distance > 10) {
+                _updateCurrentLocationMarker(coords);
+                return;
+              }
+            } else {
+              _updateCurrentLocationMarker(coords);
+            }
           }
           if (state.isNavigating) {
             _visualNavigator?.onLocationUpdated(location);
@@ -237,9 +310,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         }),
       );
 
-      _locationEngine?.startWithLocationAccuracy(
-        LocationAccuracy.bestAvailable,
-      );
+      _locationEngine?.startWithLocationAccuracy(LocationAccuracy.navigation);
     }
   }
 
@@ -376,6 +447,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
       final route = routes.first;
       _showRouteOnMap(route);
+      _processTruckRestrictionWarnings(route);
       emit(state.copyWith(currentRoute: route, hasDirection: true));
     });
   }
@@ -499,8 +571,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         LineCap.round,
       ),
     );
-    state.mapController?.mapScene.addMapPolyline(mapPolyline);
     _currentRoutePolyline = mapPolyline;
+    state.mapController?.mapScene.addMapPolyline(mapPolyline);
     _animateToRoute(route);
   }
 
@@ -534,7 +606,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     _visualNavigator?.route = state.currentRoute!;
     _visualNavigator?.startRendering(state.mapController!);
-
+    setupTruckRestrictionWarnings();
     setupManeuverUpdates();
     if (AppKeys().isSimulation) {
       _locationEngine?.stop();
@@ -619,6 +691,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       state.mapController?.mapScene.removeMapPolyline(_currentRoutePolyline!);
       _currentRoutePolyline = null;
     }
+
+    _clearTruckPreviousMarkers();
+
     emit(
       state.copyWith(
         destinationSuggestions: FutureData<List<Suggestion>>.initial(),
@@ -641,5 +716,150 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         emit(state.copyWith(maneuverProgress: progress.maneuverProgress.first));
       }
     });
+  }
+
+  void setupTruckRestrictionWarnings() {
+    _visualNavigator
+        ?.truckRestrictionsWarningListener = TruckRestrictionsWarningListener((
+      List<TruckRestrictionWarning> warnings,
+    ) {
+      if (warnings.isEmpty) return;
+
+      for (final warning in warnings) {
+        // Determine distance state:
+        final DistanceType distanceType = warning.distanceType;
+        final String distanceLabel = _distanceTypeLabel(distanceType);
+
+        // Build description depending on which restriction field is present.
+        String description = "Truck restriction";
+
+        if (warning.weightRestriction != null) {
+          final wr = warning.weightRestriction!;
+          final int kg = wr.valueInKilograms;
+          // convert to tons with one decimal:
+          final double tons = (kg / 1000.0 * 10).round() / 10;
+          description = "Weight limit: ${tons} t";
+        } else if (warning.dimensionRestriction != null) {
+          final dr = warning.dimensionRestriction!;
+          final int valueCm = dr.valueInCentimeters;
+          String dimType = "Dimension";
+          if (dr.type == DimensionRestrictionType.truckHeight)
+            dimType = "Height";
+          if (dr.type == DimensionRestrictionType.truckLength)
+            dimType = "Length";
+          if (dr.type == DimensionRestrictionType.truckWidth) dimType = "Width";
+
+          final double meters = (valueCm / 100.0 * 10).round() / 10;
+          description = "$dimType limit: ${meters} m";
+        } else if (warning.hazardousMaterials.isNotEmpty) {
+          final hazardList = warning.hazardousMaterials
+              .map((h) => h.name.toString().split('.').last)
+              .join(', ');
+          description = "Hazardous goods not allowed: $hazardList";
+        } else if (warning.trailerCount != null) {
+          description =
+              "Trailer restriction: min ${warning.trailerCount!.min}, max ${warning.trailerCount!.max ?? 'no max'}";
+        } else {
+          description = "Truck restriction ahead";
+        }
+        String distanceInfo = "";
+        try {
+          distanceInfo = " in ${warning.distanceInMeters.toInt()} m";
+        } catch (_) {}
+
+        final message = "$description $distanceLabel$distanceInfo";
+        log("🚨 $message");
+        SnackbarUtils.showWarningSnackBar(
+          navigatorKey.currentContext!,
+          message,
+        );
+      }
+    });
+  }
+
+  String _distanceTypeLabel(DistanceType distanceType) {
+    switch (distanceType) {
+      case DistanceType.ahead:
+        return "ahead";
+      case DistanceType.reached:
+        return "reached";
+      case DistanceType.passed:
+        return "passed";
+      default:
+        return "";
+    }
+  }
+
+  void _processTruckRestrictionWarnings(Route route) async {
+    for (final section in route.sections) {
+      for (final notice in section.sectionNotices) {
+        final message = notice.code.name.toLowerCase();
+        if (message.contains("restriction") ||
+            message.contains("height") ||
+            message.contains("weight") ||
+            message.contains("width") ||
+            message.contains("tunnel") ||
+            message.contains("hazardous") ||
+            message.contains("bridge") ||
+            message.contains("limit")) {
+          print("⚠️ Truck Restriction Found: ${notice.code.name}");
+
+          // Get best coordinate (section start or geometry)
+          final GeoCoordinates location =
+              section.departurePlace.originalCoordinates ??
+              section.geometry.vertices.first;
+
+          // Add visual marker
+          await _addWarningMarker(location, notice.code.name);
+        }
+      }
+    }
+  }
+
+  /// Helper to create custom warning marker on map.
+  Future<void> _addWarningMarker(
+    GeoCoordinates coordinates,
+    String message,
+  ) async {
+    final mapImage = MapImage.withFilePathAndWidthAndHeight(
+      'assets/images/truck_warning.png',
+      70,
+      70,
+    );
+
+    final marker = MapMarker(coordinates, mapImage);
+
+    // Add marker metadata (so you can handle tap events)
+    final metadata = Metadata();
+    metadata.setString("warning_message", message);
+    marker.metadata = metadata;
+
+    state.mapController?.mapScene.addMapMarker(marker);
+    _truckRestrictionMarkers.add(marker);
+  }
+
+  // Future<void> testingWarningMarker() async {
+  //   final mapImage = MapImage.withFilePathAndWidthAndHeight(
+  //     'assets/images/truck_warning.png',
+  //     70,
+  //     70,
+  //   );
+
+  //   final marker = MapMarker(GeoCoordinates(24.8801649, 67.0699316), mapImage);
+
+  //   // Add marker metadata (so you can handle tap events)
+  //   final metadata = Metadata();
+  //   metadata.setString("warning_message", "warning_message");
+  //   marker.metadata = metadata;
+
+  //   state.mapController?.mapScene.addMapMarker(marker);
+  //   _truckRestrictionMarkers.add(marker);
+  // }
+
+  void _clearTruckPreviousMarkers() {
+    for (final marker in _truckRestrictionMarkers) {
+      state.mapController?.mapScene.removeMapMarker(marker);
+    }
+    _truckRestrictionMarkers.clear();
   }
 }
