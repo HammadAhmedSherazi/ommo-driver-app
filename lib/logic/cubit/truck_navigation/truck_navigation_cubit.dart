@@ -272,7 +272,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
   void startListeningToLocation() async {
     if (AppKeys().isSimulation) {
-      setInitialLocation(GeoCoordinates(40.7064783, -74.00585));
+      setInitialLocation(AppKeys().startCoordinates);
     } else {
       _locationEngine = LocationEngine();
       _locationEngine?.confirmHEREPrivacyNoticeInclusion();
@@ -430,8 +430,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   void calculateRoute() {
-    final start = state.startCoordinates;
-    final end = state.destinationCoordinates;
+    GeoCoordinates? start = state.startCoordinates;
+    GeoCoordinates? end = state.destinationCoordinates;
 
     if (start == null || end == null) return;
 
@@ -458,12 +458,16 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         .state;
     TruckOptions truckOptions = TruckOptions();
     truckOptions.routeOptions.enableTolls = true;
+
     truckOptions.avoidanceOptions = _createTruckAvoidanceOptions();
+
     truckOptions.truckSpecifications = _createTruckSpecifications(mySpecs);
 
-    truckOptions.hazardousMaterials = mapHazardousMaterial(
-      mySpecs.hazardousMaterial,
-    );
+    if (mySpecs.hazardousMaterial != '-') {
+      truckOptions.hazardousMaterials = mapHazardousMaterial(
+        mySpecs.hazardousMaterial,
+      );
+    }
 
     return truckOptions;
   }
@@ -571,6 +575,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         LineCap.round,
       ),
     );
+    if (_currentRoutePolyline != null) {
+      state.mapController?.mapScene.removeMapPolyline(_currentRoutePolyline!);
+      _currentRoutePolyline = null;
+      _clearTruckPreviousMarkers();
+    }
+
     _currentRoutePolyline = mapPolyline;
     state.mapController?.mapScene.addMapPolyline(mapPolyline);
     _animateToRoute(route);
@@ -600,6 +610,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     state.mapController!.camera.startAnimation(animation);
   }
+
+  void recalculateRoute() {}
 
   void startNavigation() {
     if (state.currentRoute == null) return;
@@ -681,12 +693,13 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     clearCurrentRouteDetail();
   }
 
-  void clearCurrentRouteDetail() {
+  void clearCurrentRouteDetail({bool removeDestination = true}) {
     // Clear polylines
-    if (_destinationMarker != null) {
+    if (removeDestination && _destinationMarker != null) {
       state.mapController?.mapScene.removeMapMarker(_destinationMarker!);
       _destinationMarker = null;
     }
+
     if (_currentRoutePolyline != null) {
       state.mapController?.mapScene.removeMapPolyline(_currentRoutePolyline!);
       _currentRoutePolyline = null;
@@ -697,7 +710,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     emit(
       state.copyWith(
         destinationSuggestions: FutureData<List<Suggestion>>.initial(),
-        selectedSuggestion: 'null',
+        selectedSuggestion: removeDestination ? 'null' : null,
         currentRoute: 'null',
         hasDirection: false,
         isNavigating: false,

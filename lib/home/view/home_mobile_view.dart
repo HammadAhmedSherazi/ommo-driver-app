@@ -411,9 +411,6 @@ class _HomeMobileViewState extends State<HomeMobileView>
                             .read<TruckNavigationCubit>()
                             .clearCurrentRouteDetail();
                         searchTextEditController.clear();
-                        // setState(() {
-                        //   hasDirection = false;
-                        // });
                       },
                       icon: Icon(Icons.close, color: Colors.black),
                     ),
@@ -473,7 +470,12 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     ),
                     IconButton(
                       onPressed: () {
-                        TruckSpecificationUtils.openSettingBottomSheet(context);
+                         TruckSpecificationUtils.openSettingBottomSheet(
+                          context,
+                          onEditSuccess: () {
+                            context.read<TruckNavigationCubit>().calculateRoute();
+                          },
+                        );
                       },
                       icon: SvgPicture.asset(AppIcons.settingIcon),
                       style: ButtonStyle(

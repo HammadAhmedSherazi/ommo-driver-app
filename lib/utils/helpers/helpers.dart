@@ -101,7 +101,6 @@ class Helpers {
       clipBehavior: Clip.none,
       isScrollControlled: true,
       showDragHandle: true,
-
       barrierColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),

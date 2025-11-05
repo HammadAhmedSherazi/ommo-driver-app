@@ -39,7 +39,10 @@ class TruckSpecificationUtils {
     }
   }
 
-  static void openSettingBottomSheet(BuildContext context) {
+  static void openSettingBottomSheet(
+    BuildContext context, {
+    VoidCallback? onEditSuccess,
+  }) {
     Helpers.openBottomSheet(
       context: context,
       child: SizedBox(
@@ -53,6 +56,7 @@ class TruckSpecificationUtils {
                 GestureDetector(
                   onTap: () {
                     context.popPage();
+                    if (onEditSuccess != null) onEditSuccess();
                   },
                   child: CircleAvatar(
                     radius: 25,
@@ -88,7 +92,9 @@ class TruckSpecificationUtils {
             ListTile(
               onTap: () => Helpers.openBottomSheet(
                 context: context,
-                child: EditTruckSpecificationsView(),
+                child: EditTruckSpecificationsView(
+                  onEditSuccess: onEditSuccess,
+                ),
               ),
               leading: SvgPicture.asset(AppIcons.localShippingIcon),
               title: Text(
@@ -165,6 +171,8 @@ class TruckSpecificationUtils {
                                 .toggleAvoidance(
                                   state.avoidance.entries.elementAt(index).key,
                                 );
+
+                            if (onEditSuccess != null) onEditSuccess();
                           },
                         ),
                       ),

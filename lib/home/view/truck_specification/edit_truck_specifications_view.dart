@@ -10,7 +10,8 @@ import 'package:ommo/utils/helpers/validation.dart';
 import 'package:ommo/utils/utils.dart';
 
 class EditTruckSpecificationsView extends StatefulWidget {
-  const EditTruckSpecificationsView({super.key});
+  final VoidCallback? onEditSuccess;
+  const EditTruckSpecificationsView({super.key, this.onEditSuccess});
 
   @override
   State<EditTruckSpecificationsView> createState() =>
@@ -35,6 +36,7 @@ class _EditTruckSpecificationsViewState
   late ValueNotifier<String?> selectHazardousMaterial;
 
   final hazardousMaterials = [
+    "-",
     "Explosives",
     "Gases",
     "Flammable Liquids",
@@ -424,9 +426,11 @@ class _EditTruckSpecificationsViewState
                   builder: (context, state) => CustomButtonWidget(
                     title: "Save",
                     enabled: state.hasChanges,
+
                     onPressed: () {
                       truckSpecsCubit.editTruckSpecs();
-                      context.popPage();
+                      context.popPage(true);
+                      if (widget.onEditSuccess != null) widget.onEditSuccess!();
                     },
                   ),
                 ),

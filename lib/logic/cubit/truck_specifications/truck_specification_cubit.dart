@@ -40,7 +40,7 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
       'weightInLbs': "${state.grossWeightInKilograms.kgToLbs}",
       'weightPerAxleInLbs': "${state.weightPerAxleInKilograms.kgToLbs}",
       'axleCount': "${state.axleCount}",
-      'hazardousMaterial': state.hazardousMaterial,
+      'hazardousMaterial': state.hazardousMaterial ?? '-',
     };
     setHasChanges(false);
   }

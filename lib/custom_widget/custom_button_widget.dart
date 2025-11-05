@@ -62,7 +62,7 @@ class CustomButtonWidget extends StatelessWidget {
                 elevation: WidgetStatePropertyAll(0.0),
                 backgroundColor: WidgetStatePropertyAll(
                   (bgColor ?? AppColorTheme().primary).withValues(
-                    alpha: enabled ? 1 : 07,
+                    alpha: enabled ? 1 : 0.6,
                   ),
                 ),
                 shape: WidgetStatePropertyAll(

@@ -16,7 +16,7 @@ class TruckSpecificationState extends Equatable {
   final Map<String, bool> avoidance;
 
   const TruckSpecificationState({
-    this.hazardousMaterial = "Flammable Liquids",
+    this.hazardousMaterial = '-',
     this.grossWeightInKilograms = 17000,
     this.heightInCentimeters = 3 * 100,
     this.widthInCentimeters = 4 * 100,
