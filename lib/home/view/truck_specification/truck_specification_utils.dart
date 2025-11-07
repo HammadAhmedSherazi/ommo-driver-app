@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:ommo/home/view/home_mobile_view.dart';
 import 'package:ommo/home/view/truck_specification/edit_truck_specifications_view.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
+import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specification_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state.dart';
 import 'package:ommo/utils/utils.dart';
@@ -56,7 +57,7 @@ class TruckSpecificationUtils {
                 GestureDetector(
                   onTap: () {
                     context.popPage();
-                    if (onEditSuccess != null) onEditSuccess();
+                    // if (onEditSuccess != null) onEditSuccess();
                   },
                   child: CircleAvatar(
                     radius: 25,
@@ -171,8 +172,19 @@ class TruckSpecificationUtils {
                                 .toggleAvoidance(
                                   state.avoidance.entries.elementAt(index).key,
                                 );
+                            final navigationState = context
+                                .read<TruckNavigationCubit>()
+                                .state;
+                            if (navigationState.hasDirection &&
+                                navigationState.currentRoute != null &&
+                                navigationState.selectedSuggestion != null &&
+                                !navigationState.isNavigating) {
+                              context
+                                  .read<TruckNavigationCubit>()
+                                  .calculateRoute();
+                            }
 
-                            if (onEditSuccess != null) onEditSuccess();
+                            // if (onEditSuccess != null) onEditSuccess();
                           },
                         ),
                       ),

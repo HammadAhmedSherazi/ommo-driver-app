@@ -89,4 +89,50 @@ class TruckSpecificationState extends Equatable {
     hasChanges,
     avoidance,
   ];
+
+  Map<String, dynamic> toJson() => {
+    "heightInCentimeters": heightInCentimeters,
+    "widthInCentimeters": widthInCentimeters,
+    "lengthInCentimeters": lengthInCentimeters,
+    "grossWeightInKilograms": grossWeightInKilograms,
+    "weightPerAxleInKilograms": weightPerAxleInKilograms,
+    "axleCount": axleCount,
+    "trailerCount": trailerCount,
+    "hazardousMaterial": hazardousMaterial,
+    "hasChanges": hasChanges,
+    "avoidance": avoidance,
+  };
+
+  TruckSpecificationState fromJson(Map<String, dynamic> json) {
+    return TruckSpecificationState(
+      heightInCentimeters: json["heightInCentimeters"],
+      widthInCentimeters: json["widthInCentimeters"],
+      lengthInCentimeters: json["lengthInCentimeters"],
+      grossWeightInKilograms: json["grossWeightInKilograms"],
+      weightPerAxleInKilograms: json["weightPerAxleInKilograms"],
+      axleCount: json["axleCount"],
+      trailerCount: json["trailerCount"],
+      hazardousMaterial: json["hazardousMaterial"],
+      hasChanges: json["hasChanges"],
+      avoidance: Map<String, bool>.from(json["avoidance"]),
+    );
+  }
 }
+
+// final initialSpecs = {
+//   "hazardousMaterial": '-',
+//   "grossWeightInKilograms": 17000,
+//   "heightInCentimeters": 3 * 100,
+//   "widthInCentimeters": 4 * 100,
+//   "lengthInCentimeters": 8 * 100,
+//   "weightPerAxleInKilograms": 2 * 1000,
+//   "axleCount": 4,
+//   "trailerCount": 2,
+//   "avoidance": {
+//     'highways': false,
+//     'tolls': false,
+//     'ferries': false,
+//     'tunnels': false,
+//     'unpaved_roads': false,
+//   },
+// };

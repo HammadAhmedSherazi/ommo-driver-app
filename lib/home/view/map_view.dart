@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:here_sdk/core.dart';
@@ -18,11 +20,11 @@ class MapView extends StatefulWidget {
 class MapViewState extends State<MapView> with WidgetsBindingObserver {
   late final AppLifecycleListener _appLifecycleListener;
 
-  @override
-  void didHaveMemoryPressure() {
-    super.didHaveMemoryPressure();
-    handleLowMemory();
-  }
+  // @override
+  // void didHaveMemoryPressure() {
+  //   super.didHaveMemoryPressure();
+  //   handleLowMemory();
+  // }
 
   handleLowMemory() async {
     print("System is running extremely low on memory!");
@@ -50,16 +52,18 @@ class MapViewState extends State<MapView> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addObserver(this);
     Future.delayed(Duration(seconds: 4), () {
       if (mounted) {
         context.read<TruckNavigationCubit>().startListeningToLocation();
       }
     });
-    _appLifecycleListener = AppLifecycleListener(
-      onDetach: () => {_disposeHERESDK()},
-    );
+    // _appLifecycleListener = AppLifecycleListener(
+    //   onDetach: () {
+    //     log("_map on Detach Called");
+    //     _disposeHERESDK();
+    //   },
+    // );
   }
 
   @override
@@ -92,12 +96,12 @@ class MapViewState extends State<MapView> with WidgetsBindingObserver {
   @override
   void dispose() {
     _disposeHERESDK();
-
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   void _disposeHERESDK() async {
+    log("_map _disposeHERESDK called");
     await SDKNativeEngine.sharedInstance?.dispose();
     SdkContext.release();
     _appLifecycleListener.dispose();

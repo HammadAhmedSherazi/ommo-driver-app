@@ -1,12 +1,61 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state.dart';
 import 'package:ommo/utils/extension/num_extension.dart';
+import 'package:ommo/utils/helpers/local_storage.dart';
 
 class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
-  TruckSpecificationsCubit() : super(TruckSpecificationState());
+  // TruckSpecificationsCubit(super.initialState);
+  TruckSpecificationsCubit() : super(const TruckSpecificationState()) {
+    _loadFromLocalStorage();
+  }
 
   late Map<String, String> initialState;
   late Map<String, String> editState;
+  final LocalStorage localStorage = LocalStorage();
+  static const String _storageKey = 'truck_specifications';
+
+
+  Future<void> _loadFromLocalStorage() async {
+    if (Platform.isIOS) {
+      await LocalStorage.deletePreviousStorage();
+    }
+
+    final jsonString = await localStorage.readValue(_storageKey);
+
+    if ((jsonString ?? '').isNotEmpty) {
+      try {
+        final jsonMap = jsonDecode(jsonString);
+        final savedState = fromJson(jsonMap);
+        emit(savedState);
+      } catch (e) {
+        print("Error loading truck specs: $e");
+      }
+    } else {
+      await _saveToLocalStorage();
+    }
+  }
+
+  Future<void> _saveToLocalStorage() async {
+    await localStorage.setValue(_storageKey, jsonEncode(state.toJson(),),);
+  }
+
+  TruckSpecificationState fromJson(Map<String, dynamic> json) {
+    return TruckSpecificationState(
+      heightInCentimeters: json["heightInCentimeters"],
+      widthInCentimeters: json["widthInCentimeters"],
+      lengthInCentimeters: json["lengthInCentimeters"],
+      grossWeightInKilograms: json["grossWeightInKilograms"],
+      weightPerAxleInKilograms: json["weightPerAxleInKilograms"],
+      axleCount: json["axleCount"],
+      trailerCount: json["trailerCount"],
+      hazardousMaterial: json["hazardousMaterial"],
+      hasChanges: json["hasChanges"],
+      avoidance: Map<String, bool>.from(json["avoidance"]),
+    );
+  }
 
   void setEditState(key, value) {
     if (editState[key] == initialState[key]) {
@@ -40,7 +89,7 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
       'weightInLbs': "${state.grossWeightInKilograms.kgToLbs}",
       'weightPerAxleInLbs': "${state.weightPerAxleInKilograms.kgToLbs}",
       'axleCount': "${state.axleCount}",
-      'hazardousMaterial': state.hazardousMaterial ?? '-',
+      'hazardousMaterial': state.hazardousMaterial,
     };
     setHasChanges(false);
   }
@@ -62,6 +111,7 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
     final Map<String, bool> _avoidance = {...state.avoidance};
     _avoidance[key] = !_avoidance[key]!;
     emit(state.copyWith(avoidance: _avoidance));
+    _saveToLocalStorage();
   }
 
   void editTruckSpecs() {
@@ -115,6 +165,7 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
           ),
         );
       }
+      _saveToLocalStorage();
       clearEditState();
     } catch (e) {
       print("Getting error on updating truck specs $e");

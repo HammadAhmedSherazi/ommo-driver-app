@@ -25,9 +25,13 @@ class AppKeys {
   //   -87.3228214,
   // );
   final GeoCoordinates startCoordinates = GeoCoordinates(
-    41.585905,
-    -87.3038246,
+    33.682070,
+    -112.203014,
   );
+  // final GeoCoordinates startCoordinates = GeoCoordinates(
+  //   41.585905,
+  //   -87.3038246,
+  // );
   final String accessKeySecret =
       "3MSg_BDUhi10ssWBhC_69dR5AzIOmttXg7BpgtsOF_XjKU5xO9LHMFdCF4xh7JvBvggBtgIU0X-PhgTgCjN6Eg";
 }

@@ -13,13 +13,16 @@ void main() async {
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
-  ]);                      
+  ]);
   runApp(App());
 }
 
 Future<void> _initializeHERESDK() async {
   SdkContext.init(IsolateOrigin.main);
-  AuthenticationMode authenticationMode = AuthenticationMode.withKeySecret(AppKeys().accessKeyId, AppKeys().accessKeySecret);
+  AuthenticationMode authenticationMode = AuthenticationMode.withKeySecret(
+    AppKeys().accessKeyId,
+    AppKeys().accessKeySecret,
+  );
   SDKOptions sdkOptions = SDKOptions.withAuthenticationMode(authenticationMode);
 
   try {

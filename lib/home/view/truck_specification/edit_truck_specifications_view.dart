@@ -4,6 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:ommo/app/views/app_view.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/home/view/home_mobile_view.dart';
+import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specification_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state.dart';
 import 'package:ommo/utils/helpers/validation.dart';
@@ -430,7 +431,15 @@ class _EditTruckSpecificationsViewState
                     onPressed: () {
                       truckSpecsCubit.editTruckSpecs();
                       context.popPage(true);
-                      if (widget.onEditSuccess != null) widget.onEditSuccess!();
+                      final navigationState = context
+                          .read<TruckNavigationCubit>()
+                          .state;
+                      if (navigationState.hasDirection &&
+                          navigationState.currentRoute != null &&
+                          navigationState.selectedSuggestion != null &&
+                          !navigationState.isNavigating) {
+                        context.read<TruckNavigationCubit>().calculateRoute();
+                      }
                     },
                   ),
                 ),
