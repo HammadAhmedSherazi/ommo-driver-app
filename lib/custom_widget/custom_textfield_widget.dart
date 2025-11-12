@@ -15,7 +15,7 @@ class CustomTextfieldWidget extends StatelessWidget {
   final bool readOnly;
   const CustomTextfieldWidget({
     super.key,
-  this.readOnly = false, 
+    this.readOnly = false,
 
     this.controller,
     required this.hintText,
@@ -50,14 +50,11 @@ class CustomTextfieldWidget extends StatelessWidget {
       inputFormatters:
           inputFormatters ??
           [
-            if (keyboardType == TextInputType.number)
-              FilteringTextInputFormatter.digitsOnly, // only 0-9 allowed
+            if (keyboardType == TextInputType.number) FilteringTextInputFormatter.digitsOnly, // only 0-9 allowed
           ],
       readOnly: onTap != null,
       decoration: InputDecoration(
-        prefixIcon: prefixIcon != null
-            ? Row(children: [10.w, prefixIcon!])
-            : null,
+        prefixIcon: prefixIcon != null ? Row(children: [10.w, prefixIcon!]) : null,
         prefixIconConstraints: BoxConstraints(maxWidth: 40, maxHeight: 24),
         suffixIconConstraints: BoxConstraints(maxWidth: 40, maxHeight: 24),
         suffixIcon: suffixIcon != null
@@ -71,10 +68,7 @@ class CustomTextfieldWidget extends StatelessWidget {
         hintText: hintText,
         filled: true,
         fillColor: AppColorTheme().whiteShade,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
     );
   }
