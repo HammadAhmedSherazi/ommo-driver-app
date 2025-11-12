@@ -26,13 +26,7 @@ class TruckSpecificationState extends Equatable {
     this.trailerCount = 2,
     this.truckType = TruckType.straight,
     this.hasChanges = false,
-    this.avoidance = const {
-      'highways': false,
-      'tolls': false,
-      'ferries': false,
-      'tunnels': false,
-      'unpaved_roads': false,
-    },
+    this.avoidance = const {'highways': false, 'tolls': false, 'ferries': false, 'tunnels': false, 'unpaved_roads': false},
   });
 
   Map<String, String> get truckInfo => {
@@ -59,13 +53,11 @@ class TruckSpecificationState extends Equatable {
     Map<String, bool>? avoidance,
   }) {
     return TruckSpecificationState(
-      grossWeightInKilograms:
-          grossWeightInKilograms ?? this.grossWeightInKilograms,
+      grossWeightInKilograms: grossWeightInKilograms ?? this.grossWeightInKilograms,
       heightInCentimeters: heightInCentimeters ?? this.heightInCentimeters,
       widthInCentimeters: widthInCentimeters ?? this.widthInCentimeters,
       lengthInCentimeters: lengthInCentimeters ?? this.lengthInCentimeters,
-      weightPerAxleInKilograms:
-          weightPerAxleInKilograms ?? this.weightPerAxleInKilograms,
+      weightPerAxleInKilograms: weightPerAxleInKilograms ?? this.weightPerAxleInKilograms,
       axleCount: axleCount ?? this.axleCount,
       trailerCount: trailerCount ?? this.trailerCount,
       truckType: truckType ?? this.truckType,

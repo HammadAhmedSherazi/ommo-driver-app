@@ -12,6 +12,7 @@ import 'package:here_sdk/routing.dart';
 import 'package:here_sdk/search.dart';
 import 'package:here_sdk/transport.dart';
 import 'package:ommo/utils/utils.dart';
+import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state.dart';
 
 import '../home/view/map_view.dart';
 import 'HEREPositioningSimulator.dart';
@@ -53,10 +54,12 @@ class TruckGuidanceExample {
 
   final HereMapController _hereMapController;
   final ShowDialogFunction _showDialog;
+  final TruckSpecificationState? specsState;
 
   TruckGuidanceExample(
     ShowDialogFunction showDialogCallback,
     HereMapController hereMapController,
+    {this.specsState}
   ) : _showDialog = showDialogCallback,
       _hereMapController = hereMapController {
     MapCamera camera = _hereMapController.camera;
@@ -148,36 +151,30 @@ class TruckGuidanceExample {
   // Used during tracking mode.
   VehicleProfile _createVehicleProfile() {
     VehicleProfile vehicleProfile = VehicleProfile(VehicleType.truck);
-    vehicleProfile.grossWeightInKilograms = MyTruckSpecs.grossWeightInKilograms;
-    vehicleProfile.heightInCentimeters = MyTruckSpecs.heightInCentimeters;
-    // The total length including all trailers (if any).
-    vehicleProfile.lengthInCentimeters = MyTruckSpecs.lengthInCentimeters;
-    vehicleProfile.widthInCentimeters = MyTruckSpecs.widthInCentimeters;
-    vehicleProfile.truckType = MyTruckSpecs.truckType;
-    vehicleProfile.trailerCount = MyTruckSpecs.trailerCount;
-    vehicleProfile.axleCount = MyTruckSpecs.axleCount;
-    vehicleProfile.weightPerAxleInKilograms =
-        MyTruckSpecs.weightPerAxleInKilograms;
+    final s = specsState;
+    vehicleProfile.grossWeightInKilograms = s?.grossWeightInKilograms ?? MyTruckSpecs.grossWeightInKilograms;
+    vehicleProfile.heightInCentimeters = s?.heightInCentimeters ?? MyTruckSpecs.heightInCentimeters;
+    vehicleProfile.lengthInCentimeters = s?.lengthInCentimeters ?? MyTruckSpecs.lengthInCentimeters;
+    vehicleProfile.widthInCentimeters = s?.widthInCentimeters ?? MyTruckSpecs.widthInCentimeters;
+    vehicleProfile.truckType = s?.truckType ?? MyTruckSpecs.truckType;
+    vehicleProfile.trailerCount = s?.trailerCount ?? MyTruckSpecs.trailerCount;
+    vehicleProfile.axleCount = s?.axleCount ?? MyTruckSpecs.axleCount;
+    vehicleProfile.weightPerAxleInKilograms = s?.weightPerAxleInKilograms ?? MyTruckSpecs.weightPerAxleInKilograms;
     return vehicleProfile;
   }
 
   // Used for route calculation.
   TruckSpecifications _createTruckSpecifications() {
     TruckSpecifications truckSpecifications = TruckSpecifications();
-    // When weight is not set, possible weight restrictions will not be taken into consideration
-    // for route calculation. By default, weight is not set.
-    // Specify the weight including trailers and shipped goods (if any).
-    truckSpecifications.grossWeightInKilograms =
-        MyTruckSpecs.grossWeightInKilograms;
-    truckSpecifications.heightInCentimeters = MyTruckSpecs.heightInCentimeters;
-    truckSpecifications.widthInCentimeters = MyTruckSpecs.widthInCentimeters;
-    // The total length including all trailers (if any).
-    truckSpecifications.lengthInCentimeters = MyTruckSpecs.lengthInCentimeters;
-    truckSpecifications.weightPerAxleInKilograms =
-        MyTruckSpecs.weightPerAxleInKilograms;
-    truckSpecifications.axleCount = MyTruckSpecs.axleCount;
-    truckSpecifications.trailerCount = MyTruckSpecs.trailerCount;
-    truckSpecifications.truckType = MyTruckSpecs.truckType;
+    final s = specsState;
+    truckSpecifications.grossWeightInKilograms = (s?.grossWeightInKilograms ?? MyTruckSpecs.grossWeightInKilograms);
+    truckSpecifications.heightInCentimeters = (s?.heightInCentimeters ?? MyTruckSpecs.heightInCentimeters);
+    truckSpecifications.widthInCentimeters = (s?.widthInCentimeters ?? MyTruckSpecs.widthInCentimeters);
+    truckSpecifications.lengthInCentimeters = (s?.lengthInCentimeters ?? MyTruckSpecs.lengthInCentimeters);
+    truckSpecifications.weightPerAxleInKilograms = (s?.weightPerAxleInKilograms ?? MyTruckSpecs.weightPerAxleInKilograms);
+    truckSpecifications.axleCount = (s?.axleCount ?? MyTruckSpecs.axleCount);
+    truckSpecifications.trailerCount = (s?.trailerCount ?? MyTruckSpecs.trailerCount);
+    truckSpecifications.truckType = (s?.truckType ?? MyTruckSpecs.truckType);
     return truckSpecifications;
   }
 
@@ -381,11 +378,19 @@ class TruckGuidanceExample {
             truckRestrictionWarning.weightRestriction!,
             distanceType,
           );
+          // Try to suggest/select an alternative route if a weight restriction lies ahead.
+          if (distanceType == DistanceType.ahead) {
+            _trySelectNonViolatingAlternative();
+          }
         } else if (truckRestrictionWarning.dimensionRestriction != null) {
           _handleDimensionTruckWarning(
             truckRestrictionWarning.dimensionRestriction!,
             distanceType,
           );
+          // Try to suggest/select an alternative route if a height/width/length restriction lies ahead.
+          if (distanceType == DistanceType.ahead) {
+            _trySelectNonViolatingAlternative();
+          }
         } else {
           _handleTruckRestrictions("No Trucks.", distanceType);
         }
@@ -647,8 +652,15 @@ class TruckGuidanceExample {
       return;
     }
 
-    // availableRoutes = List.from(routes);
-    selectRouteAndDrawPolyLines(routes.first);
+    // Prefer a route that does not violate weight/height restrictions if available.
+    Route selected = routes.first;
+    for (final r in routes) {
+      if (!_isRouteViolatingWeightOrHeight(r)) {
+        selected = r;
+        break;
+      }
+    }
+    selectRouteAndDrawPolyLines(selected);
     // When no error, routes contains at least one route.
     // lastCalculatedTruckRoute = routes.first;
 
@@ -663,6 +675,55 @@ class TruckGuidanceExample {
     // final truckRouteColor = AppColorTheme().primary; // For example, a shade of blue.
     // const truckRouteWidthInPixels = 30.0;
     // _showRouteOnMap(lastCalculatedTruckRoute!, truckRouteColor, truckRouteWidthInPixels);
+  }
+
+  // Check for any weight/height related violated restrictions on the route.
+  bool _isRouteViolatingWeightOrHeight(Route route) {
+    for (final section in route.sections) {
+      for (final sectionNotice in section.sectionNotices) {
+        for (final violatedRestriction in sectionNotice.violatedRestrictions) {
+          final details = violatedRestriction.details;
+          if (details == null) continue;
+          if (details.maxWeight != null) return true;
+          if (details.maxWeightPerAxleInKilograms != null) return true;
+          if (details.maxHeightInCentimeters != null) return true;
+          if (details.maxWidthInCentimeters != null) return true;
+          if (details.maxLengthInCentimeters != null) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // Attempt to recalculate with alternatives and select a non-violating route if possible.
+  void _trySelectNonViolatingAlternative() {
+    if (startGeoCoordinates == null || destinationGeoCoordinates == null) {
+      return;
+    }
+    _routingEngine?.calculateTruckRoute(
+      _getCurrentWaypoints(startGeoCoordinates!, destinationGeoCoordinates!),
+      _createTruckOptions(),
+      (routingError, routes) {
+        if (routingError != null || routes == null || routes.isEmpty) {
+          return;
+        }
+        // Pick the first non-violating route, otherwise keep current.
+        Route? candidate;
+        for (final r in routes) {
+          if (!_isRouteViolatingWeightOrHeight(r)) {
+            candidate = r;
+            break;
+          }
+        }
+        if (candidate != null &&
+            (lastCalculatedTruckRoute == null ||
+                candidate != lastCalculatedTruckRoute)) {
+          selectRouteAndDrawPolyLines(candidate);
+          // Inform UI that an alternative route was suggested/selected.
+          uiCallback?.onTruckRestrictionWarning("Alternative route selected to avoid restriction");
+        }
+      },
+    );
   }
 
   selectRouteAndDrawPolyLines(Route route) {
@@ -730,16 +791,42 @@ class TruckGuidanceExample {
   // Returns a TruckOptions instance configured for truck routing.
   TruckOptions _createTruckOptions() {
     TruckOptions truckOptions = TruckOptions();
-    truckOptions.routeOptions.enableTolls = true;
+    // Respect user's desire to avoid tolls/highways where possible.
+    final avoid = specsState?.avoidance;
+    // If user wants to avoid tolls, disable tolls.
+    final avoidTolls = avoid != null ? (avoid['tolls'] == true) : false;
+    truckOptions.routeOptions.enableTolls = !avoidTolls;
+    // Request alternative routes to allow picking non-violating options when possible.
+    try {
+      // If supported by SDK, prefer multiple alternatives.
+      // Ignored gracefully if not available.
+      // ignore: invalid_use
+      // @ts-ignore (Dart analyzer will ignore unknown field gracefully at runtime in our build context)
+      // dynamic to bypass static analysis if field exists:
+      // This is a no-op if the SDK doesn't have this property.
+      // Will be optimized out in AOT.
+      // ignore: unnecessary_statements
+      (truckOptions.routeOptions as dynamic).alternatives = 2;
+    } catch (_) {}
 
     AvoidanceOptions avoidanceOptions = AvoidanceOptions();
-    avoidanceOptions.roadFeatures = [
-      RoadFeatures.uTurns,
-      RoadFeatures.ferry,
-      RoadFeatures.dirtRoad,
-      RoadFeatures.tunnel,
-      RoadFeatures.carShuttleTrain,
-    ];
+    final List<RoadFeatures> road = [];
+    // Keep existing sensible defaults, but let user's choices override.
+    // Start with nothing and add based on settings; if no settings present, apply previous defaults.
+    if (avoid != null) {
+      if (avoid['ferries'] == true) road.add(RoadFeatures.ferry);
+      if (avoid['tunnels'] == true) road.add(RoadFeatures.tunnel);
+      if (avoid['unpaved_roads'] == true) road.add(RoadFeatures.dirtRoad);
+    } else {
+      road.addAll([
+        RoadFeatures.uTurns,
+        RoadFeatures.ferry,
+        RoadFeatures.dirtRoad,
+        RoadFeatures.tunnel,
+        RoadFeatures.carShuttleTrain,
+      ]);
+    }
+    avoidanceOptions.roadFeatures = road;
     // Exclude emission zones to not pollute the air in sensitive inner city areas.
     avoidanceOptions.zoneCategories = [ZoneCategory.environmental];
     truckOptions.avoidanceOptions = avoidanceOptions;

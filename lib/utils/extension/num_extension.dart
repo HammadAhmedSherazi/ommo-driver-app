@@ -1,8 +1,7 @@
 import 'package:intl/intl.dart';
 
 extension NumExtension on num {
-  String get cmtoFeetInchesFormattedString =>
-      "${cmToFeetInches['feet']}ft ${cmToFeetInches['inches']}in";
+  String get cmtoFeetInchesFormattedString => "${cmToFeetInches['feet']}ft ${cmToFeetInches['inches']}in";
 
   num get inchesToCm => this * 2.54;
 

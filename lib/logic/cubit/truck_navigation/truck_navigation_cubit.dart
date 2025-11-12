@@ -56,38 +56,49 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         return;
       }
 
+      // Enable vehicle restrictions and related map features
+      _enableMapFeatures(controller);
+
       controller.gestures.tapListener = TapListener((Point2D touchPoint) {
-        const double pickRadius = 2;
+        // Use a larger area to include restriction icons
+        const double pickRadius = 50;
         final Rectangle2D pickArea = Rectangle2D(
           Point2D(touchPoint.x - pickRadius, touchPoint.y - pickRadius),
           Size2D(pickRadius * 2, pickRadius * 2),
         );
 
+        // Pick from both mapItems (custom markers) and mapContent (restriction icons)
         final filter = MapSceneMapPickFilter([
           MapSceneMapPickFilterContentType.mapItems,
+          MapSceneMapPickFilterContentType.mapContent,
         ]);
 
         controller.pick(filter, pickArea, (MapPickResult? result) {
-          if ((result?.mapItems?.markers ?? []).isEmpty) {
-            log(
-              "result?.mapItems?.markers ?? [] is ${result?.mapItems?.markers ?? []}",
-            );
-            return;
+          if (result == null) return;
+
+          // Handle custom markers (truck restriction warnings)
+          if ((result.mapItems?.markers ?? []).isNotEmpty) {
+            final MapMarker? pickedMarker = result.mapItems?.markers.firstOrNull;
+            if (pickedMarker != null) {
+              final String message =
+                  pickedMarker.metadata?.getString("warning_message") ?? '';
+              if (message.isNotEmpty) {
+                SnackbarUtils.showWarningSnackBar(
+                  navigatorKey.currentContext!,
+                  message,
+                );
+              }
+            }
           }
 
-          final MapMarker? pickedMarker = result?.mapItems?.markers.firstOrNull;
-
-          if (pickedMarker == null) {
-            log("pickedMarker is null");
-            return;
-          }
-          // Get metadata message if available
-          final String message =
-              pickedMarker.metadata?.getString("warning_message") ?? '';
-          if (message.isNotEmpty) {
+          // Handle vehicle restrictions from map content
+          final vehicleRestrictions = result.mapContent?.vehicleRestrictions;
+          if (vehicleRestrictions != null && vehicleRestrictions.isNotEmpty) {
+            final restriction = vehicleRestrictions.first;
+            final coords = restriction.coordinates;
             SnackbarUtils.showWarningSnackBar(
               navigatorKey.currentContext!,
-              message,
+              "Vehicle restriction at ${coords.latitude.toStringAsFixed(6)}, ${coords.longitude.toStringAsFixed(6)}",
             );
           }
         });
@@ -108,6 +119,65 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     }
     _visualNavigator = VisualNavigator();
     _navigator = Navigator();
+    
+    // Set up transport profile for VisualNavigator to enable truck restriction warnings
+    _setupTransportProfile();
+  }
+
+  // Set up transport profile for VisualNavigator
+  void _setupTransportProfile() {
+    if (_visualNavigator == null) return;
+    
+    try {
+      final context = navigatorKey.currentContext;
+      if (context == null) {
+        log("Context not available for transport profile setup");
+        return;
+      }
+      
+      final TruckSpecificationState specs = context
+          .read<TruckSpecificationsCubit>()
+          .state;
+      
+      final TransportProfile transportProfile = TransportProfile();
+      final VehicleProfile vehicleProfile = VehicleProfile(VehicleType.truck);
+      
+      vehicleProfile.grossWeightInKilograms = specs.grossWeightInKilograms;
+      vehicleProfile.heightInCentimeters = specs.heightInCentimeters;
+      vehicleProfile.widthInCentimeters = specs.widthInCentimeters;
+      vehicleProfile.lengthInCentimeters = specs.lengthInCentimeters;
+      vehicleProfile.weightPerAxleInKilograms = specs.weightPerAxleInKilograms;
+      vehicleProfile.axleCount = specs.axleCount;
+      vehicleProfile.trailerCount = specs.trailerCount;
+      vehicleProfile.truckType = specs.truckType;
+      
+      transportProfile.vehicleProfile = vehicleProfile;
+      _visualNavigator!.trackingTransportProfile = transportProfile;
+      
+      log("Transport profile set up for truck specifications");
+    } catch (e) {
+      log("Error setting up transport profile: $e");
+    }
+  }
+  
+  // Update transport profile when truck specifications change
+  void updateTransportProfile() {
+    _setupTransportProfile();
+  }
+
+  // Enable map features including vehicle restrictions
+  void _enableMapFeatures(HereMapController controller) {
+    final Map<String, String> mapFeatures = {
+      MapFeatures.trafficFlow: MapFeatureModes.trafficFlowWithFreeFlow,
+      MapFeatures.trafficIncidents: MapFeatureModes.defaultMode,
+      MapFeatures.safetyCameras: MapFeatureModes.defaultMode,
+      MapFeatures.vehicleRestrictions: MapFeatureModes.defaultMode,
+      MapFeatures.environmentalZones: MapFeatureModes.defaultMode,
+      MapFeatures.congestionZones: MapFeatureModes.defaultMode,
+    };
+
+    controller.mapScene.enableFeatures(mapFeatures);
+    log("Vehicle restrictions and map features enabled");
   }
 
   void changeMapScheme(MapScheme scheme) {
@@ -119,6 +189,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         return;
       }
       print("Map scheme changed to $scheme");
+      // Re-enable map features after scheme change
+      if (state.mapController != null) {
+        _enableMapFeatures(state.mapController!);
+      }
     });
   }
 
@@ -434,6 +508,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     GeoCoordinates? end = state.destinationCoordinates;
 
     if (start == null || end == null) return;
+
+    // Update transport profile before calculating route to ensure restrictions are accurate
+    _setupTransportProfile();
 
     final waypoints = [Waypoint(start), Waypoint(end)];
 

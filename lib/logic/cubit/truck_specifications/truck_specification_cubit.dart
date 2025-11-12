@@ -17,7 +17,6 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
   final LocalStorage localStorage = LocalStorage();
   static const String _storageKey = 'truck_specifications';
 
-
   Future<void> _loadFromLocalStorage() async {
     if (Platform.isIOS) {
       await LocalStorage.deletePreviousStorage();
@@ -39,7 +38,7 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
   }
 
   Future<void> _saveToLocalStorage() async {
-    await localStorage.setValue(_storageKey, jsonEncode(state.toJson(),),);
+    await localStorage.setValue(_storageKey, jsonEncode(state.toJson()));
   }
 
   TruckSpecificationState fromJson(Map<String, dynamic> json) {
@@ -75,17 +74,12 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
     editState = {};
 
     initialState = {
-      'lengthInFeet':
-          "${state.lengthInCentimeters.cmToFeetInches['feet'] ?? ''}",
-      'lengthInInches':
-          "${state.lengthInCentimeters.cmToFeetInches['inches'] ?? ''}",
+      'lengthInFeet': "${state.lengthInCentimeters.cmToFeetInches['feet'] ?? ''}",
+      'lengthInInches': "${state.lengthInCentimeters.cmToFeetInches['inches'] ?? ''}",
       'widthInFeet': "${state.widthInCentimeters.cmToFeetInches['feet'] ?? ''}",
-      'widthInInches':
-          "${state.widthInCentimeters.cmToFeetInches['inches'] ?? ''}",
-      'heightInFeet':
-          "${state.heightInCentimeters.cmToFeetInches['feet'] ?? ''}",
-      'heightInInches':
-          "${state.heightInCentimeters.cmToFeetInches['inches'] ?? ''}",
+      'widthInInches': "${state.widthInCentimeters.cmToFeetInches['inches'] ?? ''}",
+      'heightInFeet': "${state.heightInCentimeters.cmToFeetInches['feet'] ?? ''}",
+      'heightInInches': "${state.heightInCentimeters.cmToFeetInches['inches'] ?? ''}",
       'weightInLbs': "${state.grossWeightInKilograms.kgToLbs}",
       'weightPerAxleInLbs': "${state.weightPerAxleInKilograms.kgToLbs}",
       'axleCount': "${state.axleCount}",
@@ -174,9 +168,7 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
 
   checkWeightField(entry, field, onChange) {
     if (entry.key.contains(field)) {
-      final weightLbs = int.tryParse(
-        editState['${field}InLbs'] ?? initialState['${field}InLbs'] ?? '',
-      );
+      final weightLbs = int.tryParse(editState['${field}InLbs'] ?? initialState['${field}InLbs'] ?? '');
       if (weightLbs != null) {
         onChange(weightLbs.lbsToKgs);
       }
@@ -185,12 +177,8 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
 
   checkAndCalculateTheFeetAndInchesField(entry, field, onChange) {
     if (entry.key.contains(field)) {
-      final feet = int.tryParse(
-        editState['${field}InFeet'] ?? initialState['${field}InFeet'] ?? '',
-      );
-      final inches = int.tryParse(
-        editState['${field}InInches'] ?? initialState['${field}InInches'] ?? '',
-      );
+      final feet = int.tryParse(editState['${field}InFeet'] ?? initialState['${field}InFeet'] ?? '');
+      final inches = int.tryParse(editState['${field}InInches'] ?? initialState['${field}InInches'] ?? '');
       if (feet != null && inches != null) {
         final totalInches = (feet * 12) + inches;
         onChange(totalInches.inchesToCm);

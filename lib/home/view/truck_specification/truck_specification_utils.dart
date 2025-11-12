@@ -40,10 +40,7 @@ class TruckSpecificationUtils {
     }
   }
 
-  static void openSettingBottomSheet(
-    BuildContext context, {
-    VoidCallback? onEditSuccess,
-  }) {
+  static void openSettingBottomSheet(BuildContext context, {VoidCallback? onEditSuccess}) {
     Helpers.openBottomSheet(
       context: context,
       child: SizedBox(
@@ -62,20 +59,10 @@ class TruckSpecificationUtils {
                   child: CircleAvatar(
                     radius: 25,
                     backgroundColor: AppColorTheme().whiteShade,
-                    child: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.black,
-                      size: 18,
-                    ),
+                    child: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 18),
                   ),
                 ),
-                Text(
-                  "Settings",
-                  style: AppTextTheme().subHeadingText.copyWith(
-                    fontWeight: AppFontWeight.semiBold,
-                    fontSize: 20,
-                  ),
-                ),
+                Text("Settings", style: AppTextTheme().subHeadingText.copyWith(fontWeight: AppFontWeight.semiBold, fontSize: 20)),
               ],
             ),
             20.h,
@@ -83,30 +70,16 @@ class TruckSpecificationUtils {
             20.h,
 
             // Vehicle
-            Text(
-              "Vehicle",
-              style: AppTextTheme().lightText.copyWith(
-                color: AppColorTheme().secondary,
-              ),
-            ),
+            Text("Vehicle", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
             20.h,
             ListTile(
               onTap: () => Helpers.openBottomSheet(
                 context: context,
-                child: EditTruckSpecificationsView(
-                  onEditSuccess: onEditSuccess,
-                ),
+                child: EditTruckSpecificationsView(onEditSuccess: onEditSuccess),
               ),
               leading: SvgPicture.asset(AppIcons.localShippingIcon),
-              title: Text(
-                "My truck",
-                style: AppTextTheme().lightText.copyWith(fontSize: 16),
-              ),
-              trailing: const Icon(
-                Icons.arrow_forward_ios_outlined,
-                color: Colors.black,
-                size: 22,
-              ),
+              title: Text("My truck", style: AppTextTheme().lightText.copyWith(fontSize: 16)),
+              trailing: const Icon(Icons.arrow_forward_ios_outlined, color: Colors.black, size: 22),
               contentPadding: EdgeInsets.zero,
             ),
 
@@ -117,17 +90,18 @@ class TruckSpecificationUtils {
                   (index) => ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: 20.w,
-                    title: Text(
-                      state.truckInfo.entries.elementAt(index).key,
-                      style: AppTextTheme().lightText,
-                    ),
+                    title: Text(state.truckInfo.entries.elementAt(index).key, style: AppTextTheme().lightText),
                     visualDensity: const VisualDensity(vertical: -4.0),
-                    trailing: Text(
-                      state.truckInfo.entries.elementAt(index).value,
-                      style: AppTextTheme().lightText.copyWith(
-                        color: AppColorTheme().secondary,
+                    trailing: InkWell(
+                      onTap: () => Helpers.openBottomSheet(
+                        context: context,
+                        child: EditTruckSpecificationsView(onEditSuccess: onEditSuccess),
                       ),
-                      textAlign: TextAlign.end,
+                      child: Text(
+                        state.truckInfo.entries.elementAt(index).value,
+                        style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
+                        textAlign: TextAlign.end,
+                      ),
                     ),
                   ),
                 ),
@@ -135,12 +109,7 @@ class TruckSpecificationUtils {
             ),
             20.h,
             // Restrictions
-            Text(
-              "Restrictions",
-              style: AppTextTheme().lightText.copyWith(
-                color: AppColorTheme().secondary,
-              ),
-            ),
+            Text("Restrictions", style: AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary)),
             20.h,
             BlocBuilder<TruckSpecificationsCubit, TruckSpecificationState>(
               buildWhen: (p, c) => p.avoidance != c.avoidance,
@@ -150,38 +119,21 @@ class TruckSpecificationUtils {
                     state.avoidance.length,
                     (index) => ListTile(
                       contentPadding: EdgeInsets.zero,
-                      leading: SvgPicture.asset(
-                        _setRestrictionIcon(
-                          state.avoidance.entries.elementAt(index).key,
-                        ),
-                      ),
-                      title: Text(
-                        _setRestrictiontitle(
-                          state.avoidance.entries.elementAt(index).key,
-                        ),
-                        style: AppTextTheme().lightText,
-                      ),
+                      leading: SvgPicture.asset(_setRestrictionIcon(state.avoidance.entries.elementAt(index).key)),
+                      title: Text(_setRestrictiontitle(state.avoidance.entries.elementAt(index).key), style: AppTextTheme().lightText),
                       visualDensity: const VisualDensity(vertical: -4.0),
                       trailing: Transform.scale(
                         scale: 0.6,
                         child: Switch.adaptive(
                           value: state.avoidance.entries.elementAt(index).value,
                           onChanged: (v) {
-                            context
-                                .read<TruckSpecificationsCubit>()
-                                .toggleAvoidance(
-                                  state.avoidance.entries.elementAt(index).key,
-                                );
-                            final navigationState = context
-                                .read<TruckNavigationCubit>()
-                                .state;
+                            context.read<TruckSpecificationsCubit>().toggleAvoidance(state.avoidance.entries.elementAt(index).key);
+                            final navigationState = context.read<TruckNavigationCubit>().state;
                             if (navigationState.hasDirection &&
                                 navigationState.currentRoute != null &&
                                 navigationState.selectedSuggestion != null &&
                                 !navigationState.isNavigating) {
-                              context
-                                  .read<TruckNavigationCubit>()
-                                  .calculateRoute();
+                              context.read<TruckNavigationCubit>().calculateRoute();
                             }
 
                             // if (onEditSuccess != null) onEditSuccess();
