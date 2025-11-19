@@ -9,4 +9,5 @@ class AppImages {
   static const String greenMarker = "${imagePath}green_marker.png";
   static const String satelliteMapImg = "${imagePath}satellite_map_img.png";
   static const String logoIcon = "${imagePath}logo_icon.png";
+  static const String filterIcon = "${imagePath}mdi_filter.png";
 }

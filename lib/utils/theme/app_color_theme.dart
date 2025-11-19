@@ -24,6 +24,7 @@ class AppColorTheme {
   Color get grey => const Color(0xFF747574);
   Color get lightestGrey => const Color(0xFFEAEAEA);
   Color get red => const Color(0xFFFF3333);
+  Color get red2 => const Color(0xFFFF4F5B);
   Color get whiteRed => const Color(0xFFFFF0F0);
   Color get whiteShade => const Color(0xFFF4F6F8);
   Color get whiteShade1 => const Color(0xFFF8F8F8);

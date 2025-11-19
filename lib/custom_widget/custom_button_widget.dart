@@ -4,7 +4,8 @@ class CustomButtonWidget extends StatelessWidget {
   final bool isLoad;
   final bool enabled;
   final String title;
-  final bool? isRightSide;
+  final double? radius;
+  final bool isRightSide;
   final Widget? icon;
   final VoidCallback onPressed;
   final Color? bgColor;
@@ -13,6 +14,7 @@ class CustomButtonWidget extends StatelessWidget {
     super.key,
     required this.title,
     this.isLoad = false,
+    this.radius,
     this.enabled = true,
     required this.onPressed,
     this.icon,
@@ -32,7 +34,7 @@ class CustomButtonWidget extends StatelessWidget {
                 alpha: enabled ? 1 : 07,
               ),
               padding: EdgeInsets.zero,
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(radius ?? 30),
               onPressed: enabled ? onPressed : null,
               child: icon != null
                   ? Row(
@@ -40,14 +42,14 @@ class CustomButtonWidget extends StatelessWidget {
                       mainAxisSize: MainAxisSize.max,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (!isRightSide!) ?icon,
+                        if (!isRightSide) ?icon,
                         Text(
                           title,
                           style: AppTextTheme().bodyText.copyWith(
                             color: textColor ?? Colors.white,
                           ),
                         ),
-                        if (isRightSide!) ?icon,
+                        if (isRightSide) ?icon,
                       ],
                     )
                   : Text(
@@ -67,7 +69,7 @@ class CustomButtonWidget extends StatelessWidget {
                 ),
                 shape: WidgetStatePropertyAll(
                   RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(radius ?? 30),
                   ),
                 ),
               ),
@@ -78,13 +80,14 @@ class CustomButtonWidget extends StatelessWidget {
                       mainAxisSize: MainAxisSize.max,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        icon!,
+                        if (!isRightSide) ?icon,
                         Text(
                           title,
                           style: AppTextTheme().bodyText.copyWith(
                             color: textColor ?? Colors.white,
                           ),
                         ),
+                        if (isRightSide) ?icon,
                       ],
                     )
                   : Text(

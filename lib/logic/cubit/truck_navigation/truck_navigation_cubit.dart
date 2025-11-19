@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:math' as m;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:flutter/widgets.dart' as widgets;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -516,7 +517,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     final truckOptions = _createTruckOptions();
 
-    _routingEngine.calculateTruckRoute(waypoints, truckOptions, (
+     _routingEngine.calculateTruckRoute(waypoints, truckOptions, (
       RoutingError? error,
       List<Route>? routes,
     ) {

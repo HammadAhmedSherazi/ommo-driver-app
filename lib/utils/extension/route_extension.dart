@@ -18,6 +18,11 @@ extension RouteExtension on route.Route {
     return "${miles.toStringAsFixed(1)} mi";
   }
 
+  String get distanceInMilesINNumber {
+    double miles = lengthInMeters / 1609.34; // 1 mile = 1609.34 m
+    return miles.toStringAsFixed(1);
+  }
+
   String get formattedDuration {
     final duration = Duration(seconds: this.duration.inSeconds);
     final hours = duration.inHours;

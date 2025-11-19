@@ -15,6 +15,7 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
   runApp(App());
+  
 }
 
 Future<void> _initializeHERESDK() async {
