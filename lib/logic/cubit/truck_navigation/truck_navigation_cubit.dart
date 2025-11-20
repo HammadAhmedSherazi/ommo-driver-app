@@ -61,6 +61,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       _enableMapFeatures(controller);
 
       controller.gestures.tapListener = TapListener((Point2D touchPoint) {
+        if (!state.hasDirection && !state.isNavigating) {
+          _handleMapTapForDestination(touchPoint);
+        }
+
         // Use a larger area to include restriction icons
         const double pickRadius = 50;
         final Rectangle2D pickArea = Rectangle2D(
@@ -79,7 +83,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
           // Handle custom markers (truck restriction warnings)
           if ((result.mapItems?.markers ?? []).isNotEmpty) {
-            final MapMarker? pickedMarker = result.mapItems?.markers.firstOrNull;
+            final MapMarker? pickedMarker =
+                result.mapItems?.markers.firstOrNull;
             if (pickedMarker != null) {
               final String message =
                   pickedMarker.metadata?.getString("warning_message") ?? '';
@@ -93,15 +98,15 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
           }
 
           // Handle vehicle restrictions from map content
-          final vehicleRestrictions = result.mapContent?.vehicleRestrictions;
-          if (vehicleRestrictions != null && vehicleRestrictions.isNotEmpty) {
-            final restriction = vehicleRestrictions.first;
-            final coords = restriction.coordinates;
-            SnackbarUtils.showWarningSnackBar(
-              navigatorKey.currentContext!,
-              "Vehicle restriction at ${coords.latitude.toStringAsFixed(6)}, ${coords.longitude.toStringAsFixed(6)}",
-            );
-          }
+          // final vehicleRestrictions = result.mapContent?.vehicleRestrictions;
+          // if (vehicleRestrictions != null && vehicleRestrictions.isNotEmpty) {
+          //   final restriction = vehicleRestrictions.first;
+          //   final coords = restriction.coordinates;
+          //   SnackbarUtils.showWarningSnackBar(
+          //     navigatorKey.currentContext!,
+          //     "Vehicle restriction at ${coords.latitude.toStringAsFixed(6)}, ${coords.longitude.toStringAsFixed(6)}",
+          //   );
+          // }
         });
       });
     });
@@ -120,7 +125,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     }
     _visualNavigator = VisualNavigator();
     _navigator = Navigator();
-    
+
     // Set up transport profile for VisualNavigator to enable truck restriction warnings
     _setupTransportProfile();
   }
@@ -128,21 +133,21 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   // Set up transport profile for VisualNavigator
   void _setupTransportProfile() {
     if (_visualNavigator == null) return;
-    
+
     try {
       final context = navigatorKey.currentContext;
       if (context == null) {
         log("Context not available for transport profile setup");
         return;
       }
-      
+
       final TruckSpecificationState specs = context
           .read<TruckSpecificationsCubit>()
           .state;
-      
+
       final TransportProfile transportProfile = TransportProfile();
       final VehicleProfile vehicleProfile = VehicleProfile(VehicleType.truck);
-      
+
       vehicleProfile.grossWeightInKilograms = specs.grossWeightInKilograms;
       vehicleProfile.heightInCentimeters = specs.heightInCentimeters;
       vehicleProfile.widthInCentimeters = specs.widthInCentimeters;
@@ -151,16 +156,16 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       vehicleProfile.axleCount = specs.axleCount;
       vehicleProfile.trailerCount = specs.trailerCount;
       vehicleProfile.truckType = specs.truckType;
-      
+
       transportProfile.vehicleProfile = vehicleProfile;
       _visualNavigator!.trackingTransportProfile = transportProfile;
-      
+
       log("Transport profile set up for truck specifications");
     } catch (e) {
       log("Error setting up transport profile: $e");
     }
   }
-  
+
   // Update transport profile when truck specifications change
   void updateTransportProfile() {
     _setupTransportProfile();
@@ -457,7 +462,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   void setDestinationCoordinate(Suggestion suggestion) {
-    emit(state.copyWith(selectedSuggestion: suggestion));
+    emit(
+      state.copyWith(
+        selectedSuggestion: suggestion,
+        destinationCoordinates: suggestion.place?.geoCoordinates,
+      ),
+    );
     setDestinationMarkerFromSuggestion();
   }
 
@@ -469,7 +479,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     }
 
     MapImage destIcon = MapImage.withFilePathAndWidthAndHeight(
-      AppImages.greenMarker,
+      AppImages.greenMapPin,
       60,
       100,
     );
@@ -517,7 +527,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     final truckOptions = _createTruckOptions();
 
-     _routingEngine.calculateTruckRoute(waypoints, truckOptions, (
+    _routingEngine.calculateTruckRoute(waypoints, truckOptions, (
       RoutingError? error,
       List<Route>? routes,
     ) {
@@ -789,9 +799,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       state.copyWith(
         destinationSuggestions: FutureData<List<Suggestion>>.initial(),
         selectedSuggestion: removeDestination ? 'null' : null,
+        destinationCoordinates: removeDestination ? 'null' : null,
         currentRoute: 'null',
         hasDirection: false,
         isNavigating: false,
+        hasTapDestination: false,
       ),
     );
   }
@@ -952,5 +964,87 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       state.mapController?.mapScene.removeMapMarker(marker);
     }
     _truckRestrictionMarkers.clear();
+  }
+
+  void _handleMapTapForDestination(Point2D touchPoint) {
+    // Convert screen coordinates to geo coordinates
+    final geoCoordinates = state.mapController?.viewToGeoCoordinates(
+      touchPoint,
+    );
+    if (geoCoordinates == null) return;
+
+    // Set destination coordinates
+    emit(
+      state.copyWith(
+        hasTapDestination: true,
+        destinationCoordinates: geoCoordinates,
+      ),
+    );
+
+    // Add destination marker
+    if (_destinationMarker != null) {
+      state.mapController?.mapScene.removeMapMarker(_destinationMarker!);
+      _destinationMarker = null;
+    }
+
+    MapImage destIcon = MapImage.withFilePathAndWidthAndHeight(
+      AppImages.greenMapPin,
+      60,
+      100,
+    );
+
+    _destinationMarker = MapMarker(geoCoordinates, destIcon);
+    state.mapController?.mapScene.addMapMarker(_destinationMarker!);
+
+    // Reverse geocode to get place details
+    _reverseGeocodeDestination(geoCoordinates);
+  }
+
+  void _reverseGeocodeDestination(GeoCoordinates coords) {
+    final SearchOptions options = SearchOptions()
+      ..languageCode = LanguageCode.enUs
+      ..maxItems = 1;
+
+    _searchEngine.searchByCoordinates(coords, options, (
+      SearchError? error,
+      List<Place>? places,
+    ) {
+      if (error != null) {
+        log("Reverse geocoding failed: $error");
+        emit(
+          state.copyWith(
+            tappedPlace: FutureData.error("Unable to get location details"),
+          ),
+        );
+        return;
+      }
+      if (places != null && places.isNotEmpty) {
+        emit(state.copyWith(tappedPlace: FutureData.completed(places.first)));
+      } else {
+        emit(
+          state.copyWith(
+            tappedPlace: FutureData.error(
+              "No details available for this location",
+            ),
+          ),
+        );
+      }
+    });
+  }
+
+  void removeTapDestination() {
+    if (_destinationMarker != null) {
+      state.mapController?.mapScene.removeMapMarker(_destinationMarker!);
+      _destinationMarker = null;
+    }
+
+    clearCurrentRouteDetail();
+    emit(
+      state.copyWith(
+        hasTapDestination: false,
+        destinationCoordinates: 'null',
+        tappedPlace: FutureData<Place>.initial(),
+      ),
+    );
   }
 }

@@ -81,7 +81,7 @@ class MapViewState extends State<MapView> with WidgetsBindingObserver {
                 ),
               )
             : SizedBox(
-                height: context.screenHeight * 0.7,
+                height: context.screenHeight * 0.75,
                 width: context.screenWidth,
                 child: HereMap(
                   onMapCreated: context

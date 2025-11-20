@@ -13,9 +13,12 @@ class TruckNavigationState extends Equatable {
   final GeoCoordinates? startCoordinates;
   final FutureData<Place>? currentPlace;
   final Suggestion? selectedSuggestion;
+  final GeoCoordinates? destinationCoordinates;
+  final FutureData<Place>? tappedPlace;
   final Route? currentRoute;
   final bool isNavigating;
   final bool isMapLoading;
+  final bool hasTapDestination;
   final bool hasDirection;
   final bool cameraControlledByNavigator;
   final ManeuverProgress? maneuverProgress;
@@ -27,17 +30,19 @@ class TruckNavigationState extends Equatable {
     this.maneuverProgress,
     this.selectedSuggestion,
     this.nearbyTruckStops,
-    // this.destinationCoordinates,
+    this.destinationCoordinates,
     this.currentRoute,
+    this.tappedPlace,
     this.isMapLoading = true,
+    this.hasTapDestination = false,
     this.isNavigating = false,
     this.hasDirection = false,
     this.cameraControlledByNavigator = false,
     this.destinationSuggestions,
   });
 
-  GeoCoordinates? get destinationCoordinates =>
-      selectedSuggestion?.place?.geoCoordinates;
+  // GeoCoordinates? get destinationCoordinates =>
+  //     selectedSuggestion?.place?.geoCoordinates;
 
   TruckNavigationState copyWith({
     HereMapController? mapController,
@@ -46,9 +51,12 @@ class TruckNavigationState extends Equatable {
     dynamic selectedSuggestion,
     FutureData<List<Suggestion>>? destinationSuggestions,
     FutureData<List<Place>>? nearbyTruckStops,
+    dynamic destinationCoordinates,
+    FutureData<Place>? tappedPlace,
     dynamic currentRoute,
     bool? isNavigating,
     bool? isMapLoading,
+    bool? hasTapDestination,
     bool? cameraControlledByNavigator,
     bool? hasDirection,
     dynamic maneuverProgress,
@@ -63,6 +71,10 @@ class TruckNavigationState extends Equatable {
       selectedSuggestion: selectedSuggestion == 'null'
           ? null
           : (selectedSuggestion ?? this.selectedSuggestion),
+      destinationCoordinates: destinationCoordinates == 'null'
+          ? null
+          : (destinationCoordinates ?? this.destinationCoordinates),
+      tappedPlace: tappedPlace ?? this.tappedPlace,
       currentRoute: currentRoute == 'null'
           ? null
           : (currentRoute ?? this.currentRoute),
@@ -74,6 +86,7 @@ class TruckNavigationState extends Equatable {
       cameraControlledByNavigator:
           cameraControlledByNavigator ?? this.cameraControlledByNavigator,
       hasDirection: hasDirection ?? this.hasDirection,
+      hasTapDestination: hasTapDestination ?? this.hasTapDestination,
     );
   }
 
@@ -85,11 +98,11 @@ class TruckNavigationState extends Equatable {
     nearbyTruckStops,
     startCoordinates,
     selectedSuggestion,
+    destinationCoordinates,
+    tappedPlace,
     currentRoute,
     isNavigating,
     isMapLoading,
-    hasDirection,
-    cameraControlledByNavigator,
-    maneuverProgress,
+    hasTapDestination,
   ];
 }
