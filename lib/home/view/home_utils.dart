@@ -158,7 +158,7 @@ class HomeUtils {
     Function(String?)? onContinue,
   }) {
     final TextEditingController startController = TextEditingController(
-      text: "Start My Current Location",
+      text: "Your Location",
     );
     final TextEditingController destinationController = TextEditingController();
 
@@ -212,7 +212,17 @@ class HomeUtils {
                 readOnly: true,
               ),
               20.h,
-              BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+              BlocConsumer<TruckNavigationCubit, TruckNavigationState>(
+                listener: (context, state) {
+                  if (state.currentRoute != null && state.hasDirection) {
+                    isLoading.value = true;
+
+                    Navigator.pop(context);
+                  }
+                },
+                listenWhen: (previous, current) =>
+                    previous.currentRoute != current.currentRoute,
+
                 buildWhen: (p, c) =>
                     p.destinationSuggestions != c.destinationSuggestions,
                 builder: (context, state) {
@@ -227,10 +237,20 @@ class HomeUtils {
                             ? SizedBox()
                             : ListTile(
                                 onTap: () {
+                                  if (isLoading.value) return;
                                   destinationController.text = item.title;
                                   context
                                       .read<TruckNavigationCubit>()
                                       .setDestinationCoordinate(item);
+                                  if (destinationController.text.isNotEmpty) {
+                                    if (onContinue != null) {
+                                      onContinue(destinationController.text);
+                                    }
+                                    isLoading.value = true;
+                                    context
+                                        .read<TruckNavigationCubit>()
+                                        .calculateRoute();
+                                  }
                                 },
                                 contentPadding: EdgeInsets.zero,
                                 leading: CircleAvatar(
@@ -266,36 +286,36 @@ class HomeUtils {
                   return SizedBox();
                 },
               ),
-              Spacer(),
-              BlocListener<TruckNavigationCubit, TruckNavigationState>(
-                listener: (context, state) {
-                  if (state.currentRoute != null && state.hasDirection) {
-                    isLoading.value = true;
+              // Spacer(),
+              // BlocListener<TruckNavigationCubit, TruckNavigationState>(
+              //   listener: (context, state) {
+              //     if (state.currentRoute != null && state.hasDirection) {
+              //       isLoading.value = true;
 
-                    Navigator.pop(context);
-                  }
-                },
-                listenWhen: (previous, current) =>
-                    previous.currentRoute != current.currentRoute,
+              //       Navigator.pop(context);
+              //     }
+              //   },
+              //   listenWhen: (previous, current) =>
+              //       previous.currentRoute != current.currentRoute,
 
-                child: ValueListenableBuilder(
-                  valueListenable: isLoading,
-                  builder: (context, value, child) => CustomButtonWidget(
-                    title: 'Continue',
-                    isLoad: value,
-                    onPressed: () async {
-                      if (destinationController.text.isNotEmpty) {
-                        if (onContinue != null) {
-                          onContinue(destinationController.text);
-                        }
-                        isLoading.value = true;
-                        context.read<TruckNavigationCubit>().calculateRoute();
-                      }
-                    },
-                    icon: Icon(Icons.arrow_forward, color: Colors.white),
-                  ),
-                ),
-              ),
+              //   child: ValueListenableBuilder(
+              //     valueListenable: isLoading,
+              //     builder: (context, value, child) => CustomButtonWidget(
+              //       title: 'Continue',
+              //       isLoad: value,
+              //       onPressed: () async {
+              //         if (destinationController.text.isNotEmpty) {
+              //           if (onContinue != null) {
+              //             onContinue(destinationController.text);
+              //           }
+              //           isLoading.value = true;
+              //           context.read<TruckNavigationCubit>().calculateRoute();
+              //         }
+              //       },
+              //       icon: Icon(Icons.arrow_forward, color: Colors.white),
+              //     ),
+              //   ),
+              // ),
               20.h,
             ],
           ),

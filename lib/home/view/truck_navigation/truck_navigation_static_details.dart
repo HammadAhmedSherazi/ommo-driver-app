@@ -32,6 +32,13 @@ class TruckNavigationStaticDetails {
     {'name': "Tire Care", 'icon': 'assets/images/Icon (10).png'},
   ];
 
+  static const List<Map<String, String>> truckStops = [
+    {'name': "Love’s", 'icon': 'assets/images/image 2.png'},
+    {'name': "Pilot/Flying J", 'icon': 'assets/images/Circle.png'},
+    {'name': "TA Petro", 'icon': 'assets/images/ta_petro_icon.png'},
+    {'name': "KwikTrip", 'icon': 'assets/images/kwik_trip_icon.png'},
+  ];
+
   static const List<Map<String, String>> placeTypes = [
     {"name": "Truck stops", 'icon': 'assets/images/Icon (27).png'},
     {'name': "Weight stations", 'icon': 'assets/images/Icon (22).png'},
@@ -98,6 +105,7 @@ class TruckNavigationStaticDetails {
       storeType: "Parking",
     ),
   ];
+
   static const List<PlaceDataModel> placesss = [
     PlaceDataModel(
       title: "Walmart",

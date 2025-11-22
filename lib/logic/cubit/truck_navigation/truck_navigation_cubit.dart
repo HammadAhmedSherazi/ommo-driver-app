@@ -466,6 +466,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       state.copyWith(
         selectedSuggestion: suggestion,
         destinationCoordinates: suggestion.place?.geoCoordinates,
+        hasTapDestination: true,
+        tappedPlace: FutureData<Place>.completed(suggestion.place),
       ),
     );
     setDestinationMarkerFromSuggestion();
@@ -1005,6 +1007,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       ..languageCode = LanguageCode.enUs
       ..maxItems = 1;
 
+    // First reverse geocode for place details
     _searchEngine.searchByCoordinates(coords, options, (
       SearchError? error,
       List<Place>? places,
@@ -1043,6 +1046,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       state.copyWith(
         hasTapDestination: false,
         destinationCoordinates: 'null',
+        selectedSuggestion: 'null',
         tappedPlace: FutureData<Place>.initial(),
       ),
     );

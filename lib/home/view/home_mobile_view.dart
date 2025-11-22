@@ -39,10 +39,13 @@ class _HomeMobileViewState extends State<HomeMobileView>
   late final TabController _tabController;
 
   final List<TextEditingController> textController = [
-    TextEditingController(text: "Start My Current Location"),
+    TextEditingController(text: "Your Location"),
   ];
   final List<FocusNode> focusNode = [FocusNode()];
-  bool showMore = false, changeMapScheme = false;
+  bool showMore = false;
+
+  // changeMapScheme = false;
+  ValueNotifier<bool> showChangeMapSchemeDialog = ValueNotifier(false);
   ValueNotifier<int> selectIndexMapView = ValueNotifier(0);
   PlaceDataModel? place;
   int selectLocationOpt = 0;
@@ -54,6 +57,23 @@ class _HomeMobileViewState extends State<HomeMobileView>
   final ValueNotifier<Map<String, String>?> _selectedStation = ValueNotifier(
     null,
   );
+
+  final ValueNotifier<List<String>> _selectedMapFeature = ValueNotifier([]);
+
+  final List<Map<String, String>> mapFeature = [
+    {'id': "1", "name": "Designated", 'icon': 'assets/images/Ellipse 6.png'},
+    {'id': "2", 'name': "Traffic", 'icon': 'assets/images/sign.png'},
+    {'id': "3", 'name': "No Trucks", 'icon': 'assets/images/images 1.png'},
+    {'id': "4", 'name': "Max Height", 'icon': 'assets/images/images 1 (1).png'},
+    {
+      'id': "5",
+      "name": "Max Length",
+      'icon': 'assets/images/Ellipse 6 (1).png',
+    },
+    {'id': "6", "name": "Max Weight", 'icon': 'assets/images/images 1 (2).png'},
+    {'id': "7", "name": "Traffic Cams", 'icon': 'assets/images/sign 1.png'},
+    {'id': "8", "name": "DOT 511", 'icon': 'assets/images/dot_icon.png'},
+  ];
 
   @override
   void initState() {
@@ -98,6 +118,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
 
   @override
   Widget build(BuildContext context) {
+    // showChangeMapSchemeDialog.value = false;
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
@@ -135,34 +156,122 @@ class _HomeMobileViewState extends State<HomeMobileView>
       //   height: double.infinity,
       //   width: double.infinity,
       // ),
-      if (changeMapScheme)
-        Align(
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-            width: 271,
+      Positioned(
+        top: context.screenHeight * 0.122,
+        right: context.screenWidth * 0.16,
+        left: context.screenWidth * 0.026,
+        child: ValueListenableBuilder(
+          valueListenable: showChangeMapSchemeDialog,
 
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              spacing: 20,
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(
-                TruckNavigationStaticDetails.mapSchemes.length,
-                (index) {
-                  final item = TruckNavigationStaticDetails.mapSchemes[index];
-                  return _styleButton(
-                    item.label,
-                    item.scheme,
-                    item.icon,
-                    index,
-                  );
-                },
-              ),
-            ),
-          ),
+          builder: (context, value, child) => value
+              ? Container(
+                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                  width: 271,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    children: [
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: () {
+                            showChangeMapSchemeDialog.value = false;
+                          },
+                          child: Icon(Icons.close, color: Color(0xff8C93A4)),
+                        ),
+                      ),
+                      16.h,
+                      Row(
+                        spacing: 20,
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: List.generate(
+                          TruckNavigationStaticDetails.mapSchemes.length,
+                          (index) {
+                            final item =
+                                TruckNavigationStaticDetails.mapSchemes[index];
+                            return _styleButton(
+                              item.label,
+                              item.scheme,
+                              item.icon,
+                              index,
+                            );
+                          },
+                        ),
+                      ),
+                      15.h,
+                      DashedLine(height: 1),
+                      15.h,
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: mapFeature.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisExtent: 44,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                        ),
+                        itemBuilder: (_, i) => ValueListenableBuilder(
+                          valueListenable: _selectedMapFeature,
+                          builder: (context, value, child) {
+                            final isSelected = value.contains(
+                              mapFeature[i]['id'],
+                            );
+                            return GestureDetector(
+                              onTap: () {
+                                final List<String> uL = List.from(
+                                  _selectedMapFeature.value,
+                                );
+                                if (isSelected) {
+                                  uL.remove(mapFeature[i]['id']);
+                                } else {
+                                  uL.add(mapFeature[i]['id'].toString());
+                                }
+                                _selectedMapFeature.value = uL;
+                              },
+                              child: Container(
+                                padding: EdgeInsets.all(12),
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: AppColorTheme().white,
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? AppColorTheme().primary
+                                        : Color(0xffEBEEF2),
+                                    width: 1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+
+                                child: Row(
+                                  children: [
+                                    Image.asset(
+                                      mapFeature[i]['icon'].toString(),
+                                      width: 20,
+                                      height: 20,
+                                    ),
+                                    8.w,
+                                    Text(
+                                      mapFeature[i]['name'].toString(),
+                                      style: AppTextTheme().bodyText.copyWith(
+                                        color: AppColorTheme().secondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : SizedBox.shrink(),
         ),
+      ),
 
       // side floating menu
       Positioned(
@@ -196,49 +305,53 @@ class _HomeMobileViewState extends State<HomeMobileView>
               ),
               child: Image.asset('assets/images/bell.png'),
             ),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  changeMapScheme = !changeMapScheme;
-                });
-              },
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
+            ValueListenableBuilder(
+              valueListenable: showChangeMapSchemeDialog,
+              builder: (context, value, child) {
+                return GestureDetector(
+                  onTap: () {
+                    showChangeMapSchemeDialog.value =
+                        !showChangeMapSchemeDialog.value;
+                  },
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
 
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  padding: EdgeInsets.all(13),
-                  decoration: BoxDecoration(
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0x0A000000), // same as #0000000A
-                        offset: Offset(0, 2), // x=0, y=2
-                        blurRadius: 6, // blur radius
-                        spreadRadius: 0, // spread
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      padding: EdgeInsets.all(13),
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x0A000000), // same as #0000000A
+                            offset: Offset(0, 2), // x=0, y=2
+                            blurRadius: 6, // blur radius
+                            spreadRadius: 0, // spread
+                          ),
+                        ],
+                        shape: BoxShape.circle,
+                        color: showChangeMapSchemeDialog.value
+                            ? AppColorTheme().primary.withValues(alpha: 0.2)
+                            : Colors.white,
                       ),
-                    ],
-                    shape: BoxShape.circle,
-                    color: changeMapScheme
-                        ? AppColorTheme().primary.withValues(alpha: 0.2)
-                        : Colors.white,
+                      child: SvgPicture.asset(
+                        AppIcons.layerBoxIcon,
+                        colorFilter: showChangeMapSchemeDialog.value
+                            ? ColorFilter.mode(
+                                AppColorTheme().primary,
+                                BlendMode.srcIn,
+                              )
+                            : null,
+                      ),
+                    ),
                   ),
-                  child: SvgPicture.asset(
-                    AppIcons.layerBoxIcon,
-                    colorFilter: changeMapScheme
-                        ? ColorFilter.mode(
-                            AppColorTheme().primary,
-                            BlendMode.srcIn,
-                          )
-                        : null,
-                  ),
-                ),
-              ),
+                );
+              },
             ),
             Container(
               width: 48,
@@ -561,6 +674,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
             );
           } else if (hasTapDirection) {
             return CustomDragableWidget(
+              scrollController: sheetScrollController,
               initialSize: 0.34,
               childrens: [
                 Row(
@@ -602,6 +716,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
             );
           } else if (selectedStation != null) {
             return CustomDragableWidget(
+              scrollController: sheetScrollController,
               childrens: [
                 Row(
                   children: [
@@ -653,25 +768,25 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   padding: EdgeInsets.symmetric(
                     horizontal: context.screenWidth * 0.026,
                   ),
-                  child: SizedBox(
-                    height: context.screenHeight * 0.065,
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      scrollDirection: Axis.horizontal,
-
-                      itemCount: TruckNavigationStaticDetails.placesss.length,
-                      separatorBuilder: (_, i) => 16.w,
-                      itemBuilder: (_, i) => Column(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(
+                      TruckNavigationStaticDetails.truckStops.length,
+                      (i) => Column(
                         children: [
                           CircleAvatar(
                             radius: 12,
                             backgroundImage: AssetImage(
-                              TruckNavigationStaticDetails.placesss[i].icon,
+                              TruckNavigationStaticDetails
+                                      .truckStops[i]['icon'] ??
+                                  '',
                             ),
                           ),
                           8.h,
                           Text(
-                            TruckNavigationStaticDetails.placesss[i].title,
+                            TruckNavigationStaticDetails
+                                    .truckStops[i]['name'] ??
+                                '',
                             style: AppTextTheme().lightText.copyWith(
                               color: const Color(0xFF000301),
                               height: 1.40,
@@ -681,6 +796,18 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       ),
                     ),
                   ),
+
+                  //  SizedBox(
+                  //   height: context.screenHeight * 0.065,
+                  //   child: ListView.separated(
+                  //     shrinkWrap: true,
+                  //     scrollDirection: Axis.horizontal,
+
+                  //     itemCount: TruckNavigationStaticDetails.truckStops.length,
+                  //     separatorBuilder: (_, i) => 16.w,
+                  //     itemBuilder: (_, i) => ,
+                  //   ),
+                  // ),
                 ),
                 40.h,
                 DefaultTabController(
@@ -864,25 +991,25 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   ],
                 ),
                 15.h,
-                BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
-                  buildWhen: (p, c) =>
-                      p.selectedSuggestion != c.selectedSuggestion,
-                  builder: (context, state) {
-                    return state.selectedSuggestion == null
-                        ? const SizedBox()
-                        : CustomButtonWidget(
-                            title: "Get Direction",
-                            onPressed: () {
-                              if (searchTextEditController.text.isNotEmpty) {
-                                context
-                                    .read<TruckNavigationCubit>()
-                                    .calculateRoute();
-                              }
-                            },
-                            icon: Icon(Icons.directions, color: Colors.white),
-                          );
-                  },
-                ),
+                // BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+                //   buildWhen: (p, c) =>
+                //       p.selectedSuggestion != c.selectedSuggestion,
+                //   builder: (context, state) {
+                //     return state.selectedSuggestion == null
+                //         ? const SizedBox()
+                //         : CustomButtonWidget(
+                //             title: "Get Direction",
+                //             onPressed: () {
+                //               if (searchTextEditController.text.isNotEmpty) {
+                //                 context
+                //                     .read<TruckNavigationCubit>()
+                //                     .calculateRoute();
+                //               }
+                //             },
+                //             icon: Icon(Icons.directions, color: Colors.white),
+                //           );
+                //   },
+                // ),
                 15.h,
                 if (!searchFieldFocusNode.hasFocus) ...[
                   currentLocationTile(context),
@@ -1273,6 +1400,11 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                           context
                                               .read<TruckNavigationCubit>()
                                               .setDestinationCoordinate(item);
+                                          sheetScrollController.animateTo(
+                                            0.34,
+                                            duration: Durations.medium2,
+                                            curve: Curves.bounceIn,
+                                          );
                                           // context.read<MapCubit>().setDestinationCoordinate(item.place!.geoCoordinates!);
                                         },
                                         contentPadding: EdgeInsets.zero,
