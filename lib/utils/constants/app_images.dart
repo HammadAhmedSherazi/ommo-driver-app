@@ -15,4 +15,5 @@ class AppImages {
   static const String blackWhitLocationIcon =
       "${imagePath}black_white_location.png";
   static const String arrowForward = "${imagePath}arror_forwart.png";
+  static const String suggestionPin = "${imagePath}suggestion_pin.png";
 }

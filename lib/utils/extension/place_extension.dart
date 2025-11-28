@@ -3,7 +3,7 @@ import 'package:ommo/home/home.dart';
 
 extension PlaceExtension on Place {
   String get distanceInMiles =>
-      ((distanceInMeters ?? 0) / 1609).toStringAsFixed(1);
+      '${((distanceInMeters ?? 0) / 1609).toStringAsFixed(1)} mi';
 
   String get getReadablePlaceTypeFriendly => switch (placeType) {
     PlaceType.poi => "Place or Business",

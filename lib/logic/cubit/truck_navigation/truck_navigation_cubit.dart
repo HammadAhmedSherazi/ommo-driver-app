@@ -466,11 +466,25 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       state.copyWith(
         selectedSuggestion: suggestion,
         destinationCoordinates: suggestion.place?.geoCoordinates,
-        hasTapDestination: true,
-        tappedPlace: FutureData<Place>.completed(suggestion.place),
+        // hasTapDestination: true,
+        // tappedPlace: FutureData<Place>.completed(suggestion.place),
       ),
     );
     setDestinationMarkerFromSuggestion();
+  }
+
+  void confirmDestination() {
+    if (state.selectedSuggestion != null) {
+      emit(
+        state.copyWith(
+          hasTapDestination: true,
+          tappedPlace: FutureData<Place>.completed(
+            state.selectedSuggestion?.place,
+          ),
+        ),
+      );
+      // setDestinationMarkerFromSuggestion();
+    }
   }
 
   void setDestinationMarkerFromSuggestion() {

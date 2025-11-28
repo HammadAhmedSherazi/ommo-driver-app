@@ -4,21 +4,28 @@ class VerticalStepWithTextField extends StatefulWidget {
   final List<TextEditingController> textControllers;
   final List<FocusNode> focusNode;
   final VoidCallback removeFieldTap;
+  final VoidCallback? onDestinationFieldTap;
+
   final bool readOnly;
 
-  const VerticalStepWithTextField({super.key,
-  this.readOnly = false, 
-  required this.textControllers, required this.removeFieldTap, required this.focusNode});
+  const VerticalStepWithTextField({
+    super.key,
+    this.readOnly = false,
+    required this.textControllers,
+    this.onDestinationFieldTap,
+    required this.removeFieldTap,
+    required this.focusNode,
+  });
 
   @override
-  State<VerticalStepWithTextField> createState() => _VerticalStepWithTextFieldState();
+  State<VerticalStepWithTextField> createState() =>
+      _VerticalStepWithTextFieldState();
 }
 
 class _VerticalStepWithTextFieldState extends State<VerticalStepWithTextField> {
   @override
   void initState() {
     super.initState();
-    
   }
 
   @override
@@ -29,7 +36,6 @@ class _VerticalStepWithTextFieldState extends State<VerticalStepWithTextField> {
       children: [
         /// Left side (steps)
         Column(
-          
           children: List.generate(widget.textControllers.length, (index) {
             final isFirst = index == 0;
             final isLast = index == widget.textControllers.length - 1;
@@ -37,25 +43,21 @@ class _VerticalStepWithTextFieldState extends State<VerticalStepWithTextField> {
             return Column(
               children: [
                 // Top icon
-               if(isFirst) 20.h,
+                if (isFirst) 20.h,
                 if (isFirst)
                   const Icon(Icons.circle_outlined, size: 15)
                 else if (isLast)
-                  const Icon(Icons.location_on, size: 24, )
+                  const Icon(Icons.location_on, size: 24)
                 else
                   const Icon(Icons.circle_outlined, size: 15),
-            
+
                 // Draw dotted line only between items
                 if (!isLast)
                   Padding(
-                    padding:EdgeInsets.symmetric(
-                      vertical: 5.6
-                    ),
+                    padding: EdgeInsets.symmetric(vertical: 5.6),
                     child: SizedBox(
                       height: 40, // match with textfield height + spacing
-                      child: CustomPaint(
-                        painter: DottedLinePainter(),
-                      ),
+                      child: CustomPaint(painter: DottedLinePainter()),
                     ),
                   ),
               ],
@@ -68,25 +70,25 @@ class _VerticalStepWithTextFieldState extends State<VerticalStepWithTextField> {
           child: Column(
             spacing: 10,
             children: List.generate(widget.textControllers.length, (index) {
-              return   CustomTextfieldWidget(
+              return CustomTextfieldWidget(
                 focusNode: widget.focusNode[index],
                 controller: widget.textControllers[index],
-                readOnly:  widget.readOnly,
-                // onTap: (){
-                //   setState(() {
-                    
-                //   });
-                // },
-                
+                onTap: index == 1 ? widget.onDestinationFieldTap : null,
+                readOnly: index == 0 ? true : widget.readOnly,
                 hintText: "Enter a location",
-                suffixIcon: widget.focusNode[index].hasFocus ? IconButton(onPressed: widget.removeFieldTap, icon: Icon(Icons.cancel), style: ButtonStyle(
-                  padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                  visualDensity: VisualDensity(
-                    horizontal: -4.0,
-                    vertical: -4.0
-                  )
-                ),) : null,
-               
+                suffixIcon: widget.focusNode[index].hasFocus
+                    ? IconButton(
+                        onPressed: widget.removeFieldTap,
+                        icon: Icon(Icons.cancel),
+                        style: ButtonStyle(
+                          padding: WidgetStatePropertyAll(EdgeInsets.zero),
+                          visualDensity: VisualDensity(
+                            horizontal: -4.0,
+                            vertical: -4.0,
+                          ),
+                        ),
+                      )
+                    : null,
               );
             }),
           ),

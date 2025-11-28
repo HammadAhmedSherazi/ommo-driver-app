@@ -151,127 +151,6 @@ class _HomeMobileViewState extends State<HomeMobileView>
     return [
       // Background content
       MapView(),
-      // Container(
-      //   color: Colors.grey,
-      //   height: double.infinity,
-      //   width: double.infinity,
-      // ),
-      Positioned(
-        top: context.screenHeight * 0.122,
-        right: context.screenWidth * 0.16,
-        left: context.screenWidth * 0.026,
-        child: ValueListenableBuilder(
-          valueListenable: showChangeMapSchemeDialog,
-
-          builder: (context, value, child) => value
-              ? Container(
-                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                  width: 271,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Column(
-                    children: [
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: () {
-                            showChangeMapSchemeDialog.value = false;
-                          },
-                          child: Icon(Icons.close, color: Color(0xff8C93A4)),
-                        ),
-                      ),
-                      16.h,
-                      Row(
-                        spacing: 20,
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: List.generate(
-                          TruckNavigationStaticDetails.mapSchemes.length,
-                          (index) {
-                            final item =
-                                TruckNavigationStaticDetails.mapSchemes[index];
-                            return _styleButton(
-                              item.label,
-                              item.scheme,
-                              item.icon,
-                              index,
-                            );
-                          },
-                        ),
-                      ),
-                      15.h,
-                      DashedLine(height: 1),
-                      15.h,
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount: mapFeature.length,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisExtent: 44,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                        ),
-                        itemBuilder: (_, i) => ValueListenableBuilder(
-                          valueListenable: _selectedMapFeature,
-                          builder: (context, value, child) {
-                            final isSelected = value.contains(
-                              mapFeature[i]['id'],
-                            );
-                            return GestureDetector(
-                              onTap: () {
-                                final List<String> uL = List.from(
-                                  _selectedMapFeature.value,
-                                );
-                                if (isSelected) {
-                                  uL.remove(mapFeature[i]['id']);
-                                } else {
-                                  uL.add(mapFeature[i]['id'].toString());
-                                }
-                                _selectedMapFeature.value = uL;
-                              },
-                              child: Container(
-                                padding: EdgeInsets.all(12),
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: AppColorTheme().white,
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? AppColorTheme().primary
-                                        : Color(0xffEBEEF2),
-                                    width: 1,
-                                  ),
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-
-                                child: Row(
-                                  children: [
-                                    Image.asset(
-                                      mapFeature[i]['icon'].toString(),
-                                      width: 20,
-                                      height: 20,
-                                    ),
-                                    8.w,
-                                    Text(
-                                      mapFeature[i]['name'].toString(),
-                                      style: AppTextTheme().bodyText.copyWith(
-                                        color: AppColorTheme().secondary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : SizedBox.shrink(),
-        ),
-      ),
 
       // side floating menu
       Positioned(
@@ -310,8 +189,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
               builder: (context, value, child) {
                 return GestureDetector(
                   onTap: () {
-                    showChangeMapSchemeDialog.value =
-                        !showChangeMapSchemeDialog.value;
+                    // showChangeMapSchemeDialog.value =
+                    //     !showChangeMapSchemeDialog.value;
+                    showMapSchemeDialog(context);
                   },
                   child: Container(
                     width: 48,
@@ -476,10 +356,18 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   focusNode: focusNode,
                   textControllers: textController,
                   readOnly: true,
+                  onDestinationFieldTap: () => HomeUtils.editLocationSheet(
+                    context,
+                    onContinue: (value) {
+                      if (value != null) {
+                        searchTextEditController.text = value;
+                      }
+                    },
+                  ),
                   removeFieldTap: () {
-                    setState(() {
-                      textController.removeLast();
-                    });
+                    // setState(() {
+                    //   textController.removeLast();
+                    // });
                   },
                 ),
                 5.h,
@@ -492,10 +380,10 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     ),
                   ),
                   onPressed: () {
-                    setState(() {
-                      textController.add(TextEditingController());
-                      focusNode.add(FocusNode());
-                    });
+                    // setState(() {
+                    //   textController.add(TextEditingController());
+                    //   focusNode.add(FocusNode());
+                    // });
                   },
                   child: Row(
                     spacing: 5,
@@ -518,6 +406,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   buildWhen: (p, c) => p.currentRoute != c.currentRoute,
                   builder: (context, state) {
                     return ListTile(
+                      onTap: () =>
+                          TruckNavigationUtils.openRouteDialogSheet(context),
                       // minLeadingWidth: 20,
                       // onTap: () {
                       //   TruckNavigationUtils.openRouteDialogSheet(context);
@@ -589,10 +479,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
                         width: 110,
                         child: CustomButtonWidget(
                           title: 'Start Trip',
-                          onPressed: () =>
-                              TruckNavigationUtils.openRouteDialogSheet(
-                                context,
-                              ),
+                          onPressed: () => context
+                              .read<TruckNavigationCubit>()
+                              .startNavigation(),
                           radius: 50,
                         ),
                       ),
@@ -940,6 +829,11 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       child: CustomTextfieldWidget(
                         focusNode: searchFieldFocusNode,
                         onTapOutside: (_) {},
+                        onEditingComplete: () {
+                          context
+                              .read<TruckNavigationCubit>()
+                              .confirmDestination();
+                        },
                         onChanged: (text) {
                           setState(() {});
                           Future.delayed(Duration(milliseconds: 400), () {
@@ -955,17 +849,17 @@ class _HomeMobileViewState extends State<HomeMobileView>
                         prefixIcon: SvgPicture.asset(AppIcons.searchIcon),
                         hintText: "Find a destination...",
                         controller: searchTextEditController,
-                        suffixIcon: searchFieldFocusNode.hasFocus
-                            ? searchTextEditController.text.isEmpty
-                                  ? SvgPicture.asset(AppIcons.mapSearchIcon)
-                                  : GestureDetector(
-                                      onTap: () {
-                                        searchTextEditController.clear();
-                                        setState(() {});
-                                      },
-                                      child: Icon(Icons.close),
-                                    )
-                            : null,
+                        // suffixIcon: searchFieldFocusNode.hasFocus
+                        //     ? searchTextEditController.text.isEmpty
+                        //           ? SvgPicture.asset(AppIcons.mapSearchIcon)
+                        //           : GestureDetector(
+                        //               onTap: () {
+                        //                 searchTextEditController.clear();
+                        //                 setState(() {});
+                        //               },
+                        //               child: Icon(Icons.close),
+                        //             )
+                        //     : null,
                       ),
                     ),
                     8.w,
@@ -984,7 +878,6 @@ class _HomeMobileViewState extends State<HomeMobileView>
                           },
                         ),
                         radius: 50,
-
                         icon: Icon(Icons.directions, color: Colors.white),
                       ),
                     ),
@@ -1400,23 +1293,49 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                           context
                                               .read<TruckNavigationCubit>()
                                               .setDestinationCoordinate(item);
-                                          sheetScrollController.animateTo(
-                                            0.34,
-                                            duration: Durations.medium2,
-                                            curve: Curves.bounceIn,
-                                          );
+
+                                          // sheetScrollController.animateTo(
+                                          //   0.34,
+                                          //   duration: Durations.medium2,
+                                          //   curve: Curves.bounceIn,
+                                          // );
                                           // context.read<MapCubit>().setDestinationCoordinate(item.place!.geoCoordinates!);
                                         },
                                         contentPadding: EdgeInsets.zero,
-                                        leading: CircleAvatar(
-                                          radius: 25,
-                                          backgroundColor: AppColorTheme()
-                                              .primary
-                                              .withValues(alpha: 0.2),
-                                          child: SvgPicture.asset(
-                                            AppIcons.navigationIconGreen,
-                                          ),
+                                        leading: Column(
+                                          children: [
+                                            CircleAvatar(
+                                              backgroundColor: Color(
+                                                0xffF4F6F8,
+                                              ),
+                                              radius: 16,
+                                              child: Image.asset(
+                                                AppImages.suggestionPin,
+                                                height: 20,
+                                                width: 20,
+                                              ),
+                                            ),
+                                            Text(
+                                              item.place?.distanceInMiles ?? '',
+                                              maxLines: 2,
+                                              style: AppTextTheme().lightText
+                                                  .copyWith(
+                                                    fontSize: 12,
+                                                    color: AppColorTheme()
+                                                        .secondary,
+                                                  ),
+                                            ),
+                                          ],
                                         ),
+                                        // leading: CircleAvatar(
+                                        //   radius: 25,
+                                        //   backgroundColor: AppColorTheme()
+                                        //       .primary
+                                        //       .withValues(alpha: 0.2),
+                                        //   child: SvgPicture.asset(
+                                        //     AppIcons.navigationIconGreen,
+                                        //   ),
+                                        // ),
                                         title: Text(
                                           item.title,
                                           maxLines: 1,
@@ -2414,6 +2333,130 @@ class _HomeMobileViewState extends State<HomeMobileView>
             child: Image.asset(AppImages.arrowForward),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<dynamic> showMapSchemeDialog(BuildContext context) {
+    return showDialog(
+      context: context,
+
+      builder: (context) => Material(
+        color: Colors.transparent,
+
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            122.h,
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+
+              // width: 271,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () {
+                        context.popPage();
+                        // showChangeMapSchemeDialog.value = false;
+                      },
+                      child: Icon(Icons.close, color: Color(0xff8C93A4)),
+                    ),
+                  ),
+                  16.h,
+                  Row(
+                    spacing: 20,
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: List.generate(
+                      TruckNavigationStaticDetails.mapSchemes.length,
+                      (index) {
+                        final item =
+                            TruckNavigationStaticDetails.mapSchemes[index];
+                        return _styleButton(
+                          item.label,
+                          item.scheme,
+                          item.icon,
+                          index,
+                        );
+                      },
+                    ),
+                  ),
+                  15.h,
+                  DashedLine(height: 1),
+                  15.h,
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: mapFeature.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisExtent: 44,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                    ),
+                    itemBuilder: (_, i) => ValueListenableBuilder(
+                      valueListenable: _selectedMapFeature,
+                      builder: (context, value, child) {
+                        final isSelected = value.contains(mapFeature[i]['id']);
+                        return GestureDetector(
+                          onTap: () {
+                            final List<String> uL = List.from(
+                              _selectedMapFeature.value,
+                            );
+                            if (isSelected) {
+                              uL.remove(mapFeature[i]['id']);
+                            } else {
+                              uL.add(mapFeature[i]['id'].toString());
+                            }
+                            _selectedMapFeature.value = uL;
+                          },
+                          child: Container(
+                            padding: EdgeInsets.all(12),
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: AppColorTheme().white,
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColorTheme().primary
+                                    : Color(0xffEBEEF2),
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+
+                            child: Row(
+                              children: [
+                                Image.asset(
+                                  mapFeature[i]['icon'].toString(),
+                                  width: 20,
+                                  height: 20,
+                                ),
+                                8.w,
+                                Text(
+                                  mapFeature[i]['name'].toString(),
+                                  style: AppTextTheme().bodyText.copyWith(
+                                    color: AppColorTheme().secondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
