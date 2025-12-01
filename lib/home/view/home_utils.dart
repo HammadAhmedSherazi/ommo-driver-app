@@ -7,6 +7,9 @@ import 'package:ommo/home/view/home_mobile_view.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
+import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
+import 'package:ommo/services/hive/recent_search/cubit/recent_search_state.dart';
+import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 import 'package:ommo/utils/extension/place_extension.dart';
 import 'package:ommo/utils/generics/generics.dart';
 import 'package:ommo/utils/helpers/helpers.dart';
@@ -252,10 +255,33 @@ class HomeUtils {
                                   : ListTile(
                                       onTap: () {
                                         if (isLoading) return;
+
+                                        context
+                                            .read<RecentSearchCubit>()
+                                            .addSearch(
+                                              RecentSearchModel(
+                                                title: item.title,
+                                                address:
+                                                    item
+                                                        .place
+                                                        ?.address
+                                                        .addressText ??
+                                                    item.title,
+                                                latitude: item
+                                                    .place
+                                                    ?.geoCoordinates
+                                                    ?.latitude,
+                                                longitude: item
+                                                    .place
+                                                    ?.geoCoordinates
+                                                    ?.longitude,
+                                              ),
+                                            );
                                         destinationController.text = item.title;
                                         context
                                             .read<TruckNavigationCubit>()
                                             .setDestinationCoordinate(item);
+
                                         if (destinationController
                                             .text
                                             .isNotEmpty) {
@@ -294,22 +320,10 @@ class HomeUtils {
                                           ),
                                         ],
                                       ),
-                                      title: Text(
-                                        item.title,
-                                        maxLines: 1,
-                                        style: AppTextTheme().bodyText.copyWith(
-                                          color: Colors.black,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      subtitle: Text(
-                                        item.place?.address.addressText ?? '',
-                                        maxLines: 2,
-                                        style: AppTextTheme().lightText
-                                            .copyWith(
-                                              color: AppColorTheme().secondary,
-                                            ),
-                                      ),
+                                      title: item.place
+                                          ?.buildSuggestionTitleWidget(),
+                                      subtitle: item.place
+                                          ?.buildSuggestionSubtitleWidget(),
                                     );
                             },
                             separatorBuilder: (context, index) => Divider(),
@@ -333,37 +347,13 @@ class HomeUtils {
                             height: context.screenHeight * 0.5,
                             child: TabBarView(
                               children: [
-                                Column(
-                                  children: [
-                                    ...List.generate(
-                                      4,
-                                      (index) => ListTile(
-                                        contentPadding: EdgeInsets.zero,
-                                        leading: CircleAvatar(
-                                          radius: 25,
-                                          backgroundColor: Color(0xffF4F6F8),
-                                          child: SvgPicture.asset(
-                                            AppIcons.frameIcon,
-                                          ),
-                                        ),
-                                        title: Text(
-                                          "1600 Amphitheatre Parkway",
-                                          style: AppTextTheme().bodyText
-                                              .copyWith(fontSize: 16),
-                                        ),
-                                        subtitle: Text(
-                                          "Manhattan, New York, NY, USA",
-                                          style: AppTextTheme().lightText
-                                              .copyWith(
-                                                color:
-                                                    AppColorTheme().secondary,
-                                              ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                showRecentSearches(
+                                  context,
+                                  onSelect: (searchHistory) {
+                                    destinationController.text =
+                                        searchHistory.title;
+                                  },
                                 ),
-
                                 ListView.builder(
                                   shrinkWrap: true,
                                   physics: NeverScrollableScrollPhysics(),
@@ -524,22 +514,10 @@ class HomeUtils {
                                           ),
                                         ],
                                       ),
-                                      title: Text(
-                                        item.title,
-                                        maxLines: 1,
-                                        style: AppTextTheme().bodyText.copyWith(
-                                          color: Colors.black,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                      subtitle: Text(
-                                        item.place?.address.addressText ?? '',
-                                        maxLines: 2,
-                                        style: AppTextTheme().lightText
-                                            .copyWith(
-                                              color: AppColorTheme().secondary,
-                                            ),
-                                      ),
+                                      title: item.place
+                                          ?.buildSuggestionTitleWidget(),
+                                      subtitle: item.place
+                                          ?.buildSuggestionSubtitleWidget(),
                                     );
                             },
                             separatorBuilder: (context, index) => Divider(),
@@ -635,6 +613,50 @@ class HomeUtils {
           ),
         ),
       ),
+    );
+  }
+
+  static Widget showRecentSearches(
+    BuildContext context, {
+    Function(RecentSearchModel searchHistory)? onSelect,
+  }) {
+    return BlocBuilder<RecentSearchCubit, RecentSearchState>(
+      builder: (context, state) {
+        if (state.isLoading) return Center(child: CircularProgressIndicator());
+
+        if (state.searches.isEmpty) {
+          return Center(child: Text("No recent searches"));
+        }
+
+        return ListView.builder(
+          itemCount: state.searches.length,
+          itemBuilder: (context, index) {
+            final item = state.searches[index];
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              onTap: () {
+                print("Selected recent: ${item.title}");
+                if (onSelect != null) onSelect(item);
+              },
+              leading: CircleAvatar(
+                radius: 25,
+                backgroundColor: Color(0xffF4F6F8),
+                child: SvgPicture.asset(AppIcons.frameIcon),
+              ),
+              title: Text(
+                item.title,
+                style: AppTextTheme().bodyText.copyWith(fontSize: 16),
+              ),
+              subtitle: Text(
+                item.address,
+                style: AppTextTheme().lightText.copyWith(
+                  color: AppColorTheme().secondary,
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

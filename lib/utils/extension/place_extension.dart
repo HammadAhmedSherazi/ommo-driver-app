@@ -1,5 +1,9 @@
+import 'dart:developer';
+
+import 'package:flutter/material.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/home/home.dart';
+import 'package:ommo/utils/theme/theme.dart';
 
 extension PlaceExtension on Place {
   String get distanceInMiles =>
@@ -23,6 +27,49 @@ extension PlaceExtension on Place {
       }
     }
     return img;
+  }
+
+  Widget buildSuggestionTitleWidget() {
+    final isBusiness = placeType == PlaceType.poi;
+
+    final fullAddress = address.addressText;
+
+    // Split street + rest
+    String streetPart = fullAddress;
+
+    if (fullAddress.contains(',')) {
+      final parts = fullAddress.split(',');
+      streetPart = parts.first.trim();
+    }
+
+    log(toString());
+    return Text(
+      isBusiness ? title : streetPart,
+      maxLines: 1,
+      style: AppTextTheme().bodyText.copyWith(
+        color: Colors.black,
+        fontSize: 16,
+      ),
+    );
+  }
+
+  Widget buildSuggestionSubtitleWidget() {
+    final isBusiness = placeType == PlaceType.poi;
+
+    final fullAddress = address.addressText;
+
+    // Split street + rest
+    String cityPart = address.addressText
+        .substring(fullAddress.indexOf(',') + 1)
+        .trim();
+
+    return Text(
+      isBusiness ? fullAddress : cityPart,
+      maxLines: 2,
+      style: AppTextTheme().lightText.copyWith(
+        color: AppColorTheme().secondary,
+      ),
+    );
   }
 
   PlaceDataModel get toPlaceDataModel => PlaceDataModel.fromJson({

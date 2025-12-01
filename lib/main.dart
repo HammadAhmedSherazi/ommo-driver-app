@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:here_sdk/core.dart';
 import 'package:here_sdk/core.engine.dart';
 import 'package:here_sdk/core.errors.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 import 'package:ommo/utils/constants/constants.dart';
 import 'app/app.dart';
 
@@ -10,12 +12,16 @@ void main() async {
   await _initializeHERESDK();
   WidgetsFlutterBinding.ensureInitialized();
 
+  await Hive.initFlutter();
+
+  Hive.registerAdapter(RecentSearchModelAdapter());
+  await Hive.openBox<RecentSearchModel>('recent_search_box');
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
   runApp(App());
-  
 }
 
 Future<void> _initializeHERESDK() async {

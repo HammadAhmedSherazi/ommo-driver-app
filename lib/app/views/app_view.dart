@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ommo/home/home.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specification_cubit.dart';
+import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
+import 'package:ommo/services/hive/recent_search/service/recent_search_services.dart';
 // import 'package:flutter_bloc/flutter_bloc.dart';
 // import 'package:general_repository/general_repository.dart';
 
@@ -28,6 +30,7 @@ class App extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => TruckSpecificationsCubit()),
         BlocProvider(create: (_) => TruckNavigationCubit()),
+        BlocProvider(create: (_) => RecentSearchCubit(RecentSearchService())),
       ],
       child: const _AppView(),
     );

@@ -1,0 +1,5 @@
+targets:
+  $default:
+    sources:
+      - lib/services/**   # ✅ Only run generators inside this folder
+      - pubspec.yaml

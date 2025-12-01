@@ -16,6 +16,8 @@ import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_utils.dart';
+import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
+import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 import 'package:ommo/utils/extension/place_extension.dart';
 import 'package:ommo/utils/extension/route_extension.dart';
 import 'package:ommo/utils/snacks/snackbar_utils.dart';
@@ -422,13 +424,17 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       //   child: SvgPicture.asset(AppIcons.truckIcon),
                       // ),
                       title: Row(
+                        // crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            // "Via I-20E",
-                            // "Route",
-                            state.currentRoute?.getRouteName ?? '',
-                            style: AppTextTheme().bodyText.copyWith(
-                              fontSize: 16,
+                          Expanded(
+                            child: Text(
+                              // "Via I-20E",
+                              // "Route",
+                              state.currentRoute?.getRouteName ?? '',
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextTheme().bodyText.copyWith(
+                                fontSize: 16,
+                              ),
                             ),
                           ),
                           12.w,
@@ -530,7 +536,6 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 ),
                 Wrap(
                   spacing: 5,
-
                   children: List.generate(
                     TruckNavigationStaticDetails.settingChipsList.length,
                     (index) => Chip(
@@ -1185,53 +1190,47 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        ListView(
-                          shrinkWrap: true,
-                          padding: EdgeInsets.zero,
-                          physics: NeverScrollableScrollPhysics(),
-                          children: [
-                            // ListTile(
-                            //   contentPadding: EdgeInsets.zero,
-                            //   leading: CircleAvatar(
-                            //     radius: 25,
-                            //     backgroundColor: AppColorTheme().primary
-                            //         .withValues(alpha: 0.2),
-                            //     child: SvgPicture.asset(
-                            //       AppIcons.navigationIconGreen,
-                            //     ),
-                            //   ),
-                            //   title: Text(
-                            //     "My location",
-                            //     style: AppTextTheme().bodyText.copyWith(
-                            //       fontSize: 16,
-                            //     ),
-                            //   ),
-                            // ),
-                            ...List.generate(
-                              4,
-                              (index) => ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                leading: CircleAvatar(
-                                  radius: 25,
-                                  backgroundColor: Color(0xffF4F6F8),
-                                  child: SvgPicture.asset(AppIcons.frameIcon),
-                                ),
-                                title: Text(
-                                  "1600 Amphitheatre Parkway",
-                                  style: AppTextTheme().bodyText.copyWith(
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  "Manhattan, New York, NY, USA",
-                                  style: AppTextTheme().lightText.copyWith(
-                                    color: AppColorTheme().secondary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                        HomeUtils.showRecentSearches(
+                          context,
+                          onSelect: (searchHistory) {
+                            searchTextEditController.text = searchHistory.title;
+                            context.read<TruckNavigationCubit>().searchPlaces(
+                              searchTextEditController.text,
+                            );
+                            setState(() {});
+                          },
                         ),
+                        // ListView(
+                        //   shrinkWrap: true,
+                        //   padding: EdgeInsets.zero,
+                        //   physics: NeverScrollableScrollPhysics(),
+                        //   children: [
+
+                        //     ...List.generate(
+                        //       4,
+                        //       (index) => ListTile(
+                        //         contentPadding: EdgeInsets.zero,
+                        //         leading: CircleAvatar(
+                        //           radius: 25,
+                        //           backgroundColor: Color(0xffF4F6F8),
+                        //           child: SvgPicture.asset(AppIcons.frameIcon),
+                        //         ),
+                        //         title: Text(
+                        //           "1600 Amphitheatre Parkway",
+                        //           style: AppTextTheme().bodyText.copyWith(
+                        //             fontSize: 16,
+                        //           ),
+                        //         ),
+                        //         subtitle: Text(
+                        //           "Manhattan, New York, NY, USA",
+                        //           style: AppTextTheme().lightText.copyWith(
+                        //             color: AppColorTheme().secondary,
+                        //           ),
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
                         ListView.builder(
                           physics: NeverScrollableScrollPhysics(),
                           itemBuilder: (context, index) => GestureDetector(
@@ -1283,16 +1282,38 @@ class _HomeMobileViewState extends State<HomeMobileView>
                               itemBuilder: (context, index) {
                                 final Suggestion? item =
                                     state.destinationSuggestions?.data?[index];
-
+                                log(item.toString());
                                 return item == null
                                     ? SizedBox()
                                     : ListTile(
                                         onTap: () {
                                           searchTextEditController.text =
                                               item.title;
+
                                           context
                                               .read<TruckNavigationCubit>()
                                               .setDestinationCoordinate(item);
+                                          context
+                                              .read<RecentSearchCubit>()
+                                              .addSearch(
+                                                RecentSearchModel(
+                                                  title: item.title,
+                                                  address:
+                                                      item
+                                                          .place
+                                                          ?.address
+                                                          .addressText ??
+                                                      item.title,
+                                                  latitude: item
+                                                      .place
+                                                      ?.geoCoordinates
+                                                      ?.latitude,
+                                                  longitude: item
+                                                      .place
+                                                      ?.geoCoordinates
+                                                      ?.longitude,
+                                                ),
+                                              );
 
                                           // sheetScrollController.animateTo(
                                           //   0.34,
@@ -1336,24 +1357,14 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                         //     AppIcons.navigationIconGreen,
                                         //   ),
                                         // ),
-                                        title: Text(
-                                          item.title,
-                                          maxLines: 1,
-                                          style: AppTextTheme().bodyText
-                                              .copyWith(
-                                                color: Colors.black,
-                                                fontSize: 16,
-                                              ),
-                                        ),
-                                        subtitle: Text(
-                                          item.place?.address.addressText ?? '',
-                                          maxLines: 2,
-                                          style: AppTextTheme().lightText
-                                              .copyWith(
-                                                color:
-                                                    AppColorTheme().secondary,
-                                              ),
-                                        ),
+                                        title:
+                                            item.place
+                                                ?.buildSuggestionTitleWidget() ??
+                                            SizedBox.shrink(),
+                                        subtitle:
+                                            item.place
+                                                ?.buildSuggestionSubtitleWidget() ??
+                                            SizedBox.shrink(),
                                       );
                               },
                               separatorBuilder: (context, index) => Divider(),
