@@ -11,16 +11,20 @@ class RecentSearchModel extends HiveObject {
   final String address;
 
   @HiveField(2)
-  final double? latitude;
+  final double latitude;
 
   @HiveField(3)
-  final double? longitude;
+  final double longitude;
 
   @HiveField(4)
   final DateTime timestamp;
+  
+  @HiveField(5)
+  final bool isBussiness;
 
   RecentSearchModel({
     required this.title,
+    required this.isBussiness,
     required this.address,
     required this.latitude,
     required this.longitude,

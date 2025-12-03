@@ -29,46 +29,44 @@ extension PlaceExtension on Place {
     return img;
   }
 
-  Widget buildSuggestionTitleWidget() {
-    final isBusiness = placeType == PlaceType.poi;
+  bool get isBusiness => placeType == PlaceType.poi;
 
+  Widget buildSuggestionTitleWidget({TextStyle? style}) {
+    return Text(
+      formattedTitle,
+      maxLines: 1,
+      style:
+          style ??
+          AppTextTheme().bodyText.copyWith(color: Colors.black, fontSize: 16),
+    );
+  }
+
+  String get formattedTitle {
     final fullAddress = address.addressText;
-
-    // Split street + rest
     String streetPart = fullAddress;
-
     if (fullAddress.contains(',')) {
       final parts = fullAddress.split(',');
       streetPart = parts.first.trim();
     }
-
-    log(toString());
-    return Text(
-      isBusiness ? title : streetPart,
-      maxLines: 1,
-      style: AppTextTheme().bodyText.copyWith(
-        color: Colors.black,
-        fontSize: 16,
-      ),
-    );
+    return isBusiness ? title : streetPart;
   }
 
-  Widget buildSuggestionSubtitleWidget() {
-    final isBusiness = placeType == PlaceType.poi;
-
+  String get formattedSubtitle {
     final fullAddress = address.addressText;
-
-    // Split street + rest
     String cityPart = address.addressText
         .substring(fullAddress.indexOf(',') + 1)
         .trim();
 
+    return isBusiness ? fullAddress : cityPart;
+  }
+
+  Widget buildSuggestionSubtitleWidget({TextStyle? style}) {
     return Text(
-      isBusiness ? fullAddress : cityPart,
+      formattedSubtitle,
       maxLines: 2,
-      style: AppTextTheme().lightText.copyWith(
-        color: AppColorTheme().secondary,
-      ),
+      style:
+          style ??
+          AppTextTheme().lightText.copyWith(color: AppColorTheme().secondary),
     );
   }
 

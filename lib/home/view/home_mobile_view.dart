@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:here_sdk/core.dart';
 import 'package:here_sdk/mapview.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
@@ -19,6 +20,7 @@ import 'package:ommo/home/view/truck_navigation/truck_navigation_utils.dart';
 import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
 import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 import 'package:ommo/utils/extension/place_extension.dart';
+import 'package:ommo/utils/extension/recent_search_model_extension.dart';
 import 'package:ommo/utils/extension/route_extension.dart';
 import 'package:ommo/utils/snacks/snackbar_utils.dart';
 import 'package:ommo/utils/utils.dart';
@@ -136,6 +138,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 ? buildInitialUi(
                     context,
                     state.hasDirection,
+
                     state.hasTapDestination,
                   )
                 : buildNavigationUi(state),
@@ -366,11 +369,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       }
                     },
                   ),
-                  removeFieldTap: () {
-                    // setState(() {
-                    //   textController.removeLast();
-                    // });
-                  },
+                  removeFieldTap: () {},
                 ),
                 5.h,
                 TextButton(
@@ -382,10 +381,10 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     ),
                   ),
                   onPressed: () {
-                    // setState(() {
-                    //   textController.add(TextEditingController());
-                    //   focusNode.add(FocusNode());
-                    // });
+                    setState(() {
+                      textController.add(TextEditingController());
+                      focusNode.add(FocusNode());
+                    });
                   },
                   child: Row(
                     spacing: 5,
@@ -834,11 +833,11 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       child: CustomTextfieldWidget(
                         focusNode: searchFieldFocusNode,
                         onTapOutside: (_) {},
-                        onEditingComplete: () {
-                          context
-                              .read<TruckNavigationCubit>()
-                              .confirmDestination();
-                        },
+                        // onEditingComplete: () {
+                        //   context
+                        //       .read<TruckNavigationCubit>()
+                        //       .confirmDestination();
+                        // },
                         onChanged: (text) {
                           setState(() {});
                           Future.delayed(Duration(milliseconds: 400), () {
@@ -880,6 +879,11 @@ class _HomeMobileViewState extends State<HomeMobileView>
                               searchTextEditController.text =
                                   destinationText ?? "";
                             }
+                            sheetScrollController.animateTo(
+                              0.34,
+                              duration: Durations.medium2,
+                              curve: Curves.bounceIn,
+                            );
                           },
                         ),
                         radius: 50,
@@ -1194,10 +1198,14 @@ class _HomeMobileViewState extends State<HomeMobileView>
                           context,
                           onSelect: (searchHistory) {
                             searchTextEditController.text = searchHistory.title;
-                            context.read<TruckNavigationCubit>().searchPlaces(
-                              searchTextEditController.text,
+                            context
+                                .read<TruckNavigationCubit>()
+                                .selectRecentAsDestination(searchHistory);
+                            sheetScrollController.animateTo(
+                              0.34,
+                              duration: Durations.medium2,
+                              curve: Curves.bounceIn,
                             );
-                            setState(() {});
                           },
                         ),
                         // ListView(
@@ -1295,31 +1303,17 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                               .setDestinationCoordinate(item);
                                           context
                                               .read<RecentSearchCubit>()
-                                              .addSearch(
-                                                RecentSearchModel(
-                                                  title: item.title,
-                                                  address:
-                                                      item
-                                                          .place
-                                                          ?.address
-                                                          .addressText ??
-                                                      item.title,
-                                                  latitude: item
-                                                      .place
-                                                      ?.geoCoordinates
-                                                      ?.latitude,
-                                                  longitude: item
-                                                      .place
-                                                      ?.geoCoordinates
-                                                      ?.longitude,
-                                                ),
-                                              );
+                                              .addSearchFromPlace(item.place!);
 
-                                          // sheetScrollController.animateTo(
-                                          //   0.34,
-                                          //   duration: Durations.medium2,
-                                          //   curve: Curves.bounceIn,
-                                          // );
+                                          context
+                                              .read<TruckNavigationCubit>()
+                                              .confirmDestination();
+
+                                          sheetScrollController.animateTo(
+                                            0.34,
+                                            duration: Durations.medium2,
+                                            curve: Curves.bounceIn,
+                                          );
                                           // context.read<MapCubit>().setDestinationCoordinate(item.place!.geoCoordinates!);
                                         },
                                         contentPadding: EdgeInsets.zero,
@@ -1992,8 +1986,17 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   children: [
                     Text(
                       state.hasTapDestination
-                          ? state.tappedPlace?.data?.title ?? ''
-                          : state.selectedSuggestion?.title ?? '',
+                          ? (state.hasdestinationFromRecent
+                                    ? state
+                                          .destinationFromRecent
+                                          ?.formattedTitle
+                                    : state
+                                          .tappedPlace
+                                          ?.data
+                                          ?.formattedTitle) ??
+                                ''
+                          : state.selectedSuggestion?.place?.formattedTitle ??
+                                '',
                       style: AppTextTheme().subHeadingText.copyWith(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -2001,12 +2004,19 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     ),
                     Text(
                       state.hasTapDestination
-                          ? state.tappedPlace?.data?.address.addressText ?? ''
+                          ? (state.hasdestinationFromRecent
+                                    ? state
+                                          .destinationFromRecent
+                                          ?.formattedSubTitle
+                                    : state
+                                          .tappedPlace
+                                          ?.data
+                                          ?.formattedSubtitle) ??
+                                ''
                           : state
                                     .selectedSuggestion
                                     ?.place
-                                    ?.address
-                                    .addressText ??
+                                    ?.formattedSubtitle ??
                                 '',
                       overflow: TextOverflow.ellipsis,
                       style: AppTextTheme().subHeadingText.copyWith(
@@ -2210,21 +2220,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
             backgroundColor: AppColorTheme().primary.withValues(alpha: 0.2),
             child: SvgPicture.asset(AppIcons.navigationIconGreen),
           ),
-          title: Text(
-            place?.title ?? "",
-            //  "210 Riverside Drive",
-            style: AppTextTheme().bodyText.copyWith(
-              color: Colors.black,
-              fontSize: 16,
-            ),
-          ),
-          subtitle: Text(
-            place?.address.addressText ?? "",
-            // "New York, NY 10025",
-            style: AppTextTheme().lightText.copyWith(
-              color: AppColorTheme().secondary,
-            ),
-          ),
+          title: place?.buildSuggestionTitleWidget(),
+          subtitle: place?.buildSuggestionSubtitleWidget(),
         ),
 
         loader: ClipRRect(
@@ -2241,52 +2238,65 @@ class _HomeMobileViewState extends State<HomeMobileView>
   Widget tapDestinationTile(BuildContext context) {
     return BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
       buildWhen: (p, c) => p.tappedPlace != c.tappedPlace,
-      builder: (context, state) => FutureDataBuilder(
-        future: state.tappedPlace,
-        onSuccess: (place) => ListTile(
-          contentPadding: EdgeInsets.zero,
+      builder: (context, state) => state.hasdestinationFromRecent
+          ? ListTile(
+              contentPadding: EdgeInsets.zero,
 
-          trailing: GestureDetector(
-            onTap: () {
-              if ((place?.title ?? '').isNotEmpty) {
-                searchTextEditController.text = place?.title ?? '';
-              }
-              context.read<TruckNavigationCubit>().calculateRoute();
-            },
-            child: CircleAvatar(
-              radius: 24,
-              backgroundColor: AppColorTheme().primary,
-              child: const Icon(
-                Icons.directions,
-                color: Colors.white,
-                size: 18,
+              trailing: GestureDetector(
+                onTap: () {
+                  if ((state.destinationFromRecent?.title ?? '').isNotEmpty) {
+                    searchTextEditController.text =
+                        state.destinationFromRecent?.title ?? '';
+                  }
+                  context.read<TruckNavigationCubit>().calculateRoute();
+                },
+                child: CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AppColorTheme().primary,
+                  child: const Icon(
+                    Icons.directions,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+              ),
+              title: state.destinationFromRecent?.buildSuggestionTitleWidget(),
+              subtitle: state.destinationFromRecent
+                  ?.buildSuggestionSubtitleWidget(),
+            )
+          : FutureDataBuilder(
+              future: state.tappedPlace,
+              onSuccess: (place) => ListTile(
+                contentPadding: EdgeInsets.zero,
+
+                trailing: GestureDetector(
+                  onTap: () {
+                    if ((place?.title ?? '').isNotEmpty) {
+                      searchTextEditController.text = place?.title ?? '';
+                    }
+                    context.read<TruckNavigationCubit>().calculateRoute();
+                  },
+                  child: CircleAvatar(
+                    radius: 24,
+                    backgroundColor: AppColorTheme().primary,
+                    child: const Icon(
+                      Icons.directions,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ),
+                title: place?.buildSuggestionTitleWidget(),
+                subtitle: place?.buildSuggestionSubtitleWidget(),
+              ),
+              loader: ClipRRect(
+                borderRadius: BorderRadiusGeometry.circular(10),
+                child: Shimmer(
+                  color: Colors.greenAccent,
+                  child: SizedBox(width: double.infinity, height: 80),
+                ),
               ),
             ),
-          ),
-          title: Text(
-            place?.title ?? "",
-            //  "210 Riverside Drive",
-            style: AppTextTheme().bodyText.copyWith(
-              color: Colors.black,
-              fontSize: 16,
-            ),
-          ),
-          subtitle: Text(
-            place?.address.addressText ?? "",
-            // "New York, NY 10025",
-            style: AppTextTheme().lightText.copyWith(
-              color: AppColorTheme().secondary,
-            ),
-          ),
-        ),
-        loader: ClipRRect(
-          borderRadius: BorderRadiusGeometry.circular(10),
-          child: Shimmer(
-            color: Colors.greenAccent,
-            child: SizedBox(width: double.infinity, height: 80),
-          ),
-        ),
-      ),
     );
   }
 

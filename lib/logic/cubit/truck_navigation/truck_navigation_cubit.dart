@@ -20,6 +20,7 @@ import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specification_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state.dart';
 import 'package:ommo/map_sdk/HEREPositioningSimulator.dart';
+import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 import 'package:ommo/utils/constants/constants.dart';
 import 'package:ommo/utils/generics/generics.dart';
 import 'package:ommo/utils/snacks/snackbar_utils.dart';
@@ -819,6 +820,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         currentRoute: 'null',
         hasDirection: false,
         isNavigating: false,
+        destinationFromRecent: 'null',
+        hasdestinationFromRecent: false,
+
         hasTapDestination: false,
       ),
     );
@@ -982,6 +986,37 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _truckRestrictionMarkers.clear();
   }
 
+  selectRecentAsDestination(RecentSearchModel recent) {
+    final GeoCoordinates geoCoordinates = GeoCoordinates(
+      recent.latitude,
+      recent.longitude,
+    );
+    // Set destination coordinates
+    emit(
+      state.copyWith(
+        hasTapDestination: true,
+        hasdestinationFromRecent: true,
+        destinationFromRecent: recent,
+        destinationCoordinates: geoCoordinates,
+      ),
+    );
+
+    // Add destination marker
+    if (_destinationMarker != null) {
+      state.mapController?.mapScene.removeMapMarker(_destinationMarker!);
+      _destinationMarker = null;
+    }
+
+    MapImage destIcon = MapImage.withFilePathAndWidthAndHeight(
+      AppImages.greenMapPin,
+      60,
+      100,
+    );
+
+    _destinationMarker = MapMarker(geoCoordinates, destIcon);
+    state.mapController?.mapScene.addMapMarker(_destinationMarker!);
+  }
+
   void _handleMapTapForDestination(Point2D touchPoint) {
     // Convert screen coordinates to geo coordinates
     final geoCoordinates = state.mapController?.viewToGeoCoordinates(
@@ -1059,7 +1094,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     emit(
       state.copyWith(
         hasTapDestination: false,
+        hasdestinationFromRecent: false,
         destinationCoordinates: 'null',
+        destinationFromRecent: 'null',
         selectedSuggestion: 'null',
         tappedPlace: FutureData<Place>.initial(),
       ),

@@ -5,6 +5,7 @@ import 'package:here_sdk/navigation.dart';
 import 'package:here_sdk/routing.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/data/response/get_data.dart';
+import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 
 class TruckNavigationState extends Equatable {
   final HereMapController? mapController;
@@ -15,6 +16,8 @@ class TruckNavigationState extends Equatable {
   final Suggestion? selectedSuggestion;
   final GeoCoordinates? destinationCoordinates;
   final FutureData<Place>? tappedPlace;
+  final bool hasdestinationFromRecent;
+  final RecentSearchModel? destinationFromRecent;
   final Route? currentRoute;
   final bool isNavigating;
   final bool isMapLoading;
@@ -35,6 +38,8 @@ class TruckNavigationState extends Equatable {
     this.tappedPlace,
     this.isMapLoading = true,
     this.hasTapDestination = false,
+    this.hasdestinationFromRecent = false,
+    this.destinationFromRecent,
     this.isNavigating = false,
     this.hasDirection = false,
     this.cameraControlledByNavigator = false,
@@ -53,8 +58,10 @@ class TruckNavigationState extends Equatable {
     FutureData<List<Place>>? nearbyTruckStops,
     dynamic destinationCoordinates,
     FutureData<Place>? tappedPlace,
+    bool? hasdestinationFromRecent,
     dynamic currentRoute,
     bool? isNavigating,
+    dynamic destinationFromRecent,
     bool? isMapLoading,
     bool? hasTapDestination,
     bool? cameraControlledByNavigator,
@@ -74,6 +81,9 @@ class TruckNavigationState extends Equatable {
       destinationCoordinates: destinationCoordinates == 'null'
           ? null
           : (destinationCoordinates ?? this.destinationCoordinates),
+      destinationFromRecent: destinationFromRecent == 'null'
+          ? null
+          : (destinationFromRecent ?? this.destinationFromRecent),
       tappedPlace: tappedPlace ?? this.tappedPlace,
       currentRoute: currentRoute == 'null'
           ? null
@@ -81,6 +91,8 @@ class TruckNavigationState extends Equatable {
       maneuverProgress: maneuverProgress == 'null'
           ? null
           : (maneuverProgress ?? this.maneuverProgress),
+      hasdestinationFromRecent:
+          hasdestinationFromRecent ?? this.hasdestinationFromRecent,
       isNavigating: isNavigating ?? this.isNavigating,
       isMapLoading: isMapLoading ?? this.isMapLoading,
       cameraControlledByNavigator:
@@ -96,6 +108,8 @@ class TruckNavigationState extends Equatable {
     mapController,
     currentPlace,
     nearbyTruckStops,
+    destinationFromRecent,
+    hasdestinationFromRecent,
     startCoordinates,
     selectedSuggestion,
     destinationCoordinates,
