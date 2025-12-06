@@ -6,6 +6,8 @@ import 'package:here_sdk/routing.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/data/response/get_data.dart';
 import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
+import 'package:ommo/utils/extension/place_extension.dart';
+import 'package:ommo/utils/extension/recent_search_model_extension.dart';
 
 class TruckNavigationState extends Equatable {
   final HereMapController? mapController;
@@ -20,11 +22,13 @@ class TruckNavigationState extends Equatable {
   final RecentSearchModel? destinationFromRecent;
   final Route? currentRoute;
   final bool isNavigating;
+  final bool hasFocusedLocation;
   final bool isMapLoading;
   final bool hasTapDestination;
   final bool hasDirection;
   final bool cameraControlledByNavigator;
   final ManeuverProgress? maneuverProgress;
+  final List<LocationPoint>? locationPoints;
 
   const TruckNavigationState({
     this.mapController,
@@ -36,6 +40,7 @@ class TruckNavigationState extends Equatable {
     this.destinationCoordinates,
     this.currentRoute,
     this.tappedPlace,
+    this.hasFocusedLocation = false,
     this.isMapLoading = true,
     this.hasTapDestination = false,
     this.hasdestinationFromRecent = false,
@@ -44,6 +49,7 @@ class TruckNavigationState extends Equatable {
     this.hasDirection = false,
     this.cameraControlledByNavigator = false,
     this.destinationSuggestions,
+    this.locationPoints,
   });
 
   // GeoCoordinates? get destinationCoordinates =>
@@ -60,6 +66,7 @@ class TruckNavigationState extends Equatable {
     FutureData<Place>? tappedPlace,
     bool? hasdestinationFromRecent,
     dynamic currentRoute,
+    bool? hasFocusedLocation,
     bool? isNavigating,
     dynamic destinationFromRecent,
     bool? isMapLoading,
@@ -67,8 +74,11 @@ class TruckNavigationState extends Equatable {
     bool? cameraControlledByNavigator,
     bool? hasDirection,
     dynamic maneuverProgress,
+    List<LocationPoint>? locationPoints,
   }) {
     return TruckNavigationState(
+      hasFocusedLocation: hasFocusedLocation ?? this.hasFocusedLocation,
+      locationPoints: locationPoints ?? this.locationPoints,
       destinationSuggestions:
           destinationSuggestions ?? this.destinationSuggestions,
       nearbyTruckStops: nearbyTruckStops ?? this.nearbyTruckStops,
@@ -104,6 +114,8 @@ class TruckNavigationState extends Equatable {
 
   @override
   List<Object?> get props => [
+    locationPoints,
+    hasFocusedLocation,
     destinationSuggestions,
     mapController,
     currentPlace,
@@ -119,4 +131,31 @@ class TruckNavigationState extends Equatable {
     isMapLoading,
     hasTapDestination,
   ];
+}
+
+enum LocationPointType { starting, destination, stop }
+
+class LocationPoint<T> extends Equatable {
+  final T place;
+  final LocationPointType pointType;
+  const LocationPoint({required this.place, required this.pointType});
+
+  bool get isRecent => place is RecentSearchModel;
+
+  GeoCoordinates? get geoCoordinates => isRecent
+      ? (place as RecentSearchModel).geoCoordinates
+      : (place as Place).geoCoordinates;
+  String? get title => isRecent
+      ? (place as RecentSearchModel).formattedTitle
+      : (place as Place).formattedTitle;
+  String? get subTitle => isRecent
+      ? (place as RecentSearchModel).formattedSubTitle
+      : (place as Place).formattedSubtitle;
+
+  LocationPoint copyWith({LocationPointType? pointType}) {
+    return LocationPoint(place: place, pointType: pointType ?? this.pointType);
+  }
+
+  @override
+  List<Object?> get props => [place, pointType];
 }

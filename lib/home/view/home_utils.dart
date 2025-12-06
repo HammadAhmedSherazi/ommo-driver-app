@@ -398,7 +398,7 @@ class HomeUtils {
 
   static void editLocationSheet(
     BuildContext context, {
-    Function(String?)? onContinue,
+    Function(dynamic place)? onContinue,
   }) {
     final TextEditingController locationController = TextEditingController();
 
@@ -472,18 +472,18 @@ class HomeUtils {
                                   : ListTile(
                                       onTap: () {
                                         locationController.text = item.title;
-                                        context
-                                            .read<TruckNavigationCubit>()
-                                            .setDestinationCoordinate(item);
+                                        // context
+                                        //     .read<TruckNavigationCubit>()
+                                        //     .setDestinationCoordinate(item);
                                         if (locationController
                                             .text
                                             .isNotEmpty) {
                                           if (onContinue != null) {
-                                            onContinue(locationController.text);
+                                            onContinue(item.place);
                                           }
-                                          context
-                                              .read<TruckNavigationCubit>()
-                                              .calculateRoute();
+                                          // context
+                                          //     .read<TruckNavigationCubit>()
+                                          //     .calculateRoute();
 
                                           Navigator.pop(context);
                                         }
@@ -543,16 +543,16 @@ class HomeUtils {
                                   context,
                                   onSelect: (item) {
                                     locationController.text = item.title;
-                                    context
-                                        .read<TruckNavigationCubit>()
-                                        .selectRecentAsDestination(item);
+                                    // context
+                                    //     .read<TruckNavigationCubit>()
+                                    //     .selectRecentAsDestination(item);
                                     if (locationController.text.isNotEmpty) {
                                       if (onContinue != null) {
-                                        onContinue(locationController.text);
+                                        onContinue(item);
                                       }
-                                      context
-                                          .read<TruckNavigationCubit>()
-                                          .calculateRoute();
+                                      // context
+                                      //     .read<TruckNavigationCubit>()
+                                      //     .calculateRoute();
 
                                       Navigator.pop(context);
                                     }

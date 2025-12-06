@@ -471,13 +471,29 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         // tappedPlace: FutureData<Place>.completed(suggestion.place),
       ),
     );
+    confirmDestination();
     setDestinationMarkerFromSuggestion();
   }
 
   void confirmDestination() {
     if (state.selectedSuggestion != null) {
+      final List<LocationPoint> _list = [];
+      _list.add(
+        LocationPoint<Place>(
+          place: state.currentPlace!.data!,
+          pointType: LocationPointType.starting,
+        ),
+      );
+      _list.add(
+        LocationPoint<Place>(
+          place: state.selectedSuggestion!.place!,
+          pointType: LocationPointType.destination,
+        ),
+      );
+
       emit(
         state.copyWith(
+          locationPoints: _list,
           hasTapDestination: true,
           tappedPlace: FutureData<Place>.completed(
             state.selectedSuggestion?.place,
@@ -532,8 +548,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   void calculateRoute() {
-    GeoCoordinates? start = state.startCoordinates;
-    GeoCoordinates? end = state.destinationCoordinates;
+    GeoCoordinates? start = state.locationPoints?.firstOrNull?.geoCoordinates;
+    GeoCoordinates? end = state.locationPoints?.lastOrNull?.geoCoordinates;
 
     if (start == null || end == null) return;
 
@@ -716,8 +732,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     state.mapController!.camera.startAnimation(animation);
   }
 
-  void recalculateRoute() {}
-
   void startNavigation() {
     if (state.currentRoute == null) return;
 
@@ -822,7 +836,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         isNavigating: false,
         destinationFromRecent: 'null',
         hasdestinationFromRecent: false,
-
+        locationPoints: [],
         hasTapDestination: false,
       ),
     );
@@ -961,24 +975,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _truckRestrictionMarkers.add(marker);
   }
 
-  // Future<void> testingWarningMarker() async {
-  //   final mapImage = MapImage.withFilePathAndWidthAndHeight(
-  //     'assets/images/truck_warning.png',
-  //     70,
-  //     70,
-  //   );
-
-  //   final marker = MapMarker(GeoCoordinates(24.8801649, 67.0699316), mapImage);
-
-  //   // Add marker metadata (so you can handle tap events)
-  //   final metadata = Metadata();
-  //   metadata.setString("warning_message", "warning_message");
-  //   marker.metadata = metadata;
-
-  //   state.mapController?.mapScene.addMapMarker(marker);
-  //   _truckRestrictionMarkers.add(marker);
-  // }
-
   void _clearTruckPreviousMarkers() {
     for (final marker in _truckRestrictionMarkers) {
       state.mapController?.mapScene.removeMapMarker(marker);
@@ -991,9 +987,25 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       recent.latitude,
       recent.longitude,
     );
+
+    final List<LocationPoint> _list = [];
+    _list.add(
+      LocationPoint<Place>(
+        place: state.currentPlace!.data!,
+        pointType: LocationPointType.starting,
+      ),
+    );
+    _list.add(
+      LocationPoint<RecentSearchModel>(
+        place: recent,
+        pointType: LocationPointType.destination,
+      ),
+    );
+
     // Set destination coordinates
     emit(
       state.copyWith(
+        locationPoints: _list,
         hasTapDestination: true,
         hasdestinationFromRecent: true,
         destinationFromRecent: recent,
@@ -1071,7 +1083,25 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         return;
       }
       if (places != null && places.isNotEmpty) {
-        emit(state.copyWith(tappedPlace: FutureData.completed(places.first)));
+        final List<LocationPoint> _list = [];
+        _list.add(
+          LocationPoint<Place>(
+            place: state.currentPlace!.data!,
+            pointType: LocationPointType.starting,
+          ),
+        );
+        _list.add(
+          LocationPoint<Place>(
+            place: places.first,
+            pointType: LocationPointType.destination,
+          ),
+        );
+        emit(
+          state.copyWith(
+            locationPoints: _list,
+            tappedPlace: FutureData.completed(places.first),
+          ),
+        );
       } else {
         emit(
           state.copyWith(
@@ -1101,5 +1131,37 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         tappedPlace: FutureData<Place>.initial(),
       ),
     );
+  }
+
+  void changeLocationPointOrder(oldIndex, newIndex) {
+    final List<LocationPoint> _list = List.from(state.locationPoints ?? []);
+    if (_list.isEmpty) return;
+    if (newIndex > oldIndex) newIndex -= 1;
+    final removed = _list.removeAt(oldIndex);
+    _list.insert(newIndex, removed);
+    emit(state.copyWith(locationPoints: _list));
+  }
+
+  void addStop(dynamic place) {
+    final List<LocationPoint> _list = List.from(state.locationPoints ?? []);
+    if (_list.isEmpty) return;
+
+    final item = place is Place
+        ? LocationPoint<Place>(place: place, pointType: LocationPointType.stop)
+        : LocationPoint<RecentSearchModel>(
+            place: place,
+            pointType: LocationPointType.stop,
+          );
+
+    _list.insert(state.locationPoints!.length - 1, item);
+    emit(state.copyWith(locationPoints: _list));
+  }
+
+  void deleteStop(int index) {
+    final List<LocationPoint> _list = List.from(state.locationPoints ?? []);
+    if (_list.isEmpty) return;
+    if (_list.length <= 2) return;
+    _list.removeAt(index);
+    emit(state.copyWith(locationPoints: _list));
   }
 }

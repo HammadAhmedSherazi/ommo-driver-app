@@ -43,6 +43,7 @@ class AppIcons {
   static const String parcelBoxIcon = "${iconPath}parcel_box_icon.svg";
   static const String map = "${iconPath}map.svg";
   static const String pinLocIcon = "${iconPath}pin_loc_icon.svg";
+  static const String destinationPointIcon = "${iconPath}destination_point_icon.svg";
   
   
   

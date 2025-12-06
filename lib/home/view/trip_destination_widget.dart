@@ -1,23 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
+import 'package:ommo/home/view/home_utils.dart';
+import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
+import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/utils/utils.dart';
 
 class TripDestinationWidget extends StatefulWidget {
-  final List<TextEditingController> textControllers;
-  final List<FocusNode> focusNode;
-  final VoidCallback removeFieldTap;
-  final VoidCallback? onDestinationFieldTap;
-
-  final bool readOnly;
-
-  const TripDestinationWidget({
-    super.key,
-    this.readOnly = false,
-    required this.textControllers,
-    this.onDestinationFieldTap,
-    required this.removeFieldTap,
-    required this.focusNode,
-  });
+  const TripDestinationWidget({super.key});
 
   @override
   State<TripDestinationWidget> createState() => _TripDestinationWidgetState();
@@ -25,99 +15,315 @@ class TripDestinationWidget extends StatefulWidget {
 
 class _TripDestinationWidgetState extends State<TripDestinationWidget> {
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 10,
-      children: [
-        /// Left side (steps)
-        Column(
-          children: List.generate(widget.textControllers.length, (index) {
-            final isFirst = index == 0;
-            final isLast = index == widget.textControllers.length - 1;
-
-            return Column(
+    return BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+      buildWhen: (previous, current) =>
+          previous.locationPoints != current.locationPoints,
+      builder: (context, state) {
+        final points = state.locationPoints ?? [];
+        return Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 12,
               children: [
-                // Top icon
-                if (isFirst) 20.h,
-                if (isFirst)
-                  const Icon(Icons.circle_outlined, size: 15)
-                else if (isLast)
-                  const Icon(Icons.location_on, size: 24)
-                else
-                  const Icon(Icons.circle_outlined, size: 15),
+                /// Left side (steps)
+                Column(
+                  children: List.generate(points.length, (index) {
+                    final isFirst = index == 0;
+                    final isLast = index == points.length - 1;
 
-                // Draw dotted line only between items
-                if (!isLast)
-                  Padding(
-                    padding: EdgeInsets.symmetric(vertical: 5.6),
-                    child: SizedBox(
-                      height: 40, // match with textfield height + spacing
-                      child: CustomPaint(painter: DottedLinePainter()),
-                    ),
-                  ),
-              ],
-            );
-          }),
-        ),
+                    return Column(
+                      children: [
+                        // Top icon
+                        // if (isFirst) 20.h,
+                        if (isFirst)
+                          Container(
+                            height: 18,
+                            width: 18,
+                            padding: EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              color: AppColorTheme().primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(width: 1, color: Colors.white),
+                              boxShadow: [
+                                BoxShadow(
+                                  offset: Offset(0, 3.2),
+                                  blurRadius: 6.4,
+                                  spreadRadius: 0,
+                                  color: Color(0x7A000000),
+                                ),
+                                BoxShadow(
+                                  offset: Offset(0, 0),
+                                  blurRadius: 0,
+                                  spreadRadius: 2.4,
+                                  color: Color(0xffFFFFFF),
+                                ),
+                              ],
+                            ),
+                          )
+                        else if (isLast)
+                          Container(
+                            height: 18,
+                            width: 18,
+                            padding: EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              color: Color(0xffFF4F5B),
+                              shape: BoxShape.circle,
+                              border: Border.all(width: 1, color: Colors.white),
+                              boxShadow: [
+                                BoxShadow(
+                                  offset: Offset(0, 3.2),
+                                  blurRadius: 6.4,
+                                  spreadRadius: 0,
+                                  color: Color(0x7A000000),
+                                ),
+                                BoxShadow(
+                                  offset: Offset(0, 0),
+                                  blurRadius: 0,
+                                  spreadRadius: 2.4,
+                                  color: Color(0xffFFFFFF),
+                                ),
+                              ],
+                            ),
+                            child: Image.asset(AppImages.destinationPointPin),
+                          )
+                        else
+                          Image.asset(
+                            AppImages.stopPointIcon,
+                            height: 20,
+                            width: 20,
+                          ),
 
-        /// Right side (textfields)
-        Expanded(
-          child: Column(
-            spacing: 10,
-            children: List.generate(widget.textControllers.length, (index) {
-              return CustomTextfieldWidget(
-                focusNode: widget.focusNode[index],
-                controller: widget.textControllers[index],
-                onTap: index == 1 ? widget.onDestinationFieldTap : null,
-                readOnly: index == 0 ? true : widget.readOnly,
-                hintText: "Enter a location",
-                suffixIcon: widget.focusNode[index].hasFocus
-                    ? IconButton(
-                        onPressed: widget.removeFieldTap,
-                        icon: Icon(Icons.cancel),
-                        style: ButtonStyle(
-                          padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                          visualDensity: VisualDensity(
-                            horizontal: -4.0,
-                            vertical: -4.0,
+                        // Draw dotted line only between items
+                        // if (!isLast)
+                        Padding(
+                          padding: EdgeInsets.symmetric(vertical: 5.6),
+                          child: SizedBox(
+                            height: 16, // match with textfield height + spacing
+                            child: CustomPaint(painter: DottedLinePainter()),
                           ),
                         ),
-                      )
-                    : null,
-              );
-            }),
-          ),
-        ),
-      ],
+                      ],
+                    );
+                  }),
+                ),
+
+                /// Right side (textfields)
+                Expanded(
+                  child: ReorderableListView.builder(
+                    itemCount: points.length,
+                    shrinkWrap: true,
+                    padding: EdgeInsets.zero,
+                    cacheExtent: 45,
+                    itemExtent: 45,
+                    clipBehavior: Clip.none,
+                    itemBuilder: (_, i) {
+                      final isFirst = i == 0;
+                      final isLast = i == points.length - 1;
+
+                      return Container(
+                        key: ValueKey(points[i].title),
+                        margin: EdgeInsets.only(bottom: 25),
+                        child: GestureDetector(
+                          onDoubleTap: () {
+                            if (isFirst || isLast || points.length <= 2) return;
+                            showDeleteDialog(
+                              context,
+                              isFirst: isFirst,
+                              isLast: isLast,
+                              item: points[i],
+                              index: i,
+                              onDelete: () => context
+                                  .read<TruckNavigationCubit>()
+                                  .deleteStop(i),
+                            );
+                          },
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              5.w,
+                              Expanded(
+                                child: Text(
+                                  points[i].title ?? '',
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                  style: AppTextTheme().bodyText.copyWith(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ),
+                              5.w,
+                              Image.asset(
+                                AppImages.pointDragIcon,
+                                height: 20,
+                                width: 20,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                    onReorder: context
+                        .read<TruckNavigationCubit>()
+                        .changeLocationPointOrder,
+                  ),
+                ),
+              ],
+            ),
+
+            InkWell(
+              onTap: () => HomeUtils.editLocationSheet(
+                context,
+                onContinue: (place) {
+                  context.read<TruckNavigationCubit>().addStop(place);
+                },
+              ),
+              child: Row(
+                children: [
+                  Image.asset(AppImages.addCircle, height: 20, width: 20),
+                  12.w,
+                  Text(
+                    "Add a stop",
+                    style: AppTextTheme().bodyText.copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: AppColorTheme().primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
-}
 
-// Dotted vertical line painter
-class DottedLinePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    double dashHeight = 2, dashSpace = 3, startY = 0;
-    final paint = Paint()
-      ..color = AppColorTheme().primary
-      ..strokeWidth = 1;
+  showDeleteDialog(
+    BuildContext context, {
+    required bool isFirst,
+    required bool isLast,
+    required LocationPoint item,
+    required int index,
+    VoidCallback? onDelete,
+  }) {
+    return showDialog(
+      context: context,
+      fullscreenDialog: true,
 
-    while (startY < size.height) {
-      canvas.drawLine(
-        Offset(size.width / 2, startY),
-        Offset(size.width / 2, startY + dashHeight),
-        paint,
-      );
-      startY += dashHeight + dashSpace;
-    }
+      barrierColor: Colors.transparent,
+      builder: (context) => Material(
+        color: Colors.transparent,
+
+        child: GestureDetector(
+          onTap: () => context.popPage(),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 50),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.black54, Colors.black87],
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              spacing: 40,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (isFirst)
+                      Container(
+                        height: 18,
+                        width: 18,
+                        padding: EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: AppColorTheme().primary,
+                          shape: BoxShape.circle,
+                          border: Border.all(width: 1, color: Colors.white),
+                          boxShadow: [
+                            BoxShadow(
+                              offset: Offset(0, 3.2),
+                              blurRadius: 6.4,
+                              spreadRadius: 0,
+                              color: Color(0x7A000000),
+                            ),
+                            BoxShadow(
+                              offset: Offset(0, 0),
+                              blurRadius: 0,
+                              spreadRadius: 2.4,
+                              color: Color(0xffFFFFFF),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (isLast)
+                      Container(
+                        height: 18,
+                        width: 18,
+                        padding: EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: Color(0xffFF4F5B),
+                          shape: BoxShape.circle,
+                          border: Border.all(width: 1, color: Colors.white),
+                          boxShadow: [
+                            BoxShadow(
+                              offset: Offset(0, 3.2),
+                              blurRadius: 6.4,
+                              spreadRadius: 0,
+                              color: Color(0x7A000000),
+                            ),
+                            BoxShadow(
+                              offset: Offset(0, 0),
+                              blurRadius: 0,
+                              spreadRadius: 2.4,
+                              color: Color(0xffFFFFFF),
+                            ),
+                          ],
+                        ),
+                        child: Image.asset(AppImages.destinationPointPin),
+                      )
+                    else
+                      Image.asset(
+                        AppImages.stopPointIcon,
+                        height: 20,
+                        width: 20,
+                      ),
+
+                    17.w,
+                    Expanded(
+                      child: Text(
+                        item.title ?? '',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: AppTextTheme().bodyText.copyWith(
+                          fontSize: 16,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ),
+                    5.w,
+                    Image.asset(AppImages.pointDragIcon, height: 20, width: 20),
+                  ],
+                ),
+
+                CustomButtonWidget(
+                  title: "Delete",
+                  bgColor: AppColorTheme().red2,
+                  onPressed: () {
+                    if (onDelete != null) onDelete();
+                    context.popPage();
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

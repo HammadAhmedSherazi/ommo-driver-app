@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,6 +13,7 @@ import 'package:ommo/custom_widget/future_data_builder.dart';
 import 'package:ommo/home/view/home_app_bar.dart';
 import 'package:ommo/home/view/home_utils.dart';
 import 'package:ommo/home/view/map_view.dart';
+import 'package:ommo/home/view/trip_destination_widget.dart';
 import 'package:ommo/home/view/truck_specification/truck_specification_utils.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
@@ -357,49 +359,51 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   ],
                 ),
                 20.h,
-                VerticalStepWithTextField(
-                  focusNode: focusNode,
-                  textControllers: textController,
-                  readOnly: true,
-                  onDestinationFieldTap: () => HomeUtils.editLocationSheet(
-                    context,
-                    onContinue: (value) {
-                      if (value != null) {
-                        searchTextEditController.text = value;
-                      }
-                    },
-                  ),
-                  removeFieldTap: () {},
-                ),
-                5.h,
-                TextButton(
-                  style: ButtonStyle(
-                    padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                    visualDensity: VisualDensity(
-                      horizontal: -4.0,
-                      vertical: -4.0,
-                    ),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      textController.add(TextEditingController());
-                      focusNode.add(FocusNode());
-                    });
-                  },
-                  child: Row(
-                    spacing: 5,
-                    children: [
-                      Icon(Icons.add, size: 25),
-                      Text(
-                        "Add a stop",
-                        style: AppTextTheme().bodyText.copyWith(
-                          color: AppColorTheme().primary,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                TripDestinationWidget(),
+
+                // TripDestinationWidget(
+                //   focusNode: focusNode,
+                //   textControllers: textController,
+                //   readOnly: true,
+                //   onDestinationFieldTap: () => HomeUtils.editLocationSheet(
+                //     context,
+                //     onContinue: (value) {
+                //       if (value != null) {
+                //         searchTextEditController.text = value;
+                //       }
+                //     },
+                //   ),
+                //   removeFieldTap: () {},
+                // ),
+                // 5.h,
+                // TextButton(
+                //   style: ButtonStyle(
+                //     padding: WidgetStatePropertyAll(EdgeInsets.zero),
+                //     visualDensity: VisualDensity(
+                //       horizontal: -4.0,
+                //       vertical: -4.0,
+                //     ),
+                //   ),
+                //   onPressed: () {
+                //     setState(() {
+                //       textController.add(TextEditingController());
+                //       focusNode.add(FocusNode());
+                //     });
+                //   },
+                //   child: Row(
+                //     spacing: 5,
+                //     children: [
+                //       Icon(Icons.add, size: 25),
+                //       Text(
+                //         "Add a stop",
+                //         style: AppTextTheme().bodyText.copyWith(
+                //           color: AppColorTheme().primary,
+                //           fontSize: 16,
+                //         ),
+                //       ),
+                //     ],
+                //   ),
+                // ),
                 20.h,
                 DashedLine(),
                 20.h,
@@ -1305,9 +1309,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                               .read<RecentSearchCubit>()
                                               .addSearchFromPlace(item.place!);
 
-                                          context
-                                              .read<TruckNavigationCubit>()
-                                              .confirmDestination();
+                                          // context
+                                          //     .read<TruckNavigationCubit>()
+                                          //     .confirmDestination();
 
                                           sheetScrollController.animateTo(
                                             0.34,

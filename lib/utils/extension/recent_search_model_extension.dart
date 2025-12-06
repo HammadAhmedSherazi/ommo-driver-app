@@ -1,10 +1,13 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:here_sdk/core.dart';
 import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 import 'package:ommo/utils/theme/theme.dart';
 
 extension RecentSearchModelExtension on RecentSearchModel {
+  GeoCoordinates get geoCoordinates => GeoCoordinates(latitude, longitude);
+
   String get formattedTitle {
     String streetPart = address;
 

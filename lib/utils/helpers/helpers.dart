@@ -1,8 +1,13 @@
+import 'dart:developer';
+
 import '../../utils/utils.dart';
 import 'package:flutter/material.dart';
 
 class Helpers {
   Helpers._();
+  static print(v) {
+    log('custom $v');
+  }
 
   static String formatDate(DateTime? date) {
     if (date == null) {
