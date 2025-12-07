@@ -472,19 +472,13 @@ class HomeUtils {
                                   : ListTile(
                                       onTap: () {
                                         locationController.text = item.title;
-                                        // context
-                                        //     .read<TruckNavigationCubit>()
-                                        //     .setDestinationCoordinate(item);
                                         if (locationController
                                             .text
                                             .isNotEmpty) {
                                           if (onContinue != null) {
                                             onContinue(item.place);
                                           }
-                                          // context
-                                          //     .read<TruckNavigationCubit>()
-                                          //     .calculateRoute();
-
+                                      
                                           Navigator.pop(context);
                                         }
                                       },

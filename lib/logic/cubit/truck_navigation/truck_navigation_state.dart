@@ -29,6 +29,7 @@ class TruckNavigationState extends Equatable {
   final bool cameraControlledByNavigator;
   final ManeuverProgress? maneuverProgress;
   final List<LocationPoint>? locationPoints;
+  final int nextTargetIndex;
 
   const TruckNavigationState({
     this.mapController,
@@ -50,6 +51,7 @@ class TruckNavigationState extends Equatable {
     this.cameraControlledByNavigator = false,
     this.destinationSuggestions,
     this.locationPoints,
+    this.nextTargetIndex = 1,
   });
 
   // GeoCoordinates? get destinationCoordinates =>
@@ -75,8 +77,10 @@ class TruckNavigationState extends Equatable {
     bool? hasDirection,
     dynamic maneuverProgress,
     List<LocationPoint>? locationPoints,
+    int? nextTargetIndex,
   }) {
     return TruckNavigationState(
+      nextTargetIndex: nextTargetIndex ?? this.nextTargetIndex,
       hasFocusedLocation: hasFocusedLocation ?? this.hasFocusedLocation,
       locationPoints: locationPoints ?? this.locationPoints,
       destinationSuggestions:
@@ -114,6 +118,7 @@ class TruckNavigationState extends Equatable {
 
   @override
   List<Object?> get props => [
+    nextTargetIndex,
     locationPoints,
     hasFocusedLocation,
     destinationSuggestions,
@@ -135,8 +140,8 @@ class TruckNavigationState extends Equatable {
 
 enum LocationPointType { starting, destination, stop }
 
-class LocationPoint<T> extends Equatable {
-  final T place;
+class LocationPoint extends Equatable {
+  final dynamic place;
   final LocationPointType pointType;
   const LocationPoint({required this.place, required this.pointType});
 
@@ -152,8 +157,11 @@ class LocationPoint<T> extends Equatable {
       ? (place as RecentSearchModel).formattedSubTitle
       : (place as Place).formattedSubtitle;
 
-  LocationPoint copyWith({LocationPointType? pointType}) {
-    return LocationPoint(place: place, pointType: pointType ?? this.pointType);
+  LocationPoint copyWith({dynamic place, LocationPointType? pointType}) {
+    return LocationPoint(
+      place: place ?? this.place,
+      pointType: pointType ?? this.pointType,
+    );
   }
 
   @override

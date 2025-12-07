@@ -126,6 +126,15 @@ class _TripDestinationWidgetState extends State<TripDestinationWidget> {
                         key: ValueKey(points[i].title),
                         margin: EdgeInsets.only(bottom: 25),
                         child: GestureDetector(
+                          onTap: () => HomeUtils.editLocationSheet(
+                            context,
+                            onContinue: (updatedPlace) {
+                              context.read<TruckNavigationCubit>().editStop(
+                                i,
+                                updatedPlace,
+                              );
+                            },
+                          ),
                           onDoubleTap: () {
                             if (isFirst || isLast || points.length <= 2) return;
                             showDeleteDialog(
