@@ -62,7 +62,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       // Enable vehicle restrictions and related map features
       _enableMapFeatures(controller);
 
-      controller.gestures.tapListener = TapListener((Point2D touchPoint) {
+      controller.gestures.doubleTapListener = DoubleTapListener((
+        Point2D touchPoint,
+      ) {
         if (!state.hasDirection && !state.isNavigating) {
           _handleMapTapForDestination(touchPoint);
         }
@@ -821,7 +823,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       _currentRoutePolyline = null;
     }
 
-    clearAllPreviousStopMarker();
+    clearAllStopMarker();
 
     _clearTruckPreviousMarkers();
 
@@ -1032,7 +1034,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     if (hasFocus) focusDestinationWithOffset(destinationPoint.geoCoordinates!);
   }
 
-  clearAllPreviousStopMarker() {
+  clearAllStopMarker() {
     if (_stopMarkers.isEmpty) return;
     for (var _sm in _stopMarkers.entries) {
       state.mapController?.mapScene.removeMapMarker(_sm.value);
@@ -1040,7 +1042,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _stopMarkers = {};
   }
 
-  clearPreviousStopMarkerAt(i) {
+  clearStopMarkerAt(i) {
     if (_stopMarkers.isEmpty) return;
     final _sm = _stopMarkers[i];
     if (_sm == null) return;
@@ -1049,7 +1051,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   void refreshStopAndDestinationMarker() {
-    clearAllPreviousStopMarker();
+    clearAllStopMarker();
     for (var i = 0; i < (state.locationPoints ?? []).length; i++) {
       if (i == 0) continue;
       if (i == state.locationPoints!.length - 1) {
@@ -1075,7 +1077,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   editStopMarkerAt(i) {
-    clearPreviousStopMarkerAt(i);
+    clearStopMarkerAt(i);
     addStopMakerAt(i);
   }
 
@@ -1263,7 +1265,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     if (index >= (state.locationPoints?.length ?? 0) - 1) return;
     _list.removeAt(index);
     emit(state.copyWith(locationPoints: _list));
-    clearPreviousStopMarkerAt(index);
+    clearStopMarkerAt(index);
     calculateRoute();
   }
 }

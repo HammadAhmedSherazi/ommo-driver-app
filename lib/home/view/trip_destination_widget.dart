@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
@@ -118,6 +119,7 @@ class _TripDestinationWidgetState extends State<TripDestinationWidget> {
                     cacheExtent: 45,
                     itemExtent: 45,
                     clipBehavior: Clip.none,
+                    buildDefaultDragHandles: false,
                     itemBuilder: (_, i) {
                       final isFirst = i == 0;
                       final isLast = i == points.length - 1;
@@ -125,34 +127,34 @@ class _TripDestinationWidgetState extends State<TripDestinationWidget> {
                       return Container(
                         key: ValueKey(points[i].title),
                         margin: EdgeInsets.only(bottom: 25),
-                        child: GestureDetector(
-                          onTap: () => HomeUtils.editLocationSheet(
-                            context,
-                            onContinue: (updatedPlace) {
-                              context.read<TruckNavigationCubit>().editStop(
-                                i,
-                                updatedPlace,
-                              );
-                            },
-                          ),
-                          onDoubleTap: () {
-                            if (isFirst || isLast || points.length <= 2) return;
-                            showDeleteDialog(
-                              context,
-                              isFirst: isFirst,
-                              isLast: isLast,
-                              item: points[i],
-                              index: i,
-                              onDelete: () => context
-                                  .read<TruckNavigationCubit>()
-                                  .deleteStop(i),
-                            );
-                          },
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              5.w,
-                              Expanded(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            5.w,
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => HomeUtils.editLocationSheet(
+                                  context,
+                                  onContinue: (updatedPlace) {
+                                    context
+                                        .read<TruckNavigationCubit>()
+                                        .editStop(i, updatedPlace);
+                                  },
+                                ),
+                                onLongPress: () {
+                                  if (isFirst || isLast || points.length <= 2)
+                                    return;
+                                  showDeleteDialog(
+                                    context,
+                                    isFirst: isFirst,
+                                    isLast: isLast,
+                                    item: points[i],
+                                    index: i,
+                                    onDelete: () => context
+                                        .read<TruckNavigationCubit>()
+                                        .deleteStop(i),
+                                  );
+                                },
                                 child: Text(
                                   points[i].title ?? '',
                                   overflow: TextOverflow.ellipsis,
@@ -163,14 +165,17 @@ class _TripDestinationWidgetState extends State<TripDestinationWidget> {
                                   ),
                                 ),
                               ),
-                              5.w,
-                              Image.asset(
+                            ),
+                            5.w,
+                            ReorderableDragStartListener(
+                              index: i,
+                              child: Image.asset(
                                 AppImages.pointDragIcon,
                                 height: 20,
                                 width: 20,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       );
                     },

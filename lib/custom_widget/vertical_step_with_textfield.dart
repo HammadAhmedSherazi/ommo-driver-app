@@ -5,7 +5,6 @@ class VerticalStepWithTextField extends StatefulWidget {
   final List<FocusNode> focusNode;
   final VoidCallback removeFieldTap;
   final VoidCallback? onDestinationFieldTap;
-
   final bool readOnly;
 
   const VerticalStepWithTextField({
@@ -45,18 +44,64 @@ class _VerticalStepWithTextFieldState extends State<VerticalStepWithTextField> {
                 // Top icon
                 if (isFirst) 20.h,
                 if (isFirst)
-                  const Icon(Icons.circle_outlined, size: 15)
+                  Container(
+                    height: 18,
+                    width: 18,
+                    padding: EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: AppColorTheme().primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(width: 1, color: Colors.white),
+                      boxShadow: [
+                        BoxShadow(
+                          offset: Offset(0, 3.2),
+                          blurRadius: 6.4,
+                          spreadRadius: 0,
+                          color: Color(0x7A000000),
+                        ),
+                        BoxShadow(
+                          offset: Offset(0, 0),
+                          blurRadius: 0,
+                          spreadRadius: 2.4,
+                          color: Color(0xffFFFFFF),
+                        ),
+                      ],
+                    ),
+                  )
                 else if (isLast)
-                  const Icon(Icons.location_on, size: 24)
+                  Container(
+                    height: 20,
+                    width: 20,
+                    padding: EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: Color(0xffFF4F5B),
+                      shape: BoxShape.circle,
+                      border: Border.all(width: 1, color: Colors.white),
+                      boxShadow: [
+                        BoxShadow(
+                          offset: Offset(0, 3.2),
+                          blurRadius: 6.4,
+                          spreadRadius: 0,
+                          color: Color(0x7A000000),
+                        ),
+                        BoxShadow(
+                          offset: Offset(0, 0),
+                          blurRadius: 0,
+                          spreadRadius: 2.4,
+                          color: Color(0xffFFFFFF),
+                        ),
+                      ],
+                    ),
+                    child: Image.asset(AppImages.destinationPointPin),
+                  )
                 else
-                  const Icon(Icons.circle_outlined, size: 15),
-
+                  Image.asset(AppImages.stopPointIcon, height: 20, width: 20),
                 // Draw dotted line only between items
                 if (!isLast)
                   Padding(
                     padding: EdgeInsets.symmetric(vertical: 5.6),
                     child: SizedBox(
-                      height: 40, // match with textfield height + spacing
+                      height: 35, // match with textfield height + spacing
                       child: CustomPaint(painter: DottedLinePainter()),
                     ),
                   ),
@@ -76,19 +121,6 @@ class _VerticalStepWithTextFieldState extends State<VerticalStepWithTextField> {
                 onTap: index == 1 ? widget.onDestinationFieldTap : null,
                 readOnly: index == 0 ? true : widget.readOnly,
                 hintText: "Enter a location",
-                suffixIcon: widget.focusNode[index].hasFocus
-                    ? IconButton(
-                        onPressed: widget.removeFieldTap,
-                        icon: Icon(Icons.cancel),
-                        style: ButtonStyle(
-                          padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                          visualDensity: VisualDensity(
-                            horizontal: -4.0,
-                            vertical: -4.0,
-                          ),
-                        ),
-                      )
-                    : null,
               );
             }),
           ),
