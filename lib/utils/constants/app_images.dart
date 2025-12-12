@@ -7,6 +7,7 @@ class AppImages {
 
   static const String defaultMapImg = "${imagePath}default_map_img.png";
   static const String redMapPin = "${imagePath}red_map_pin.png";
+  static const String redLocationIcon = "${imagePath}Map pin.png";
   static const String greenMarker = "${imagePath}green_marker.png";
   static const String greenMapPin = "${imagePath}green_map_pin.png";
   static const String satelliteMapImg = "${imagePath}satellite_map_img.png";
@@ -25,4 +26,5 @@ class AppImages {
   static const String pointsShuffleIcon = "${imagePath}arrow-down-up.png";
   static const String pointDragIcon = "${imagePath}si_drag-handle-duotone.png";
   static const String addCircle = "${imagePath}Frame.png";
+  static const String blackPointPin = "${imagePath}black_map_pin.png";
 }

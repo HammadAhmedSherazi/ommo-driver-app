@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/home/view/home_mobile_view.dart';
+import 'package:ommo/home/view/pick_location_from_map.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
@@ -220,7 +221,7 @@ class HomeUtils {
                 textControllers: [startController, destinationController],
                 focusNode: [FocusNode(), destinationFocusNode],
                 removeFieldTap: () {},
-                readOnly: false,
+                readOnly: [true, false],
               ),
               20.h,
               ValueListenableBuilder(
@@ -448,6 +449,41 @@ class HomeUtils {
                 ),
               ),
               20.h,
+              GestureDetector(
+                onTap: () => context.pushPage(
+                  PickLocationFromMap(
+                    onPlacePicked: (picked) {
+                      if (onContinue != null) {
+                        onContinue(picked);
+
+                        Navigator.pop(context);
+                      }
+                    },
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 24,
+                      backgroundColor: AppColorTheme().whiteShade,
+                      child: Image.asset(
+                        AppImages.blackPointPin,
+                        width: 20,
+                        height: 20,
+                      ),
+                    ),
+                    12.w,
+                    Text(
+                      'Choose on map',
+                      style: AppTextTheme().bodyText.copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              20.h,
               ValueListenableBuilder(
                 valueListenable: showRecentTab,
                 builder: (_, val, c) {
@@ -478,7 +514,7 @@ class HomeUtils {
                                           if (onContinue != null) {
                                             onContinue(item.place);
                                           }
-                                      
+
                                           Navigator.pop(context);
                                         }
                                       },

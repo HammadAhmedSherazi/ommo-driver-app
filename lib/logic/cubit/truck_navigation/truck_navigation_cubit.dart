@@ -458,6 +458,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
   /// Routing and Navigation Functions
   void searchPlaces(String query) {
+    if (query == '') {
+      emit(state.copyWith(destinationSuggestions: FutureData.completed([])));
+      return;
+    }
+
     if (state.startCoordinates == null) return;
     SearchOptions searchOptions = SearchOptions();
     searchOptions.languageCode = LanguageCode.enUs;
@@ -508,6 +513,25 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       ),
     );
     setDestinationMarker();
+  }
+
+  void createTrip(Place start, end) {
+    final List<LocationPoint> _list = [];
+    _list.addAll([
+      LocationPoint(place: start, pointType: LocationPointType.starting),
+      LocationPoint(place: end, pointType: LocationPointType.destination),
+    ]);
+
+    emit(
+      state.copyWith(
+        destinationCoordinates: end.geoCoordinates,
+        locationPoints: _list,
+        hasTapDestination: true,
+        tappedPlace: FutureData<Place>.completed(end.place),
+      ),
+    );
+    setDestinationMarker();
+    calculateRoute();
   }
 
   void focusDestinationWithOffset(
@@ -683,9 +707,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       MapPolylineSolidRepresentation(
         MapMeasureDependentRenderSize.withSingleSize(
           RenderSizeUnit.pixels,
-          30.0,
+          15.0,
         ),
-        AppColorTheme().primary,
+        // AppColorTheme().cyan,
+        material.Colors.blue,
         LineCap.round,
       ),
     );
@@ -1227,7 +1252,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     final List<LocationPoint> _list = List.from(state.locationPoints ?? []);
     final item = LocationPoint(place: place, pointType: LocationPointType.stop);
-    final addIndex = state.locationPoints!.length - 1;
+    // final addIndex = state.locationPoints!.length - 1;
+    final addIndex = state.locationPoints!.length;
     _list.insert(addIndex, item);
     emit(state.copyWith(locationPoints: _list));
     addStopMakerAt(addIndex);
