@@ -515,19 +515,16 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     setDestinationMarker();
   }
 
-  void createTrip(Place start, end) {
+  void createTrip(List<LocationPoint> points) {
     final List<LocationPoint> _list = [];
-    _list.addAll([
-      LocationPoint(place: start, pointType: LocationPointType.starting),
-      LocationPoint(place: end, pointType: LocationPointType.destination),
-    ]);
+    _list.addAll(points);
 
     emit(
       state.copyWith(
-        destinationCoordinates: end.geoCoordinates,
+        destinationCoordinates: points[1].geoCoordinates,
         locationPoints: _list,
         hasTapDestination: true,
-        tappedPlace: FutureData<Place>.completed(end.place),
+        // tappedPlace: FutureData<Place>.completed(points[1].place),
       ),
     );
     setDestinationMarker();

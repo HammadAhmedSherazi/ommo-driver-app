@@ -99,6 +99,7 @@ class Helpers {
   static openBottomSheet({
     required BuildContext context,
     required Widget child,
+    VoidCallback? whenComplete,
   }) {
     showModalBottomSheet(
       context: context,
@@ -118,7 +119,7 @@ class Helpers {
         ),
         child: child,
       ),
-    );
+    ).whenComplete(whenComplete ?? () {});
   }
 
   static void showCustomBottomSheet(BuildContext context, Widget child) {

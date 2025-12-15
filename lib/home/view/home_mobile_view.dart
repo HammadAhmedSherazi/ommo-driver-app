@@ -10,6 +10,7 @@ import 'package:here_sdk/mapview.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/custom_widget/future_data_builder.dart';
+import 'package:ommo/home/view/create_trip_view.dart';
 import 'package:ommo/home/view/home_app_bar.dart';
 import 'package:ommo/home/view/home_utils.dart';
 import 'package:ommo/home/view/map_view.dart';
@@ -876,20 +877,31 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       width: 100,
                       child: CustomButtonWidget(
                         title: 'Trip',
-                        onPressed: () => HomeUtils.openTripBottomSheet(
-                          context,
-                          onContinue: (destinationText) {
-                            if ((destinationText ?? '').isNotEmpty) {
-                              searchTextEditController.text =
-                                  destinationText ?? "";
-                            }
+                        onPressed: () => Helpers.openBottomSheet(
+                          context: context,
+                          whenComplete: () {
                             sheetScrollController.animateTo(
                               0.34,
                               duration: Durations.medium2,
                               curve: Curves.bounceIn,
                             );
                           },
+                          child: CreateTripView(),
                         ),
+                        // HomeUtils.openTripBottomSheet(
+                        //   context,
+                        //   onContinue: (destinationText) {
+                        //     if ((destinationText ?? '').isNotEmpty) {
+                        //       searchTextEditController.text =
+                        //           destinationText ?? "";
+                        //     }
+                        //     sheetScrollController.animateTo(
+                        //       0.34,
+                        //       duration: Durations.medium2,
+                        //       curve: Curves.bounceIn,
+                        //     );
+                        //   },
+                        // ),
                         radius: 50,
                         icon: Icon(Icons.directions, color: Colors.white),
                       ),

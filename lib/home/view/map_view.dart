@@ -18,7 +18,7 @@ class MapView extends StatefulWidget {
 }
 
 class MapViewState extends State<MapView> with WidgetsBindingObserver {
-  late final AppLifecycleListener _appLifecycleListener;
+  // late final AppLifecycleListener _appLifecycleListener;
 
   // @override
   // void didHaveMemoryPressure() {
@@ -104,6 +104,6 @@ class MapViewState extends State<MapView> with WidgetsBindingObserver {
     log("_map _disposeHERESDK called");
     await SDKNativeEngine.sharedInstance?.dispose();
     SdkContext.release();
-    _appLifecycleListener.dispose();
+    // _appLifecycleListener.dispose();
   }
 }
