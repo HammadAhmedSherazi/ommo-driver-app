@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:here_sdk/search.dart';
-import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
+import 'package:ommo/models/location_point_model.dart';
 
 class CreateTripState extends Equatable {
   final LocationPoint? startPoint;

@@ -19,12 +19,12 @@ import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specification_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state.dart';
 import 'package:ommo/map_sdk/HEREPositioningSimulator.dart';
+import 'package:ommo/models/location_point_model.dart';
 import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 import 'package:ommo/utils/constants/constants.dart';
 import 'package:ommo/utils/extension/recent_search_model_extension.dart';
 import 'package:ommo/utils/generics/generics.dart';
 import 'package:ommo/utils/snacks/snackbar_utils.dart';
-import 'package:ommo/utils/theme/theme.dart';
 
 class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   TruckNavigationCubit() : super(TruckNavigationState());
@@ -43,6 +43,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   Map<int, MapMarker> _stopMarkers = {};
   List<MapMarker> _truckRestrictionMarkers = [];
   final loc.Location _location = loc.Location();
+  bool isFirstTimeLocationGet = true;
 
   // Setters
   void setInitialLocation(GeoCoordinates coords) {
@@ -253,6 +254,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         // currentPlace: FutureData.loading(),
       ),
     );
+    if (isFirstTimeLocationGet) {
+      isFirstTimeLocationGet = false;
+      focusOnCurrentLocation();
+    }
     getCurrentLocationPlace();
     getNearbyTruckStops();
   }
@@ -498,6 +503,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _list.add(
       LocationPoint(
         place: state.currentPlace!.data!,
+        isMyLocation: true,
         pointType: LocationPointType.starting,
       ),
     );
@@ -719,20 +725,22 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     _currentRoutePolyline = mapPolyline;
     state.mapController?.mapScene.addMapPolyline(mapPolyline);
-    _animateToRoute(route);
+    animateToRoute(route);
   }
 
-  void _animateToRoute(Route route) {
-    Point2D origin = Point2D(50, 50);
+  void animateToRoute([Route? route]) {
+    final Route? _route = route ?? state.currentRoute;
+    if (_route == null) return;
+    Point2D origin = Point2D(80, 80);
     Size2D sizeInPixels = Size2D(
-      state.mapController!.viewportSize.width - 100,
-      state.mapController!.viewportSize.height - 100,
+      state.mapController!.viewportSize.width - 250,
+      state.mapController!.viewportSize.height - 250,
     );
     Rectangle2D mapViewport = Rectangle2D(origin, sizeInPixels);
 
     MapCameraUpdate cameraUpdate =
         MapCameraUpdateFactory.lookAtAreaWithGeoOrientationAndViewRectangle(
-          route.boundingBox,
+          _route.boundingBox,
           GeoOrientationUpdate(0.0, 0.0),
           mapViewport,
         );
@@ -1016,6 +1024,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _list.add(
       LocationPoint(
         place: state.currentPlace!.data!,
+        isMyLocation: true,
         pointType: LocationPointType.starting,
       ),
     );
@@ -1053,6 +1062,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     _destinationMarker = MapMarker(destinationPoint.geoCoordinates!, destIcon);
     state.mapController?.mapScene.addMapMarker(_destinationMarker!);
+
+    // 👇 THIS FIXES THE JUMPING & OFFSET
+    _destinationMarker!.anchor = Anchor2D.withHorizontalAndVertical(0.5, 1.0);
+
     if (hasFocus) focusDestinationWithOffset(destinationPoint.geoCoordinates!);
   }
 
@@ -1084,18 +1097,45 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     }
   }
 
+  // MapMarker createRandomMapMarkerInViewport(
+  //   HereMapController mapController,
+  //   String label,
+  // ) {
+  //   GeoBox viewport = mapController.camera.boundingBox!;
+  //   GeoCoordinates coordinates = GeoCoordinates(
+  //     viewport.southWestCorner.latitude +
+  //         (viewport.northEastCorner.latitude -
+  //                 viewport.southWestCorner.latitude) *
+  //             (DateTime.now().millisecondsSinceEpoch % 100) /
+  //             100,
+  //     viewport.southWestCorner.longitude +
+  //         (viewport.northEastCorner.longitude -
+  //                 viewport.southWestCorner.longitude) *
+  //             (DateTime.now().millisecondsSinceEpoch % 100) /
+  //             100,
+  //   );
+
+  //   MapImage image = MapImage.withImageAndText(
+  //     label,
+  //     const TextStyle(color: Color(0xFFFFFFFF), fontSize: 24),
+  //   );
+
+  //   return MapMarker(coordinates, image);
+  // }
+
   addStopMakerAt(i, {bool hasFocus = true}) {
-    final GeoCoordinates? sC = state.locationPoints?[i].geoCoordinates;
-    if (sC == null) return;
+    final GeoCoordinates? markerCoordinate =
+        state.locationPoints?[i].geoCoordinates;
+    if (markerCoordinate == null) return;
     MapImage markerIcon = MapImage.withFilePathAndWidthAndHeight(
       AppImages.redMapPin,
       150,
       180,
     );
-    final marker = MapMarker(sC, markerIcon);
+    final marker = MapMarker(markerCoordinate, markerIcon);
     state.mapController?.mapScene.addMapMarker(marker);
     _stopMarkers[i] = marker;
-    if (hasFocus) focusDestinationWithOffset(sC);
+    if (hasFocus) focusDestinationWithOffset(markerCoordinate);
   }
 
   editStopMarkerAt(i) {
@@ -1161,6 +1201,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         _list.add(
           LocationPoint(
             place: state.currentPlace!.data!,
+            isMyLocation: true,
             pointType: LocationPointType.starting,
           ),
         );
@@ -1228,10 +1269,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       any =
           state.locationPoints?.any(
             (e) =>
-                e.geoCoordinates?.latitude ==
-                    (place as RecentSearchModel).geoCoordinates.latitude &&
-                e.geoCoordinates?.longitude ==
-                    (place as RecentSearchModel).geoCoordinates.longitude,
+                e.geoCoordinates?.latitude == place.geoCoordinates.latitude &&
+                e.geoCoordinates?.longitude == place.geoCoordinates.longitude,
           ) ??
           true;
     } else {
@@ -1240,8 +1279,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
             (e) =>
                 e.geoCoordinates?.latitude ==
                     (place as Place).geoCoordinates?.latitude &&
-                e.geoCoordinates?.longitude ==
-                    (place as Place).geoCoordinates?.longitude,
+                e.geoCoordinates?.longitude == place.geoCoordinates?.longitude,
           ) ??
           true;
     }

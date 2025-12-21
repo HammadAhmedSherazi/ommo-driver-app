@@ -6,7 +6,8 @@ class TruckSpecificationState extends Equatable {
   final int heightInCentimeters;
   final int widthInCentimeters;
   final int lengthInCentimeters;
-  final int grossWeightInKilograms;
+  // final int grossWeightInKilograms;
+  final int grossWeightInLbs;
   final int weightPerAxleInKilograms;
   final int axleCount;
   final TruckType truckType;
@@ -15,9 +16,12 @@ class TruckSpecificationState extends Equatable {
   final bool hasChanges;
   final Map<String, bool> avoidance;
 
+  int get grossWeightInKilograms => grossWeightInLbs.lbsToKgs.toInt();
+
   const TruckSpecificationState({
     this.hazardousMaterial = '-',
-    this.grossWeightInKilograms = 17000,
+    this.grossWeightInLbs = 37478,
+    // this.grossWeightInKilograms = 17000,
     this.heightInCentimeters = 3 * 100,
     this.widthInCentimeters = 4 * 100,
     this.lengthInCentimeters = 8 * 100,
@@ -39,14 +43,16 @@ class TruckSpecificationState extends Equatable {
     "Height": heightInCentimeters.cmtoFeetInchesFormattedString,
     "Width": widthInCentimeters.cmtoFeetInchesFormattedString,
     "Length": lengthInCentimeters.cmtoFeetInchesFormattedString,
-    "Total Weight": grossWeightInKilograms.kgToLbsFormattedString,
+    "Total Weight": '$grossWeightInLbs lbs',
+    // "Total Weight": grossWeightInKilograms.kgToLbsFormattedString,
     "Axle Count": axleCount.toString(),
     // "Weight per Axle Group": weightPerAxleInKilograms.kgToLbsFormattedString,
     "Hazardous Materials": hazardousMaterial,
   };
 
   TruckSpecificationState copyWith({
-    int? grossWeightInKilograms,
+    // int? grossWeightInKilograms,
+    int? grossWeightInLbs,
     int? heightInCentimeters,
     int? widthInCentimeters,
     int? lengthInCentimeters,
@@ -59,8 +65,9 @@ class TruckSpecificationState extends Equatable {
     Map<String, bool>? avoidance,
   }) {
     return TruckSpecificationState(
-      grossWeightInKilograms:
-          grossWeightInKilograms ?? this.grossWeightInKilograms,
+      grossWeightInLbs: grossWeightInLbs ?? this.grossWeightInLbs,
+      // grossWeightInKilograms:
+      //     grossWeightInKilograms ?? this.grossWeightInKilograms,
       heightInCentimeters: heightInCentimeters ?? this.heightInCentimeters,
       widthInCentimeters: widthInCentimeters ?? this.widthInCentimeters,
       lengthInCentimeters: lengthInCentimeters ?? this.lengthInCentimeters,
@@ -77,7 +84,8 @@ class TruckSpecificationState extends Equatable {
 
   @override
   List<Object?> get props => [
-    grossWeightInKilograms,
+    grossWeightInLbs,
+    // grossWeightInKilograms,
     heightInCentimeters,
     widthInCentimeters,
     lengthInCentimeters,
@@ -94,7 +102,8 @@ class TruckSpecificationState extends Equatable {
     "heightInCentimeters": heightInCentimeters,
     "widthInCentimeters": widthInCentimeters,
     "lengthInCentimeters": lengthInCentimeters,
-    "grossWeightInKilograms": grossWeightInKilograms,
+    // "grossWeightInKilograms": grossWeightInKilograms,
+    "grossWeightInLbs": grossWeightInLbs,
     "weightPerAxleInKilograms": weightPerAxleInKilograms,
     "axleCount": axleCount,
     "trailerCount": trailerCount,
@@ -108,7 +117,8 @@ class TruckSpecificationState extends Equatable {
       heightInCentimeters: json["heightInCentimeters"],
       widthInCentimeters: json["widthInCentimeters"],
       lengthInCentimeters: json["lengthInCentimeters"],
-      grossWeightInKilograms: json["grossWeightInKilograms"],
+      // grossWeightInKilograms: json["grossWeightInKilograms"],
+      grossWeightInLbs: json["grossWeightInLbs"],
       weightPerAxleInKilograms: json["weightPerAxleInKilograms"],
       axleCount: json["axleCount"],
       trailerCount: json["trailerCount"],

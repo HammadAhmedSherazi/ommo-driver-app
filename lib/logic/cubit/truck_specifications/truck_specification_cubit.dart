@@ -46,7 +46,8 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
       heightInCentimeters: json["heightInCentimeters"],
       widthInCentimeters: json["widthInCentimeters"],
       lengthInCentimeters: json["lengthInCentimeters"],
-      grossWeightInKilograms: json["grossWeightInKilograms"],
+      grossWeightInLbs: json["grossWeightInLbs"],
+      // grossWeightInKilograms: json["grossWeightInKilograms"],
       weightPerAxleInKilograms: json["weightPerAxleInKilograms"],
       axleCount: json["axleCount"],
       trailerCount: json["trailerCount"],
@@ -74,13 +75,18 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
     editState = {};
 
     initialState = {
-      'lengthInFeet': "${state.lengthInCentimeters.cmToFeetInches['feet'] ?? ''}",
-      'lengthInInches': "${state.lengthInCentimeters.cmToFeetInches['inches'] ?? ''}",
+      'lengthInFeet':
+          "${state.lengthInCentimeters.cmToFeetInches['feet'] ?? ''}",
+      'lengthInInches':
+          "${state.lengthInCentimeters.cmToFeetInches['inches'] ?? ''}",
       'widthInFeet': "${state.widthInCentimeters.cmToFeetInches['feet'] ?? ''}",
-      'widthInInches': "${state.widthInCentimeters.cmToFeetInches['inches'] ?? ''}",
-      'heightInFeet': "${state.heightInCentimeters.cmToFeetInches['feet'] ?? ''}",
-      'heightInInches': "${state.heightInCentimeters.cmToFeetInches['inches'] ?? ''}",
-      'weightInLbs': "${state.grossWeightInKilograms.kgToLbs}",
+      'widthInInches':
+          "${state.widthInCentimeters.cmToFeetInches['inches'] ?? ''}",
+      'heightInFeet':
+          "${state.heightInCentimeters.cmToFeetInches['feet'] ?? ''}",
+      'heightInInches':
+          "${state.heightInCentimeters.cmToFeetInches['inches'] ?? ''}",
+      'weightInLbs': "${state.grossWeightInLbs}",
       'weightPerAxleInLbs': "${state.weightPerAxleInKilograms.kgToLbs}",
       'axleCount': "${state.axleCount}",
       'hazardousMaterial': state.hazardousMaterial,
@@ -114,7 +120,7 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
         num? updateLengthInCm;
         num? updateWidthInCm;
         num? updateHeightInCm;
-        num? updateWeightKgs;
+        int? updateWeightLbs;
         num? updateWeightPerAxleKgs;
         num? updateAxleCount;
         String? updateHazardousMaterial;
@@ -131,12 +137,12 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
           });
 
           checkWeightField(entry, 'weight', (value) {
-            updateWeightKgs = value;
+            updateWeightLbs = value;
           });
 
-          checkWeightField(entry, 'weightPerAxle', (value) {
-            updateWeightPerAxleKgs = value;
-          });
+          // checkWeightField(entry, 'weightPerAxle', (value) {
+          //   updateWeightPerAxleKgs = value;
+          // });
 
           if (entry.key == 'axleCount') {
             final axleCount = int.tryParse(entry.value);
@@ -152,8 +158,9 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
             lengthInCentimeters: updateLengthInCm?.toInt(),
             widthInCentimeters: updateWidthInCm?.toInt(),
             heightInCentimeters: updateHeightInCm?.toInt(),
-            grossWeightInKilograms: updateWeightKgs?.toInt(),
-            weightPerAxleInKilograms: updateWeightPerAxleKgs?.toInt(),
+            grossWeightInLbs: updateWeightLbs,
+            // grossWeightInKilograms: updateWeightKgs?.toInt(),
+            // weightPerAxleInKilograms: updateWeightPerAxleKgs?.toInt(),
             axleCount: updateAxleCount?.toInt(),
             hazardousMaterial: updateHazardousMaterial,
           ),
@@ -168,17 +175,23 @@ class TruckSpecificationsCubit extends Cubit<TruckSpecificationState> {
 
   checkWeightField(entry, field, onChange) {
     if (entry.key.contains(field)) {
-      final weightLbs = int.tryParse(editState['${field}InLbs'] ?? initialState['${field}InLbs'] ?? '');
+      final weightLbs = int.tryParse(
+        editState['${field}InLbs'] ?? initialState['${field}InLbs'] ?? '',
+      );
       if (weightLbs != null) {
-        onChange(weightLbs.lbsToKgs);
+        onChange(weightLbs);
       }
     }
   }
 
   checkAndCalculateTheFeetAndInchesField(entry, field, onChange) {
     if (entry.key.contains(field)) {
-      final feet = int.tryParse(editState['${field}InFeet'] ?? initialState['${field}InFeet'] ?? '');
-      final inches = int.tryParse(editState['${field}InInches'] ?? initialState['${field}InInches'] ?? '');
+      final feet = int.tryParse(
+        editState['${field}InFeet'] ?? initialState['${field}InFeet'] ?? '',
+      );
+      final inches = int.tryParse(
+        editState['${field}InInches'] ?? initialState['${field}InInches'] ?? '',
+      );
       if (feet != null && inches != null) {
         final totalInches = (feet * 12) + inches;
         onChange(totalInches.inchesToCm);

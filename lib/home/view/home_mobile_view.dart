@@ -303,23 +303,28 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 ),
               ),
             ),
-            Container(
-              width: 48,
-              height: 48,
-              padding: EdgeInsets.all(13),
-              decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x0A000000), // same as #0000000A
-                    offset: Offset(0, 2), // x=0, y=2
-                    blurRadius: 6, // blur radius
-                    spreadRadius: 0, // spread
-                  ),
-                ],
-                shape: BoxShape.circle,
-                color: Colors.white,
+            InkWell(
+              onTap: () =>
+                  context.read<TruckNavigationCubit>().animateToRoute(),
+
+              child: Container(
+                width: 48,
+                height: 48,
+                padding: EdgeInsets.all(13),
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x0A000000), // same as #0000000A
+                      offset: Offset(0, 2), // x=0, y=2
+                      blurRadius: 6, // blur radius
+                      spreadRadius: 0, // spread
+                    ),
+                  ],
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                ),
+                child: Image.asset('assets/images/ion_compass-sharp.png'),
               ),
-              child: Image.asset('assets/images/ion_compass-sharp.png'),
             ),
           ],
         ),

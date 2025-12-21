@@ -6,6 +6,7 @@ import 'package:ommo/app/views/app_view.dart';
 import 'package:ommo/logic/cubit/create_trip/create_trip_state.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
+import 'package:ommo/models/location_point_model.dart';
 import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
 
 class CreateTripCubit extends Cubit<CreateTripState> {
@@ -24,6 +25,7 @@ class CreateTripCubit extends Cubit<CreateTripState> {
           .state
           .currentPlace
           ?.data,
+      isMyLocation: true,
       pointType: LocationPointType.starting,
     );
 
@@ -89,6 +91,7 @@ class CreateTripCubit extends Cubit<CreateTripState> {
     emit(
       state.copyWith(
         startPoint: state.currentStartPoint,
+        
         showYourLocationTab: false,
       ),
     );

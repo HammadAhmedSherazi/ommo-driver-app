@@ -71,24 +71,24 @@ class MapViewState extends State<MapView> with WidgetsBindingObserver {
     // return SizedBox();
     return BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
       buildWhen: (previous, current) =>
-          previous.isMapLoading != current.isMapLoading ||
+          // previous.isMapLoading != current.isMapLoading ||
           previous.mapController != current.mapController,
       builder: (context, state) {
-        return state.isMapLoading
-            ? Center(
-                child: CircularProgressIndicator(
-                  color: AppColorTheme().primary,
-                ),
-              )
-            : SizedBox(
-                height: context.screenHeight * 0.75,
-                width: context.screenWidth,
-                child: HereMap(
-                  onMapCreated: context
-                      .read<TruckNavigationCubit>()
-                      .onMapCreated,
-                ),
-              );
+        return
+        // state.isMapLoading
+        //     ? Center(
+        //         child: CircularProgressIndicator(
+        //           color: AppColorTheme().primary,
+        //         ),
+        //       )
+        //     :
+        SizedBox(
+          height: context.screenHeight * 0.75,
+          width: context.screenWidth,
+          child: HereMap(
+            onMapCreated: context.read<TruckNavigationCubit>().onMapCreated,
+          ),
+        );
       },
     );
   }

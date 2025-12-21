@@ -5,6 +5,7 @@ import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/home/view/home_utils.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
+import 'package:ommo/models/location_point_model.dart';
 import 'package:ommo/utils/utils.dart';
 
 class TripDestinationWidget extends StatefulWidget {
