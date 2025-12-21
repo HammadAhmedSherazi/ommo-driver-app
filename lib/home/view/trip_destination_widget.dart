@@ -180,9 +180,11 @@ class _TripDestinationWidgetState extends State<TripDestinationWidget> {
                         ),
                       );
                     },
-                    onReorder: context
-                        .read<TruckNavigationCubit>()
-                        .changeLocationPointOrder,
+                    onReorder: (oldIndex, newIndex) {
+                      context
+                          .read<TruckNavigationCubit>()
+                          .changeLocationPointOrder(oldIndex, newIndex);
+                    },
                   ),
                 ),
               ],

@@ -1,6 +1,10 @@
 import 'dart:developer';
 import 'dart:math' as m;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' as material;
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' as widgets;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:here_sdk/animation.dart';
@@ -25,6 +29,7 @@ import 'package:ommo/utils/constants/constants.dart';
 import 'package:ommo/utils/extension/recent_search_model_extension.dart';
 import 'package:ommo/utils/generics/generics.dart';
 import 'package:ommo/utils/snacks/snackbar_utils.dart';
+import 'package:ommo/utils/theme/theme.dart';
 
 class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   TruckNavigationCubit() : super(TruckNavigationState());
@@ -44,6 +49,60 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   List<MapMarker> _truckRestrictionMarkers = [];
   final loc.Location _location = loc.Location();
   bool isFirstTimeLocationGet = true;
+  Future<MapImage> _createStopMarkerImage(int index) async {
+    const double size = 70.0;
+    const double borderWidth = 5.0;
+
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final ui.Canvas canvas = ui.Canvas(recorder);
+
+    final ui.Offset center = ui.Offset(size / 2, size / 2);
+
+    final ui.Paint borderPaint = ui.Paint()
+      ..color = AppColorTheme().primary
+      ..style = ui.PaintingStyle.fill;
+
+    final ui.Paint fillPaint = ui.Paint()
+      ..color = ui.Color(0xFFFFFFFF)
+      ..style = ui.PaintingStyle.fill;
+
+    // Draw border circle (outer)
+    canvas.drawCircle(center, size / 2, borderPaint);
+
+    // Draw inner circle (fill)
+    canvas.drawCircle(center, (size / 2) - borderWidth, fillPaint);
+
+    // Draw text
+    final ui.ParagraphBuilder paragraphBuilder = ui.ParagraphBuilder(
+      ui.ParagraphStyle(
+        textAlign: TextAlign.center,
+        fontSize: 30.0,
+        fontWeight: ui.FontWeight.bold,
+      ),
+    );
+
+    paragraphBuilder.pushStyle(ui.TextStyle(color: ui.Color(0xFF000000)));
+    paragraphBuilder.addText('$index');
+
+    final ui.Paragraph paragraph = paragraphBuilder.build();
+    paragraph.layout(ui.ParagraphConstraints(width: size));
+
+    canvas.drawParagraph(
+      paragraph,
+      ui.Offset(0, center.dy - paragraph.height / 2),
+    );
+
+    final ui.Picture picture = recorder.endRecording();
+    final ui.Image image = await picture.toImage(size.toInt(), size.toInt());
+    final ByteData? byteData = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+
+    return MapImage.withPixelDataAndImageFormat(
+      byteData!.buffer.asUint8List(),
+      ImageFormat.png,
+    );
+  }
 
   // Setters
   void setInitialLocation(GeoCoordinates coords) {
@@ -1085,7 +1144,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _stopMarkers.remove(i);
   }
 
-  void refreshStopAndDestinationMarker() {
+  Future<void> refreshStopAndDestinationMarker() async {
     clearAllStopMarker();
     for (var i = 0; i < (state.locationPoints ?? []).length; i++) {
       if (i == 0) continue;
@@ -1093,7 +1152,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         setDestinationMarker();
         continue;
       }
-      addStopMakerAt(i, hasFocus: false);
+      await addStopMakerAt(i, hasFocus: false);
     }
   }
 
@@ -1123,15 +1182,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   //   return MapMarker(coordinates, image);
   // }
 
-  addStopMakerAt(i, {bool hasFocus = true}) {
+  Future<void> addStopMakerAt(int i, {bool hasFocus = true}) async {
     final GeoCoordinates? markerCoordinate =
         state.locationPoints?[i].geoCoordinates;
     if (markerCoordinate == null) return;
-    MapImage markerIcon = MapImage.withFilePathAndWidthAndHeight(
-      AppImages.redMapPin,
-      150,
-      180,
-    );
+    final MapImage markerIcon = await _createStopMarkerImage(i);
     final marker = MapMarker(markerCoordinate, markerIcon);
     state.mapController?.mapScene.addMapMarker(marker);
     _stopMarkers[i] = marker;
@@ -1249,7 +1304,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
   }
 
-  void changeLocationPointOrder(oldIndex, newIndex) {
+  Future<void> changeLocationPointOrder(oldIndex, newIndex) async {
     if (newIndex > oldIndex) newIndex -= 1;
     final List<LocationPoint> _list = List.from(state.locationPoints ?? []);
     if (_list.isEmpty) return;
@@ -1257,7 +1312,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _list.insert(newIndex, removed);
     emit(state.copyWith(locationPoints: _list));
     calculateRoute();
-    refreshStopAndDestinationMarker();
+    await refreshStopAndDestinationMarker();
   }
 
   void addStop(dynamic place) {
@@ -1291,7 +1346,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     final addIndex = state.locationPoints!.length;
     _list.insert(addIndex, item);
     emit(state.copyWith(locationPoints: _list));
-    addStopMakerAt(addIndex);
+    // addStopMakerAt(addIndex);
+    refreshStopAndDestinationMarker();
     calculateRoute();
   }
 
