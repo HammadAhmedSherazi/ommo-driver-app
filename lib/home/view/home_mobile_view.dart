@@ -95,19 +95,35 @@ class _HomeMobileViewState extends State<HomeMobileView>
     searchFieldFocusNode.addListener(() {
       setState(() {});
       if (searchFieldFocusNode.hasFocus) {
-        sheetScrollController.animateTo(
-          0.95,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+        maximizeBottomSheet();
       } else {
-        sheetScrollController.animateTo(
-          0.26,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+        minimizeBottomSheet();
       }
     });
+  }
+
+  makeHalfBottomSheet() {
+    sheetScrollController.animateTo(
+      0.95,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  maximizeBottomSheet() {
+    sheetScrollController.animateTo(
+      0.95,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  minimizeBottomSheet() {
+    sheetScrollController.animateTo(
+      0.26,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
   }
 
   _setDirectionIcon(int index) {

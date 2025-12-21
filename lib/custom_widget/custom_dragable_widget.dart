@@ -20,6 +20,8 @@ class CustomDragableWidget extends StatelessWidget {
       initialChildSize: initialSize ?? 0.26,
       minChildSize: miniSize ?? 0.24,
       controller: scrollController,
+      snap: true,
+      snapSizes: [0.26, 0.55, 0.95],
       maxChildSize: 0.95,
       builder: (context, scrollController) {
         return Container(
