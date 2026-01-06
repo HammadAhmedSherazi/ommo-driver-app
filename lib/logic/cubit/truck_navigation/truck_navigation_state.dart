@@ -11,7 +11,7 @@ import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart'
 class TruckNavigationState extends Equatable {
   final HereMapController? mapController;
   final FutureData<List<Suggestion>>? destinationSuggestions;
-  final FutureData<List<Place>>? nearbyTruckStops;
+  // final FutureData<List<Place>>? nearbyTruckStops;
   final GeoCoordinates? startCoordinates;
   final FutureData<Place>? currentPlace;
   final Suggestion? selectedSuggestion;
@@ -29,6 +29,9 @@ class TruckNavigationState extends Equatable {
   final ManeuverProgress? maneuverProgress;
   final List<LocationPoint>? locationPoints;
   final int nextTargetIndex;
+  final FutureData<List<Place>>? categorySearchResults;
+  final List<String>? availableBrands;
+  final String? selectedBrand;
 
   const TruckNavigationState({
     this.mapController,
@@ -36,7 +39,7 @@ class TruckNavigationState extends Equatable {
     this.startCoordinates,
     this.maneuverProgress,
     this.selectedSuggestion,
-    this.nearbyTruckStops,
+    // this.nearbyTruckStops,
     this.destinationCoordinates,
     this.currentRoute,
     this.tappedPlace,
@@ -51,6 +54,9 @@ class TruckNavigationState extends Equatable {
     this.destinationSuggestions,
     this.locationPoints,
     this.nextTargetIndex = 1,
+    this.categorySearchResults,
+    this.availableBrands,
+    this.selectedBrand,
   });
 
   // GeoCoordinates? get destinationCoordinates =>
@@ -77,6 +83,9 @@ class TruckNavigationState extends Equatable {
     dynamic maneuverProgress,
     List<LocationPoint>? locationPoints,
     int? nextTargetIndex,
+    FutureData<List<Place>>? categorySearchResults,
+    List<String>? availableBrands,
+    String? selectedBrand,
   }) {
     return TruckNavigationState(
       nextTargetIndex: nextTargetIndex ?? this.nextTargetIndex,
@@ -84,7 +93,7 @@ class TruckNavigationState extends Equatable {
       locationPoints: locationPoints ?? this.locationPoints,
       destinationSuggestions:
           destinationSuggestions ?? this.destinationSuggestions,
-      nearbyTruckStops: nearbyTruckStops ?? this.nearbyTruckStops,
+      // nearbyTruckStops: nearbyTruckStops ?? this.nearbyTruckStops,
       mapController: mapController ?? this.mapController,
       currentPlace: currentPlace ?? this.currentPlace,
       startCoordinates: startCoordinates ?? this.startCoordinates,
@@ -112,6 +121,9 @@ class TruckNavigationState extends Equatable {
           cameraControlledByNavigator ?? this.cameraControlledByNavigator,
       hasDirection: hasDirection ?? this.hasDirection,
       hasTapDestination: hasTapDestination ?? this.hasTapDestination,
+      categorySearchResults: categorySearchResults ?? this.categorySearchResults,
+      availableBrands: availableBrands ?? this.availableBrands,
+      selectedBrand: selectedBrand == 'null' ? null : (selectedBrand ?? this.selectedBrand),
     );
   }
 
@@ -123,7 +135,7 @@ class TruckNavigationState extends Equatable {
     destinationSuggestions,
     mapController,
     currentPlace,
-    nearbyTruckStops,
+    // nearbyTruckStops,
     destinationFromRecent,
     hasdestinationFromRecent,
     startCoordinates,
@@ -134,5 +146,8 @@ class TruckNavigationState extends Equatable {
     isNavigating,
     isMapLoading,
     hasTapDestination,
+    categorySearchResults,
+    availableBrands,
+    selectedBrand,
   ];
 }

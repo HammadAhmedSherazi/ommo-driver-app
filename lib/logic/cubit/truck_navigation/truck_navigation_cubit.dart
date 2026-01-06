@@ -122,29 +122,42 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       // Enable vehicle restrictions and related map features
       _enableMapFeatures(controller);
 
-      controller.gestures.doubleTapListener = DoubleTapListener((
+      // adding drop pin feature to the map to set destination
+      controller.gestures.longPressListener = LongPressListener((
+        GestureState gestureState,
         Point2D touchPoint,
       ) {
-        if (!state.hasDirection && !state.isNavigating) {
-          _handleMapTapForDestination(touchPoint);
+        if (gestureState == GestureState.end &&
+            !state.hasDirection &&
+            !state.isNavigating) {
+          final GeoCoordinates? geoCoordinates = state.mapController
+              ?.viewToGeoCoordinates(touchPoint);
+          _handleMapTapForDestination(geoCoordinates);
         }
+      });
+    });
 
-        // Use a larger area to include restriction icons
-        const double pickRadius = 50;
-        final Rectangle2D pickArea = Rectangle2D(
-          Point2D(touchPoint.x - pickRadius, touchPoint.y - pickRadius),
-          Size2D(pickRadius * 2, pickRadius * 2),
-        );
+    // add listener to show warning marker detials
+    controller.gestures.tapListener = TapListener((Point2D touchPoint) {
+      // Use a larger area to include restriction icons
+      const double pickRadius = 50;
+      final Rectangle2D pickArea = Rectangle2D(
+        Point2D(touchPoint.x - pickRadius, touchPoint.y - pickRadius),
+        Size2D(pickRadius * 2, pickRadius * 2),
+      );
 
-        // Pick from both mapItems (custom markers) and mapContent (restriction icons)
-        final filter = MapSceneMapPickFilter([
-          MapSceneMapPickFilterContentType.mapItems,
-          MapSceneMapPickFilterContentType.mapContent,
-        ]);
+      // Pick from both mapItems (custom markers) and mapContent (restriction icons)
+      final filter = MapSceneMapPickFilter([
+        MapSceneMapPickFilterContentType.mapItems,
+        MapSceneMapPickFilterContentType.mapContent,
+      ]);
 
-        controller.pick(filter, pickArea, (MapPickResult? result) {
-          if (result == null) return;
+      controller.pick(filter, pickArea, (MapPickResult? result) {
+        log("result: $result");
 
+        if (result == null) return;
+
+        if (state.isNavigating) {
           // Handle custom markers (truck restriction warnings)
           if ((result.mapItems?.markers ?? []).isNotEmpty) {
             final MapMarker? pickedMarker =
@@ -160,18 +173,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
               }
             }
           }
-
-          // Handle vehicle restrictions from map content
-          // final vehicleRestrictions = result.mapContent?.vehicleRestrictions;
-          // if (vehicleRestrictions != null && vehicleRestrictions.isNotEmpty) {
-          //   final restriction = vehicleRestrictions.first;
-          //   final coords = restriction.coordinates;
-          //   SnackbarUtils.showWarningSnackBar(
-          //     navigatorKey.currentContext!,
-          //     "Vehicle restriction at ${coords.latitude.toStringAsFixed(6)}, ${coords.longitude.toStringAsFixed(6)}",
-          //   );
-          // }
-        });
+        } else if (!state.isNavigating && !state.hasDirection) {
+          final PickedPlace? pickedPlace =
+              result.mapContent?.pickedPlaces.firstOrNull;
+          if (pickedPlace == null) return;
+          _handlePickedPlaceForDestination(pickedPlace);
+        }
       });
     });
 
@@ -318,7 +325,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       focusOnCurrentLocation();
     }
     getCurrentLocationPlace();
-    getNearbyTruckStops();
   }
 
   void mapZoomIn(material.BuildContext context) {
@@ -361,61 +367,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     loc.LocationData locationData = await _location.getLocation();
     return GeoCoordinates(locationData.latitude!, locationData.longitude!);
-  }
-
-  Future getNearbyTruckStops() async {
-    if (state.startCoordinates == null) {
-      emit(
-        state.copyWith(
-          nearbyTruckStops: FutureData.error(
-            "Unable to retrieve nearby places because the current location could not be determined.",
-          ),
-        ),
-      );
-      return;
-    }
-
-    final SearchEngine searchEngine = SearchEngine();
-
-    final SearchOptions options = SearchOptions()
-      ..languageCode = LanguageCode.enUs
-      ..maxItems = 3;
-
-    TextQueryArea queryArea = TextQueryArea.withCenter(state.startCoordinates!);
-
-    final TextQuery query = TextQuery.withArea("truck stop", queryArea);
-
-    searchEngine.searchByText(query, options, (
-      SearchError? error,
-      List<Place>? places,
-    ) {
-      if (error != null) {
-        emit(
-          state.copyWith(
-            nearbyTruckStops: FutureData.error(
-              "Unable to retrieve nearby places because $error",
-            ),
-          ),
-        );
-
-        return;
-      }
-
-      if (places != null && places.isNotEmpty) {
-        final List<Place> _list = [];
-
-        for (final place in places) {
-          _list.add(place);
-        }
-        emit(state.copyWith(nearbyTruckStops: FutureData.completed(_list)));
-      } else {
-        emit(
-          state.copyWith(
-            nearbyTruckStops: FutureData.error("No nearby places found"),
-          ),
-        );
-      }
-    });
   }
 
   void startListeningToLocation() async {
@@ -553,6 +504,261 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
   }
 
+  /// Search places by category (e.g., Truck stops, Rest areas, Weight stations)
+  void searchByCategory(String placeTypeName) {
+    if (state.startCoordinates == null) {
+      emit(
+        state.copyWith(
+          categorySearchResults: FutureData.error(
+            "Unable to search: current location not available",
+          ),
+          availableBrands: [], // Clear brands on error
+          selectedBrand: 'null', // Clear selected brand
+        ),
+      );
+      return;
+    }
+
+    // Get category codes for the place type
+    List<String> categoryCodes = _getCategoryCodesForPlaceType(placeTypeName);
+    if (categoryCodes.isEmpty) {
+      emit(
+        state.copyWith(
+          categorySearchResults: FutureData.error(
+            "No category found for: $placeTypeName",
+          ),
+          availableBrands: [], // Clear brands on error
+          selectedBrand: 'null', // Clear selected brand
+        ),
+      );
+      return;
+    }
+
+    // Emit loading state and clear previous brands/brand selection
+    emit(
+      state.copyWith(
+        categorySearchResults: FutureData<List<Place>>.loading(),
+        availableBrands: [], // Clear previous brands
+        selectedBrand: 'null', // Clear selected brand when place type changes
+      ),
+    );
+
+    // Create category list
+    List<PlaceCategory> placeCategoryList = categoryCodes
+        .map((code) => PlaceCategory(code))
+        .toList();
+
+    // Create search area around current location
+    // Create a valid corridor with at least 2 points (required for GeoCorridor)
+    final center = state.startCoordinates!;
+    const int halfWidthInMeters = 50000; // 50km radius
+
+    // Create a small line segment near the center to form a valid polyline
+    // Add a second point slightly offset to create a valid corridor
+    const double offsetInDegrees = 0.01; // Small offset (~1km)
+    final GeoCoordinates secondPoint = GeoCoordinates(
+      center.latitude + offsetInDegrees,
+      center.longitude,
+    );
+
+    // Create corridor with at least 2 points
+    final List<GeoCoordinates> routeVertices = [center, secondPoint];
+    final GeoCorridor routeCorridor = GeoCorridor(
+      routeVertices,
+      halfWidthInMeters,
+    );
+
+    CategoryQueryArea categoryQueryArea =
+        CategoryQueryArea.withCorridorAndCenter(routeCorridor, center);
+
+    // Create category query
+    CategoryQuery categoryQuery = CategoryQuery.withCategoriesInArea(
+      placeCategoryList,
+      categoryQueryArea,
+    );
+
+    // Set search options
+    SearchOptions searchOptions = SearchOptions();
+    searchOptions.languageCode = LanguageCode.enUs;
+    searchOptions.maxItems = 50;
+
+    // For truck-related categories, set custom option
+    if (placeTypeName.toLowerCase().contains('truck') ||
+        placeTypeName.toLowerCase().contains('weight') ||
+        placeTypeName.toLowerCase().contains('rest area')) {
+      _searchEngine.setCustomOption("show", "truck");
+    }
+
+    // Perform search
+    _searchEngine.searchByCategory(categoryQuery, searchOptions, (
+      SearchError? searchError,
+      List<Place>? places,
+    ) {
+      if (searchError != null) {
+        log("Category search error: $searchError");
+        emit(
+          state.copyWith(
+            categorySearchResults: FutureData.error(searchError.toString()),
+          ),
+        );
+        return;
+      }
+
+      if (places != null && places.isNotEmpty) {
+        // Extract unique brands from search results
+        final brands = _extractBrandsFromPlaces(places);
+        emit(
+          state.copyWith(
+            categorySearchResults: FutureData.completed(places),
+            availableBrands: brands,
+            selectedBrand:
+                null, // Always reset to null - show all places initially
+          ),
+        );
+      } else {
+        emit(
+          state.copyWith(
+            categorySearchResults: FutureData.completed([]),
+            availableBrands: [],
+            selectedBrand: 'null', // Always reset to null
+          ),
+        );
+      }
+    });
+  }
+
+  /// Extract unique brand names from places
+  List<String> _extractBrandsFromPlaces(List<Place> places) {
+    final Set<String> brandSet = {};
+
+    for (final place in places) {
+      // Try to extract brand from place title
+      final title = place.title.trim();
+      if (title.isEmpty) continue;
+
+      // Common truck stop brands to look for
+      final knownBrands = [
+        "Love's",
+        "Loves",
+        "Pilot",
+        "Flying J",
+        "TA",
+        "Petro",
+        "KwikTrip",
+        "Kwik Trip",
+        "TravelCenters",
+        "Travel Centers",
+        "Speedco",
+        "Flying J Travel Plaza",
+        "Pilot Travel Center",
+      ];
+
+      // Check if title contains known brand
+      bool foundKnownBrand = false;
+      for (final brand in knownBrands) {
+        if (title.toLowerCase().contains(brand.toLowerCase())) {
+          brandSet.add(brand);
+          foundKnownBrand = true;
+          break;
+        }
+      }
+
+      // If no known brand found, try to extract first word
+      if (!foundKnownBrand) {
+        final words = title.split(' ');
+        if (words.isNotEmpty) {
+          final firstWord = words.first.trim();
+          // Skip if it's too short or common words
+          if (firstWord.length > 2 &&
+              !['the', 'a', 'an', 'the'].contains(firstWord.toLowerCase())) {
+            // Only add if it looks like a brand name (capitalized, reasonable length)
+            if (firstWord[0].toUpperCase() == firstWord[0] &&
+                firstWord.length <= 20) {
+              brandSet.add(firstWord);
+            }
+          }
+        }
+      }
+    }
+
+    return brandSet.toList()..sort();
+  }
+
+  /// Filter places by selected brand
+  void filterByBrand(String? brand) {
+    if (brand == null || brand.isEmpty) {
+      // Clear filter - show all results
+      emit(state.copyWith(selectedBrand: 'null'));
+      return;
+    }
+
+    emit(state.copyWith(selectedBrand: brand));
+  }
+
+  /// Clear brand filter and available brands
+  void clearBrandFilter() {
+    emit(state.copyWith(availableBrands: [], selectedBrand: 'null'));
+  }
+
+  /// Map place type names to HERE SDK category codes
+  List<String> _getCategoryCodesForPlaceType(String placeTypeName) {
+    final name = placeTypeName.toLowerCase();
+
+    // Truck stops - use truck stop plaza category
+    if (name.contains('truck stop')) {
+      return ['700-7900-0132']; // Truck stop plaza
+    }
+
+    // Parking - use truck parking category
+    if (name.contains('parking')) {
+      return ['700-7900-0131']; // Truck parking
+    }
+
+    // Rest areas
+    if (name.contains('rest area')) {
+      return [
+        '700-7900-0133', // Rest area
+        '700-7900-0131', // Also include truck parking
+      ];
+    }
+
+    // Weight stations / Scales
+    if (name.contains('weight station') || name.contains('scales')) {
+      return ['700-7900-0134']; // Weigh station
+    }
+
+    // Fuel
+    if (name.contains('fuel')) {
+      return [
+        '700-7600-0000', // Gas station / Fuel
+        '700-7900-0132', // Also truck stops which have fuel
+      ];
+    }
+
+    // Truck Washes
+    if (name.contains('wash')) {
+      return ['700-7900-0135']; // Truck wash
+    }
+
+    // Restaurant
+    if (name.contains('restaurant')) {
+      return ['100-1000-0000']; // Restaurant
+    }
+
+    // Hotel
+    if (name.contains('hotel')) {
+      return [PlaceCategory.accommodation];
+    }
+
+    // Store
+    if (name.contains('store')) {
+      return [PlaceCategory.shopping];
+    }
+
+    // Return empty list if no match
+    return [];
+  }
+
   void setDestinationCoordinate(Suggestion suggestion) {
     final destinationPoint = LocationPoint(
       place: suggestion.place!,
@@ -575,6 +781,35 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         locationPoints: _list,
         hasTapDestination: true,
         tappedPlace: FutureData<Place>.completed(suggestion.place),
+      ),
+    );
+    setDestinationMarker();
+  }
+
+  /// Set destination from a Place object (used for category search results)
+  void setDestinationFromPlace(Place place) {
+    if (state.currentPlace?.data == null) return;
+
+    final destinationPoint = LocationPoint(
+      place: place,
+      pointType: LocationPointType.destination,
+    );
+    final List<LocationPoint> _list = [];
+    _list.add(
+      LocationPoint(
+        place: state.currentPlace!.data!,
+        isMyLocation: true,
+        pointType: LocationPointType.starting,
+      ),
+    );
+    _list.add(destinationPoint);
+
+    emit(
+      state.copyWith(
+        destinationCoordinates: place.geoCoordinates,
+        locationPoints: _list,
+        hasTapDestination: true,
+        tappedPlace: FutureData<Place>.completed(place),
       ),
     );
     setDestinationMarker();
@@ -1198,11 +1433,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     addStopMakerAt(i);
   }
 
-  void _handleMapTapForDestination(Point2D touchPoint) {
+  void _handleMapTapForDestination(GeoCoordinates? geoCoordinates) {
     // Convert screen coordinates to geo coordinates
-    final geoCoordinates = state.mapController?.viewToGeoCoordinates(
-      touchPoint,
-    );
     if (geoCoordinates == null) return;
 
     // Set destination coordinates
@@ -1232,6 +1464,110 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _reverseGeocodeDestination(geoCoordinates);
   }
 
+  void _handlePickedPlaceForDestination(PickedPlace pickedPlace) {
+    // Emit loading state
+    emit(
+      state.copyWith(
+        hasTapDestination: true,
+        destinationCoordinates: pickedPlace.coordinates,
+        tappedPlace: FutureData<Place>.loading(),
+      ),
+    );
+
+    // Add destination marker
+    if (_destinationMarker != null) {
+      state.mapController?.mapScene.removeMapMarker(_destinationMarker!);
+      _destinationMarker = null;
+    }
+
+    MapImage destIcon = MapImage.withFilePathAndWidthAndHeight(
+      AppImages.greenMapPin,
+      60,
+      100,
+    );
+
+    _destinationMarker = MapMarker(pickedPlace.coordinates, destIcon);
+    state.mapController?.mapScene.addMapMarker(_destinationMarker!);
+    _destinationMarker!.anchor = Anchor2D.withHorizontalAndVertical(0.5, 1.0);
+
+    // Search by text using the POI name to get the actual POI place
+    // This ensures we get the POI instead of an address
+    final SearchOptions options = SearchOptions()
+      ..languageCode = LanguageCode.enUs
+      ..maxItems = 10; // Get more results to find the matching POI
+
+    TextQueryArea queryArea = TextQueryArea.withCenter(pickedPlace.coordinates);
+
+    _searchEngine.suggestByText(
+      TextQuery.withArea(pickedPlace.name, queryArea),
+      options,
+      (SearchError? error, List<Suggestion>? suggestions) {
+        if (error != null) {
+          log("Search by text failed: $error");
+          // Fallback to reverse geocoding
+          _reverseGeocodeDestination(pickedPlace.coordinates);
+          return;
+        }
+
+        if (suggestions == null || suggestions.isEmpty) {
+          // Fallback to reverse geocoding
+          _reverseGeocodeDestination(pickedPlace.coordinates);
+          return;
+        }
+
+        // Find the suggestion that matches the coordinates and has a place
+        Place? foundPlace;
+        for (final suggestion in suggestions) {
+          if (suggestion.place != null) {
+            final place = suggestion.place!;
+            // Check if coordinates are available and close (within ~100m)
+            if (place.geoCoordinates != null) {
+              final distance = pickedPlace.coordinates.distanceTo(
+                place.geoCoordinates!,
+              );
+              if (distance < 100) {
+                // Also check if it's a POI (not an address)
+                if (place.placeType == PlaceType.poi) {
+                  foundPlace = place;
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        // If we found a matching POI, use it; otherwise fallback to reverse geocoding
+        if (foundPlace != null) {
+          final List<LocationPoint> _list = [];
+          if (state.currentPlace?.data != null) {
+            _list.add(
+              LocationPoint(
+                place: state.currentPlace!.data!,
+                isMyLocation: true,
+                pointType: LocationPointType.starting,
+              ),
+            );
+          }
+          _list.add(
+            LocationPoint(
+              place: foundPlace,
+              pointType: LocationPointType.destination,
+            ),
+          );
+          emit(
+            state.copyWith(
+              locationPoints: _list,
+              tappedPlace: FutureData.completed(foundPlace),
+            ),
+          );
+        } else {
+          // Fallback to reverse geocoding if no matching POI found
+          _reverseGeocodeDestination(pickedPlace.coordinates);
+        }
+      },
+    );
+  }
+
   void _reverseGeocodeDestination(GeoCoordinates coords) {
     final SearchOptions options = SearchOptions()
       ..languageCode = LanguageCode.enUs
@@ -1253,13 +1589,15 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       }
       if (places != null && places.isNotEmpty) {
         final List<LocationPoint> _list = [];
-        _list.add(
-          LocationPoint(
-            place: state.currentPlace!.data!,
-            isMyLocation: true,
-            pointType: LocationPointType.starting,
-          ),
-        );
+        if (state.currentPlace?.data != null) {
+          _list.add(
+            LocationPoint(
+              place: state.currentPlace!.data!,
+              isMyLocation: true,
+              pointType: LocationPointType.starting,
+            ),
+          );
+        }
         _list.add(
           LocationPoint(
             place: places.first,

@@ -9,6 +9,7 @@ class CustomButtonWidget extends StatelessWidget {
   final Widget? icon;
   final VoidCallback onPressed;
   final Color? bgColor;
+  final Color? bdColor;
   final Color? textColor;
   const CustomButtonWidget({
     super.key,
@@ -20,6 +21,7 @@ class CustomButtonWidget extends StatelessWidget {
     this.icon,
     this.isRightSide = false,
     this.bgColor,
+    this.bdColor,
     this.textColor,
   });
 
@@ -62,6 +64,7 @@ class CustomButtonWidget extends StatelessWidget {
           : ElevatedButton(
               style: ButtonStyle(
                 elevation: WidgetStatePropertyAll(0.0),
+
                 backgroundColor: WidgetStatePropertyAll(
                   (bgColor ?? AppColorTheme().primary).withValues(
                     alpha: enabled ? 1 : 0.6,
@@ -69,6 +72,7 @@ class CustomButtonWidget extends StatelessWidget {
                 ),
                 shape: WidgetStatePropertyAll(
                   RoundedRectangleBorder(
+                    side: BorderSide(color: bdColor ?? Colors.transparent),
                     borderRadius: BorderRadius.circular(radius ?? 30),
                   ),
                 ),

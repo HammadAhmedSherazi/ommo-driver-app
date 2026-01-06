@@ -81,4 +81,33 @@ extension PlaceExtension on Place {
     'rating': details.ratings.firstOrNull?.average,
     'reviewCount': details.ratings.firstOrNull?.count,
   });
+
+  List<String> get amenitiesAsList {
+    final List<String> amenities = [];
+    final a = details.truckAmenities;
+
+    if (a == null) return amenities;
+
+    if (a.hasParking) amenities.add('Parking');
+    if (a.hasSecureParking) amenities.add('Secure Parking');
+    if (a.hasCarWash) amenities.add('Car Wash');
+    if (a.hasTruckWash) amenities.add('Truck Wash');
+    if (a.hasHighCanopy) amenities.add('High Canopy');
+    if (a.hasIdleReductionSystem) amenities.add('Idle Reduction System');
+    if (a.hasTruckScales) amenities.add('Truck Scales');
+    if (a.hasPowerSupply) amenities.add('Power Supply');
+    if (a.hasChemicalToiletDisposal) {
+      amenities.add('Chemical Toilet Disposal');
+    }
+    if (a.hasTruckStop) amenities.add('Truck Stop');
+    if (a.hasWifi) amenities.add('Wi-Fi');
+    if (a.hasTruckService) amenities.add('Truck Service');
+    if (a.hasShower) {
+      amenities.add(
+        a.showerCount != null ? 'Shower (${a.showerCount})' : 'Shower',
+      );
+    }
+
+    return amenities;
+  }
 }

@@ -12,7 +12,12 @@ class LocalStorage {
   }
 
   Future<dynamic> readValue(String key) async {
+    try {
     return await storage.read(key: key);
+  } catch (e) {
+    await storage.deleteAll();
+    return null;
+  }
   }
 
   Future<bool> clearValue(String key) async {

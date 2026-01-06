@@ -54,7 +54,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
   // changeMapScheme = false;
   ValueNotifier<bool> showChangeMapSchemeDialog = ValueNotifier(false);
   ValueNotifier<int> selectIndexMapView = ValueNotifier(0);
-  PlaceDataModel? place;
+  // PlaceDataModel? place;
   int selectLocationOpt = 0;
   // bool isSetDirection = false;
 
@@ -98,6 +98,26 @@ class _HomeMobileViewState extends State<HomeMobileView>
         maximizeBottomSheet();
       } else {
         minimizeBottomSheet();
+      }
+    });
+
+    // Listen to place type selection and trigger category search
+    _selectedStation.addListener(() {
+      final selected = _selectedStation.value;
+      if (context.mounted) {
+        if (selected != null) {
+          final placeTypeName = selected['name'] ?? '';
+          if (placeTypeName.isNotEmpty) {
+            // Clear previous brands and selected brand when place type changes
+            context.read<TruckNavigationCubit>().clearBrandFilter();
+            context.read<TruckNavigationCubit>().searchByCategory(
+              placeTypeName,
+            );
+          }
+        } else {
+          // Clear brands when place type is deselected
+          context.read<TruckNavigationCubit>().clearBrandFilter();
+        }
       }
     });
   }
@@ -592,46 +612,32 @@ class _HomeMobileViewState extends State<HomeMobileView>
               ],
             );
           } else if (hasTapDirection) {
-            return CustomDragableWidget(
-              scrollController: sheetScrollController,
-              initialSize: 0.34,
-              childrens: [
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        context
-                            .read<TruckNavigationCubit>()
-                            .removeTapDestination();
-                        searchTextEditController.clear();
-                      },
-                      child: CircleAvatar(
-                        radius: 25,
-                        backgroundColor: AppColorTheme().whiteShade,
-                        child: const Icon(
-                          Icons.arrow_back_ios,
-                          color: Colors.black,
-                          size: 18,
-                        ),
+            return BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+              buildWhen: (p, c) => p.tappedPlace != c.tappedPlace,
+              builder: (context, state) {
+                if (state.hasdestinationFromRecent) {
+                  return showTappedAddressDetails();
+                } else {
+                  return FutureDataBuilder(
+                    future: state.tappedPlace,
+                    loader: ClipRRect(
+                      borderRadius: BorderRadiusGeometry.circular(10),
+                      child: Shimmer(
+                        color: Colors.greenAccent,
+                        child: SizedBox(width: double.infinity, height: 80),
                       ),
                     ),
-                    8.w,
-                    Expanded(child: tapDestinationTile(context)),
-                    // 8.w,
-                    //
-                  ],
-                ),
-                20.h,
-                DashedLine(color: Color(0xffEBEEF2)),
-                20.h,
-                simpleTextTileWithIcon(AppImages.bookmarkIcon, 'Saved Place'),
-                16.h,
-                simpleTextTileWithIcon(
-                  AppImages.blackWhitLocationIcon,
-                  'Add New Place',
-                ),
-                32.h,
-              ],
+                    onSuccess: (place) {
+                      if (place?.placeType == PlaceType.poi) {
+                        return showTappedBusinessDetails(place);
+                      } else {
+                        return showTappedAddressDetails();
+                      }
+                    },
+                  );
+                  // return showTappedBusinessDetails();
+                }
+              },
             );
           } else if (selectedStation != null) {
             return CustomDragableWidget(
@@ -683,50 +689,142 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   ],
                 ),
                 44.h,
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: context.screenWidth * 0.026,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(
-                      TruckNavigationStaticDetails.truckStops.length,
-                      (i) => Column(
-                        children: [
-                          CircleAvatar(
-                            radius: 12,
-                            backgroundImage: AssetImage(
-                              TruckNavigationStaticDetails
-                                      .truckStops[i]['icon'] ??
-                                  '',
-                            ),
-                          ),
-                          8.h,
-                          Text(
-                            TruckNavigationStaticDetails
-                                    .truckStops[i]['name'] ??
-                                '',
-                            style: AppTextTheme().lightText.copyWith(
-                              color: const Color(0xFF000301),
-                              height: 1.40,
-                            ),
-                          ),
-                        ],
+                // Dynamic brands from search results
+                BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+                  buildWhen: (previous, current) =>
+                      previous.availableBrands != current.availableBrands ||
+                      previous.selectedBrand != current.selectedBrand,
+                  builder: (context, state) {
+                    final brands = state.availableBrands ?? [];
+                    final selectedBrand = state.selectedBrand;
+
+                    if (brands.isEmpty) {
+                      return Center(child: Text('No brands found'));
+                    }
+
+                    // if (brands.isEmpty) {
+                    //   // Show static brands if no search results yet
+                    //   return Padding(
+                    //     padding: EdgeInsets.symmetric(
+                    //       horizontal: context.screenWidth * 0.026,
+                    //     ),
+                    //     child: Row(
+                    //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //       children: List.generate(
+                    //         TruckNavigationStaticDetails.truckStops.length,
+                    //         (i) => Column(
+                    //           children: [
+                    //             CircleAvatar(
+                    //               radius: 12,
+                    //               backgroundImage: AssetImage(
+                    //                 TruckNavigationStaticDetails
+                    //                         .truckStops[i]['icon'] ??
+                    //                     '',
+                    //               ),
+                    //             ),
+                    //             8.h,
+                    //             Text(
+                    //               TruckNavigationStaticDetails
+                    //                       .truckStops[i]['name'] ??
+                    //                   '',
+                    //               style: AppTextTheme().lightText.copyWith(
+                    //                 color: const Color(0xFF000301),
+                    //                 height: 1.40,
+                    //               ),
+                    //             ),
+                    //           ],
+                    //         ),
+                    //       ),
+                    //     ),
+                    //   );
+                    // }
+
+                    // Show dynamic brands from search results
+                    return Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: context.screenWidth * 0.026,
                       ),
-                    ),
-                  ),
+                      child: SizedBox(
+                        height: 70,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: brands.length,
+                          separatorBuilder: (_, __) => 12.w,
+                          itemBuilder: (context, index) {
+                            final brand = brands[index];
+                            final isSelected = selectedBrand == brand;
 
-                  //  SizedBox(
-                  //   height: context.screenHeight * 0.065,
-                  //   child: ListView.separated(
-                  //     shrinkWrap: true,
-                  //     scrollDirection: Axis.horizontal,
-
-                  //     itemCount: TruckNavigationStaticDetails.truckStops.length,
-                  //     separatorBuilder: (_, i) => 16.w,
-                  //     itemBuilder: (_, i) => ,
-                  //   ),
-                  // ),
+                            return InkWell(
+                              onTap: () {
+                                context
+                                    .read<TruckNavigationCubit>()
+                                    .filterByBrand(isSelected ? null : brand);
+                              },
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? AppColorTheme().primary
+                                            : Colors.grey.shade300,
+                                        width: isSelected ? 2 : 1,
+                                      ),
+                                      color: isSelected
+                                          ? AppColorTheme().primary.withOpacity(
+                                              0.1,
+                                            )
+                                          : Colors.grey.shade100,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        brand.length > 8
+                                            ? brand.substring(0, 8)
+                                            : brand,
+                                        style: AppTextTheme().bodyText.copyWith(
+                                          fontSize: 10,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                          color: isSelected
+                                              ? AppColorTheme().primary
+                                              : Colors.black87,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                  4.h,
+                                  SizedBox(
+                                    width: 60,
+                                    child: Text(
+                                      brand,
+                                      style: AppTextTheme().lightText.copyWith(
+                                        color: isSelected
+                                            ? AppColorTheme().primary
+                                            : const Color(0xFF000301),
+                                        height: 1.40,
+                                        fontSize: 10,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 40.h,
                 DefaultTabController(
@@ -781,6 +879,121 @@ class _HomeMobileViewState extends State<HomeMobileView>
                           height: context.screenHeight * 0.6,
                           child: TabBarView(
                             children: [
+                              // Category search results
+                              BlocBuilder<
+                                TruckNavigationCubit,
+                                TruckNavigationState
+                              >(
+                                buildWhen: (previous, current) =>
+                                    previous.categorySearchResults !=
+                                        current.categorySearchResults ||
+                                    previous.selectedBrand !=
+                                        current.selectedBrand,
+                                builder: (context, state) {
+                                  return FutureDataBuilder<List<Place>>(
+                                    future: state.categorySearchResults,
+                                    onSuccess: (places) {
+                                      if (places == null || places.isEmpty) {
+                                        return Center(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(20),
+                                            child: Text(
+                                              'No ${selectedStation['name'] ?? 'places'} found nearby',
+                                              style: AppTextTheme().bodyText
+                                                  .copyWith(
+                                                    color: AppColorTheme()
+                                                        .secondary,
+                                                  ),
+                                            ),
+                                          ),
+                                        );
+                                      }
+
+                                      // Filter places by selected brand (only if brand is selected)
+                                      final selectedBrand = state.selectedBrand;
+                                      List<Place> filteredPlaces = places;
+
+                                      // Only filter if a brand is explicitly selected
+                                      // When selectedBrand is null, show all places
+                                      if (selectedBrand != null &&
+                                          selectedBrand.isNotEmpty) {
+                                        filteredPlaces = places.where((place) {
+                                          final title = place.title
+                                              .toLowerCase();
+                                          return title.contains(
+                                            selectedBrand.toLowerCase(),
+                                          );
+                                        }).toList();
+
+                                        if (filteredPlaces.isEmpty) {
+                                          return Center(
+                                            child: Padding(
+                                              padding: EdgeInsets.all(20),
+                                              child: Text(
+                                                'No $selectedBrand locations found',
+                                                style: AppTextTheme().bodyText
+                                                    .copyWith(
+                                                      color: AppColorTheme()
+                                                          .secondary,
+                                                    ),
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                      // If selectedBrand is null, filteredPlaces = places (all places shown)
+
+                                      return ListView.builder(
+                                        physics: BouncingScrollPhysics(),
+                                        itemCount: filteredPlaces.length,
+                                        itemBuilder: (context, index) {
+                                          final place = filteredPlaces[index];
+                                          return GestureDetector(
+                                            onTap: () {
+                                              context
+                                                  .read<TruckNavigationCubit>()
+                                                  .setDestinationFromPlace(
+                                                    place,
+                                                  );
+                                              _selectedStation.value = null;
+                                            },
+                                            child: Padding(
+                                              padding: EdgeInsets.only(
+                                                bottom: 16,
+                                              ),
+                                              child: PlaceDisplayWidget(
+                                                place: place.toPlaceDataModel,
+                                                isSaved: false,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                    loader: Column(
+                                      spacing: 10,
+                                      children: List.generate(
+                                        3,
+                                        (i) => Padding(
+                                          padding: EdgeInsets.only(bottom: 16),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                            child: Shimmer(
+                                              color: Colors.greenAccent,
+                                              child: SizedBox(
+                                                width: double.infinity,
+                                                height: 80,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                               ListView.builder(
                                 physics: NeverScrollableScrollPhysics(),
                                 itemBuilder: (context, index) => GestureDetector(
@@ -796,34 +1009,10 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                   // },
                                   child: PlaceDisplayWidget(
                                     place: TruckNavigationStaticDetails
-                                        .placesss[index],
+                                        .placess[index],
                                     isSaved: true,
                                   ),
                                 ),
-                                itemCount: TruckNavigationStaticDetails
-                                    .placesss
-                                    .length,
-                              ),
-                              ListView.builder(
-                                physics: NeverScrollableScrollPhysics(),
-                                itemBuilder: (context, index) =>
-                                    GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          searchTextEditController.text =
-                                              TruckNavigationStaticDetails
-                                                  .placess[index]
-                                                  .address;
-                                          place = TruckNavigationStaticDetails
-                                              .placess[index];
-                                        });
-                                      },
-                                      child: PlaceDisplayWidget(
-                                        place: TruckNavigationStaticDetails
-                                            .placess[index],
-                                        isSaved: true,
-                                      ),
-                                    ),
                                 itemCount:
                                     TruckNavigationStaticDetails.placess.length,
                               ),
@@ -1279,16 +1468,16 @@ class _HomeMobileViewState extends State<HomeMobileView>
                         ListView.builder(
                           physics: NeverScrollableScrollPhysics(),
                           itemBuilder: (context, index) => GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                searchTextEditController.text =
-                                    TruckNavigationStaticDetails
-                                        .placess[index]
-                                        .address;
-                                place =
-                                    TruckNavigationStaticDetails.placess[index];
-                              });
-                            },
+                            // onTap: () {
+                            //   setState(() {
+                            //     searchTextEditController.text =
+                            //         TruckNavigationStaticDetails
+                            //             .placess[index]
+                            //             .address;
+                            //     place =
+                            //         TruckNavigationStaticDetails.placess[index];
+                            //   });
+                            // },
                             child: PlaceDisplayWidget(
                               place:
                                   TruckNavigationStaticDetails.placess[index],
@@ -1412,335 +1601,430 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     },
                   ),
                 ],
-
-                if (searchFieldFocusNode.hasFocus &&
-                    searchTextEditController.text.isNotEmpty &&
-                    place != null) ...[
-                  15.h,
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: DecorationImage(image: AssetImage(place!.icon)),
-                      ),
-                    ),
-                    title: Text(
-                      place!.title,
-                      style: AppTextTheme().headingText.copyWith(fontSize: 20),
-                    ),
-                    subtitle: Row(
-                      spacing: 3,
-                      children: [
-                        // ...List.generate(
-                        //   5,
-                        //   (index) =>
-                        //       SvgPicture.asset(AppIcons.ratingIcon),
-                        // ),
-                        CustomRatingIndicator(rating: 5.0),
-                        Text(
-                          place!.rating.toString(),
-                          style: AppTextTheme().lightText.copyWith(
-                            color: Color(0xffFF8800),
-                          ),
-                        ),
-                        Text(
-                          "(${place!.reviewCount})  • ${place!.storeType} • ${place!.distance} mi",
-                          style: AppTextTheme().lightText.copyWith(
-                            color: AppColorTheme().secondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  10.h,
-                  Row(
-                    spacing: 10,
-                    children: [
-                      Expanded(
-                        child: Container(
-                          alignment: Alignment.center,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.horizontal(
-                              left: Radius.circular(50),
-                              right: Radius.circular(50),
-                            ),
-                            border: Border.all(color: Color(0xffEBEEF2)),
-                          ),
-                          child: Row(
-                            spacing: 5,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.bookmark_border_outlined,
-                                color: Colors.black,
-                                size: 20,
-                              ),
-                              Text(
-                                "Save",
-                                style: AppTextTheme().bodyText.copyWith(
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          alignment: Alignment.center,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.horizontal(
-                              left: Radius.circular(50),
-                              right: Radius.circular(50),
-                            ),
-                            border: Border.all(color: Color(0xffEBEEF2)),
-                          ),
-                          child: Row(
-                            spacing: 5,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.phone_outlined,
-                                color: Colors.black,
-                                size: 20,
-                              ),
-                              Text(
-                                "Save",
-                                style: AppTextTheme().bodyText.copyWith(
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  20.h,
-                  DashedLine(),
-                  20.h,
-                  ListTile(
-                    leading: Icon(
-                      Icons.location_on_outlined,
-                      color: Colors.black,
-                    ),
-                    horizontalTitleGap: 5,
-                    title: Text(
-                      place!.address,
-                      style: AppTextTheme().lightText.copyWith(fontSize: 16),
-                    ),
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.schedule, color: Colors.black),
-                    horizontalTitleGap: 5,
-                    title: Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: place!.shopStatus == true
-                                ? "Opened"
-                                : "Closed",
-                            style: AppTextTheme().lightText.copyWith(
-                              fontSize: 16,
-                              color: place!.shopStatus == true
-                                  ? AppColorTheme().primary
-                                  : Colors.red,
-                            ),
-                          ),
-                          TextSpan(
-                            text: "  •  ", // example extra text
-                            style: AppTextTheme().lightText.copyWith(
-                              fontSize: 16,
-                              color: AppColorTheme().secondary,
-                            ),
-                          ),
-                          TextSpan(
-                            text: place!.shopStatus != true
-                                ? "Opens at ${place!.time}"
-                                : "Closes at ${place!.time}",
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.phone_outlined, color: Colors.black),
-                    horizontalTitleGap: 5,
-                    title: Text(
-                      "(406) 555-0120 ",
-                      style: AppTextTheme().lightText.copyWith(fontSize: 16),
-                    ),
-                  ),
-                  ListTile(
-                    leading: Icon(Icons.language, color: Colors.black),
-                    horizontalTitleGap: 5,
-                    title: Text(
-                      "https://www.elizabeth-restaurant.com",
-                      style: AppTextTheme().lightText.copyWith(fontSize: 16),
-                    ),
-                  ),
-                  10.h,
-                  DashedLine(),
-                  15.h,
-                  Wrap(
-                    spacing: 8, // space between chips
-                    runSpacing: 8, // space between lines
-                    children: ["Parking", "ATM", "WI-FI"].map((e) {
-                      return Chip(
-                        padding: EdgeInsets.zero,
-                        labelPadding: const EdgeInsets.only(right: 8),
-                        avatar: Icon(
-                          Icons.check_circle_outline,
-                          color: Colors.green,
-                          size: 24,
-                        ),
-                        label: Text(e, style: TextStyle(fontSize: 14)),
-                        backgroundColor: const Color(0xffF4F6F8),
-                        shape: RoundedRectangleBorder(
-                          side: BorderSide(color: Colors.transparent),
-                          borderRadius: BorderRadius.circular(50), // pill shape
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  15.h,
-                  DashedLine(),
-                  20.h,
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Q&As",
-                        style: AppTextTheme().headingText.copyWith(
-                          fontSize: 16,
-                        ),
-                      ),
-                      TextButton(
-                        style: ButtonStyle(
-                          padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                          visualDensity: VisualDensity(
-                            horizontal: -4.0,
-                            vertical: -4.0,
-                          ),
-                        ),
-                        onPressed: () {},
-                        child: Text(
-                          "More",
-                          style: AppTextTheme().headingText.copyWith(
-                            fontSize: 16,
-                            color: AppColorTheme().primary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  20.h,
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemBuilder: (context, index) => Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 15,
-                        vertical: 10,
-                      ),
-                      height: 132,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Color(0xffEBEEF2)),
-                      ),
-                      child: Row(
-                        spacing: 10,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.help),
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  "Does Walmart allow overnight truck parking?",
-                                  style: AppTextTheme().bodyText.copyWith(
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                Text(
-                                  "Some locations do, but always check with the store first.",
-                                  style: AppTextTheme().lightText.copyWith(
-                                    color: AppColorTheme().secondary,
-                                  ),
-                                ),
-                                Row(
-                                  spacing: 8,
-                                  children: [
-                                    Text(
-                                      "View 7 replies",
-                                      style: AppTextTheme().bodyText.copyWith(
-                                        color: AppColorTheme().primary,
-                                      ),
-                                    ),
-                                    Icon(Icons.arrow_forward_ios, size: 15),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    separatorBuilder: (context, index) => 5.h,
-                    itemCount: 2,
-                  ),
-                  20.h,
-                  Row(
-                    spacing: 5,
-                    children: [
-                      CircleAvatar(
-                        radius: 25,
-                        backgroundImage: NetworkImage(
-                          'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8dXNlciUyMHByb2ZpbGV8ZW58MHx8MHx8fDA%3D',
-                        ),
-                      ),
-                      Expanded(
-                        child: CustomTextfieldWidget(
-                          hintText: "Ask the question...",
-                          suffixIcon: CircleAvatar(
-                            backgroundColor: AppColorTheme().primary,
-                            child: Icon(Icons.arrow_upward, size: 18),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  20.h,
-                  DashedLine(),
-                  20.h,
-                  Text(
-                    "How was your experience here?",
-                    style: AppTextTheme().bodyText.copyWith(
-                      fontSize: 16,
-                      fontWeight: AppFontWeight.semiBold,
-                    ),
-                  ),
-                  20.h,
-                  RatingBar.builder(
-                    itemPadding: EdgeInsets.all(3),
-                    unratedColor: Color(0xffEBEEF2),
-                    itemBuilder: (context, index) =>
-                        SvgPicture.asset(AppIcons.ratingIcon),
-                    onRatingUpdate: (rating) {},
-                  ),
-                ],
               ],
             );
           }
         },
       ),
     ];
+  }
+
+  Widget showTappedAddressDetails() {
+    return CustomDragableWidget(
+      // scrollController: sheetScrollController,
+      initialSize: 0.34,
+      childrens: [
+        Row(
+          children: [
+            GestureDetector(
+              onTap: () {
+                context.read<TruckNavigationCubit>().removeTapDestination();
+                searchTextEditController.clear();
+              },
+              child: CircleAvatar(
+                radius: 25,
+                backgroundColor: AppColorTheme().whiteShade,
+                child: const Icon(
+                  Icons.arrow_back_ios,
+                  color: Colors.black,
+                  size: 18,
+                ),
+              ),
+            ),
+            8.w,
+            Expanded(child: tapDestinationTile(context)),
+            // 8.w,
+            //
+          ],
+        ),
+        20.h,
+        DashedLine(color: Color(0xffEBEEF2)),
+        20.h,
+        simpleTextTileWithIcon(AppImages.bookmarkIcon, 'Saved Place'),
+        16.h,
+        simpleTextTileWithIcon(
+          AppImages.blackWhitLocationIcon,
+          'Add New Place',
+        ),
+        32.h,
+      ],
+    );
+  }
+
+  Widget showTappedBusinessDetails(Place? place) {
+    final String image = place?.getImage ?? '';
+    final bool? isOpened = place?.details.openingHours.firstOrNull?.isOpen;
+    final String? time =
+        place?.details.openingHours.firstOrNull?.text.firstOrNull;
+    final double? rating = place?.details.ratings.firstOrNull?.average;
+    final int? ratingCount = place?.details.ratings.firstOrNull?.count;
+
+    return CustomDragableWidget(
+      // scrollController: sheetScrollController,
+      initialSize: 0.34,
+      childrens: [
+        // 15.h,
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+
+          trailing: GestureDetector(
+            onTap: () {
+              context.read<TruckNavigationCubit>().removeTapDestination();
+              searchTextEditController.clear();
+            },
+            child: const Icon(Icons.close, color: Colors.grey, size: 25),
+          ),
+          leading: Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.grey,
+              shape: BoxShape.circle,
+              image: image.isNotEmpty
+                  ? DecorationImage(image: NetworkImage(image))
+                  : null,
+            ),
+          ),
+          title: Text(
+            place?.formattedTitle ?? '',
+            style: AppTextTheme().headingText.copyWith(fontSize: 20),
+          ),
+          subtitle: Row(
+            spacing: 3,
+            children: [
+              // ...List.generate(
+              //   5,
+              //   (index) =>
+              //       SvgPicture.asset(AppIcons.ratingIcon),
+              // ),
+              if (rating != null) ...[
+                CustomRatingIndicator(rating: rating),
+                Text(
+                  rating.toString(),
+                  style: AppTextTheme().lightText.copyWith(
+                    color: Color(0xffFF8800),
+                  ),
+                ),
+              ],
+
+              Text.rich(
+                TextSpan(
+                  children: [
+                    if (ratingCount != null) ...[
+                      TextSpan(text: "($ratingCount)"),
+                      TextSpan(
+                        text: "  •  ", // example extra text
+                        style: AppTextTheme().lightText.copyWith(
+                          fontSize: 16,
+                          color: AppColorTheme().secondary,
+                        ),
+                      ),
+                    ],
+
+                    TextSpan(
+                      text: place?.details.categories.firstOrNull?.name ?? '',
+                    ),
+                    TextSpan(
+                      text: "  •  ", // example extra text
+                      style: AppTextTheme().lightText.copyWith(
+                        fontSize: 16,
+                        color: AppColorTheme().secondary,
+                      ),
+                    ),
+
+                    TextSpan(text: place?.distanceInMiles ?? ''),
+                  ],
+                  style: AppTextTheme().lightText.copyWith(
+                    color: AppColorTheme().secondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        10.h,
+        Row(
+          spacing: 10,
+          children: [
+            Expanded(
+              child: CustomButtonWidget(
+                onPressed: () {
+                  if ((place?.title ?? '').isNotEmpty) {
+                    searchTextEditController.text = place?.title ?? '';
+                  }
+                  context.read<TruckNavigationCubit>().calculateRoute();
+                },
+                title: "Trip",
+                icon: Icon(Icons.directions, color: Colors.white),
+              ),
+            ),
+            Expanded(
+              child: CustomButtonWidget(
+                onPressed: () {},
+                title: "Save",
+                bgColor: AppColorTheme().white,
+                textColor: AppColorTheme().black,
+                bdColor: AppColorTheme().secondarButtonColor,
+                icon: Icon(
+                  Icons.bookmark_border_outlined,
+                  color: Colors.black,
+                  size: 20,
+                ),
+              ),
+            ),
+            Expanded(
+              child: CustomButtonWidget(
+                onPressed: () {},
+                title: "Call",
+                bgColor: AppColorTheme().white,
+                textColor: AppColorTheme().black,
+                bdColor: AppColorTheme().secondarButtonColor,
+
+                icon: Icon(Icons.phone_outlined, color: Colors.black, size: 20),
+              ),
+            ),
+          ],
+        ),
+        20.h,
+        DashedLine(),
+        20.h,
+        ListTile(
+          leading: Icon(Icons.location_on_outlined, color: Colors.black),
+          horizontalTitleGap: 5,
+          title: Text(
+            place?.formattedSubtitle ?? '',
+            style: AppTextTheme().lightText.copyWith(fontSize: 16),
+          ),
+        ),
+        ListTile(
+          leading: Icon(Icons.schedule, color: Colors.black),
+          horizontalTitleGap: 5,
+          title: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: isOpened == null
+                      ? 'N/A'
+                      : isOpened
+                      ? "Opened"
+                      : "Closed",
+                  style: AppTextTheme().lightText.copyWith(
+                    fontSize: 16,
+                    color: isOpened == null
+                        ? AppColorTheme().lightGrey
+                        : isOpened
+                        ? AppColorTheme().primary
+                        : Colors.red,
+                  ),
+                ),
+                if (time != null) ...[
+                  TextSpan(
+                    text: "  •  ", // example extra text
+                    style: AppTextTheme().lightText.copyWith(
+                      fontSize: 16,
+                      color: AppColorTheme().secondary,
+                    ),
+                  ),
+
+                  TextSpan(
+                    text:
+                        place
+                            ?.details
+                            .openingHours
+                            .firstOrNull
+                            ?.text
+                            .firstOrNull ??
+                        '',
+                    // text: place!.shopStatus != true
+                    //     ? "Opens at ${place!.time}"
+                    //     : "Closes at ${place!.time}",
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        ListTile(
+          leading: Icon(Icons.phone_outlined, color: Colors.black),
+          horizontalTitleGap: 5,
+          title: Text(
+            place
+                    ?.details
+                    .contacts
+                    .firstOrNull
+                    ?.landlinePhones
+                    .firstOrNull
+                    ?.phoneNumber ??
+                place
+                    ?.details
+                    .contacts
+                    .firstOrNull
+                    ?.mobilePhones
+                    .firstOrNull
+                    ?.phoneNumber ??
+                'N/A',
+
+            // "(406) 555-0120 ",
+            style: AppTextTheme().lightText.copyWith(fontSize: 16),
+          ),
+        ),
+        ListTile(
+          leading: Icon(Icons.language, color: Colors.black),
+          horizontalTitleGap: 5,
+          title: Text(
+            place
+                    ?.details
+                    .contacts
+                    .firstOrNull
+                    ?.websites
+                    .firstOrNull
+                    ?.address ??
+                'N/A',
+            style: AppTextTheme().lightText.copyWith(fontSize: 16),
+          ),
+        ),
+        10.h,
+        DashedLine(),
+        15.h,
+        Wrap(
+          spacing: 8, // space between chips
+          runSpacing: 8, // space between lines
+          children: (place?.amenitiesAsList ?? []).map((e) {
+            return Chip(
+              padding: EdgeInsets.zero,
+              labelPadding: const EdgeInsets.only(right: 8),
+              avatar: Icon(
+                Icons.check_circle_outline,
+                color: Colors.green,
+                size: 24,
+              ),
+              label: Text(e, style: TextStyle(fontSize: 14)),
+              backgroundColor: const Color(0xffF4F6F8),
+              shape: RoundedRectangleBorder(
+                side: BorderSide(color: Colors.transparent),
+                borderRadius: BorderRadius.circular(50), // pill shape
+              ),
+            );
+          }).toList(),
+        ),
+        15.h,
+        // DashedLine(),
+        // 20.h,
+        // Row(
+        //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        //   children: [
+        //     Text(
+        //       "Q&As",
+        //       style: AppTextTheme().headingText.copyWith(fontSize: 16),
+        //     ),
+        //     TextButton(
+        //       style: ButtonStyle(
+        //         padding: WidgetStatePropertyAll(EdgeInsets.zero),
+        //         visualDensity: VisualDensity(horizontal: -4.0, vertical: -4.0),
+        //       ),
+        //       onPressed: () {},
+        //       child: Text(
+        //         "More",
+        //         style: AppTextTheme().headingText.copyWith(
+        //           fontSize: 16,
+        //           color: AppColorTheme().primary,
+        //         ),
+        //       ),
+        //     ),
+        //   ],
+        // ),
+        // 20.h,
+        // ListView.separated(
+        //   shrinkWrap: true,
+        //   physics: NeverScrollableScrollPhysics(),
+        //   itemBuilder: (context, index) => Container(
+        //     padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+        //     height: 132,
+        //     decoration: BoxDecoration(
+        //       borderRadius: BorderRadius.circular(12),
+        //       border: Border.all(color: Color(0xffEBEEF2)),
+        //     ),
+        //     child: Row(
+        //       spacing: 10,
+        //       crossAxisAlignment: CrossAxisAlignment.start,
+        //       children: [
+        //         Icon(Icons.help),
+        //         Expanded(
+        //           child: Column(
+        //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        //             children: [
+        //               Text(
+        //                 "Does Walmart allow overnight truck parking?",
+        //                 style: AppTextTheme().bodyText.copyWith(fontSize: 16),
+        //               ),
+        //               Text(
+        //                 "Some locations do, but always check with the store first.",
+        //                 style: AppTextTheme().lightText.copyWith(
+        //                   color: AppColorTheme().secondary,
+        //                 ),
+        //               ),
+        //               Row(
+        //                 spacing: 8,
+        //                 children: [
+        //                   Text(
+        //                     "View 7 replies",
+        //                     style: AppTextTheme().bodyText.copyWith(
+        //                       color: AppColorTheme().primary,
+        //                     ),
+        //                   ),
+        //                   Icon(Icons.arrow_forward_ios, size: 15),
+        //                 ],
+        //               ),
+        //             ],
+        //           ),
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        //   separatorBuilder: (context, index) => 5.h,
+        //   itemCount: 2,
+        // ),
+        // 20.h,
+        // Row(
+        //   spacing: 5,
+        //   children: [
+        //     CircleAvatar(
+        //       radius: 25,
+        //       backgroundImage: NetworkImage(
+        //         'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8dXNlciUyMHByb2ZpbGV8ZW58MHx8MHx8fDA%3D',
+        //       ),
+        //     ),
+        //     Expanded(
+        //       child: CustomTextfieldWidget(
+        //         hintText: "Ask the question...",
+        //         suffixIcon: CircleAvatar(
+        //           backgroundColor: AppColorTheme().primary,
+        //           child: Icon(Icons.arrow_upward, size: 18),
+        //         ),
+        //       ),
+        //     ),
+        //   ],
+        // ),
+        // 20.h,
+        // DashedLine(),
+        // 20.h,
+        // Text(
+        //   "How was your experience here?",
+        //   style: AppTextTheme().bodyText.copyWith(
+        //     fontSize: 16,
+        //     fontWeight: AppFontWeight.semiBold,
+        //   ),
+        // ),
+        // 20.h,
+        // RatingBar.builder(
+        //   itemPadding: EdgeInsets.all(3),
+        //   unratedColor: Color(0xffEBEEF2),
+        //   itemBuilder: (context, index) =>
+        //       SvgPicture.asset(AppIcons.ratingIcon),
+        //   onRatingUpdate: (rating) {},
+        // ),
+      ],
+    );
   }
 
   List<Widget> buildNavigationUi(TruckNavigationState state) {
@@ -2334,35 +2618,6 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 ),
               ),
             ),
-    );
-  }
-
-  Widget buildNearbyTruckStops(BuildContext context) {
-    return BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
-      buildWhen: (p, c) => p.nearbyTruckStops != c.nearbyTruckStops,
-      builder: (context, state) => FutureDataBuilder(
-        future: state.nearbyTruckStops,
-        onSuccess: (places) => Column(
-          children: List.generate(
-            places?.length ?? 0,
-            (index) =>
-                PlaceDisplayWidget(place: places?[index].toPlaceDataModel),
-          ),
-        ),
-        loader: Column(
-          spacing: 10,
-          children: List.generate(
-            3,
-            (i) => ClipRRect(
-              borderRadius: BorderRadiusGeometry.circular(10),
-              child: Shimmer(
-                color: Colors.greenAccent,
-                child: SizedBox(width: double.infinity, height: 80),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 
