@@ -2295,76 +2295,92 @@ class _HomeMobileViewState extends State<HomeMobileView>
           ),
         ),
         childrens: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            spacing: 10,
-            children: [
-              Image.asset('assets/images/Icon (30).png', width: 48, height: 48),
-              Expanded(
-                child: Column(
-                  spacing: 2,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      state.hasTapDestination
-                          ? (state.hasdestinationFromRecent
-                                    ? state
-                                          .destinationFromRecent
-                                          ?.formattedTitle
-                                    : state
-                                          .tappedPlace
-                                          ?.data
-                                          ?.formattedTitle) ??
-                                ''
-                          : state.selectedSuggestion?.place?.formattedTitle ??
-                                '',
-                      style: AppTextTheme().subHeadingText.copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      state.hasTapDestination
-                          ? (state.hasdestinationFromRecent
-                                    ? state
-                                          .destinationFromRecent
-                                          ?.formattedSubTitle
-                                    : state
-                                          .tappedPlace
-                                          ?.data
-                                          ?.formattedSubtitle) ??
-                                ''
-                          : state
-                                    .selectedSuggestion
-                                    ?.place
-                                    ?.formattedSubtitle ??
-                                '',
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextTheme().subHeadingText.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xff888BA1),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+            buildWhen: (previous, current) =>
+                previous.nextTargetIndex != current.nextTargetIndex,
+            builder: (context, _state) {
+              final bool isDestination =
+                  _state.nextTargetIndex == (_state.locationPoints!.length - 1);
 
-              // GestureDetector(
-              //   onTap: () {
-              //     // cancelNavigation();
-              //   },
-              //   child: CircleAvatar(
-              //     radius: 25,
-              //     backgroundColor: AppColorTheme().whiteShade,
-              //     child: const Icon(
-              //       Icons.arrow_back_ios,
-              //       color: Colors.black,
-              //       size: 18,
-              //     ),
-              //   ),
-              // ),
-            ],
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                spacing: 10,
+                children: [
+                  isDestination
+                      ? Image.asset(
+                          AppImages.redLocationIcon,
+                          width: 48,
+                          height: 48,
+                        )
+                      : Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColorTheme().white,
+                            border: Border.all(
+                              width: 5,
+                              color: AppColorTheme().red2,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              _state.nextTargetIndex.toString(),
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                  Expanded(
+                    child: Column(
+                      spacing: 2,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _state
+                                  .locationPoints?[_state.nextTargetIndex]
+                                  .title ??
+                              '',
+                          style: AppTextTheme().subHeadingText.copyWith(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          _state
+                                  .locationPoints?[_state.nextTargetIndex]
+                                  .subTitle ??
+                              '',
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextTheme().subHeadingText.copyWith(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: Color(0xff888BA1),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // GestureDetector(
+                  //   onTap: () {
+                  //     // cancelNavigation();
+                  //   },
+                  //   child: CircleAvatar(
+                  //     radius: 25,
+                  //     backgroundColor: AppColorTheme().whiteShade,
+                  //     child: const Icon(
+                  //       Icons.arrow_back_ios,
+                  //       color: Colors.black,
+                  //       size: 18,
+                  //     ),
+                  //   ),
+                  // ),
+                ],
+              );
+            },
           ),
           20.h,
           DashedLine(),

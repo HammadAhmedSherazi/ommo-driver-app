@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io';
 import 'dart:math' as m;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -405,30 +406,33 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
           if (state.isNavigating) {
             _visualNavigator?.onLocationUpdated(location);
             _navigator?.onLocationUpdated(location);
-
-            if ((state.locationPoints ?? []).length > 2) {
-              final hasAfterNext =
-                  state.nextTargetIndex < (state.locationPoints!.length - 1);
-              if (!hasAfterNext) return;
-              final GeoCoordinates? nextStop =
-                  state.locationPoints?[state.nextTargetIndex].geoCoordinates;
-              if (nextStop == null) return;
-              final double stopDistance = calculateDistanceInMeters(
-                nextStop.latitude,
-                nextStop.longitude,
-                coords.latitude,
-                coords.longitude,
-              );
-              if (stopDistance < 40) {
-                final _nextTargetIndex = state.nextTargetIndex + 1;
-                emit(state.copyWith(nextTargetIndex: _nextTargetIndex));
-              }
-            }
+            checkNextTarget(coords);
           }
         }),
       );
 
       _locationEngine?.startWithLocationAccuracy(LocationAccuracy.navigation);
+    }
+  }
+
+  void checkNextTarget(GeoCoordinates coords) {
+    if ((state.locationPoints ?? []).length > 2) {
+      final hasAfterNext =
+          state.nextTargetIndex < (state.locationPoints!.length - 1);
+      if (!hasAfterNext) return;
+      final GeoCoordinates? nextStop =
+          state.locationPoints?[state.nextTargetIndex].geoCoordinates;
+      if (nextStop == null) return;
+      final double stopDistance = calculateDistanceInMeters(
+        nextStop.latitude,
+        nextStop.longitude,
+        coords.latitude,
+        coords.longitude,
+      );
+      if (stopDistance < 40) {
+        final _nextTargetIndex = state.nextTargetIndex + 1;
+        emit(state.copyWith(nextTargetIndex: _nextTargetIndex));
+      }
     }
   }
 
@@ -882,6 +886,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
       final route = routes.first;
       _showRouteOnMap(route);
+      refreshStopAndDestinationMarker();
       _processTruckRestrictionWarnings(route);
       emit(state.copyWith(currentRoute: route, hasDirection: true));
     });
@@ -1056,11 +1061,16 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _visualNavigator?.startRendering(state.mapController!);
     setupTruckRestrictionWarnings();
     setupManeuverUpdates();
+
     if (AppKeys().isSimulation) {
       _locationEngine?.stop();
 
       emit(
-        state.copyWith(isNavigating: true, cameraControlledByNavigator: true),
+        state.copyWith(
+          isNavigating: true,
+          nextTargetIndex: 1,
+          cameraControlledByNavigator: true,
+        ),
       );
       _simulator = HEREPositioningSimulator();
 
@@ -1068,7 +1078,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         Location location,
       ) {
         _navigator?.onLocationUpdated(location);
+        checkNextTarget(location.coordinates);
       });
+
       _simulator?.startLocating(
         _visualNavigator!,
         navigatorForwarder,
@@ -1309,6 +1321,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   void selectRecentAsDestination(RecentSearchModel recent) {
+    if (recent.isBussiness) {
+      _handleRecentBusinessPlaceForDestination(recent);
+      return;
+    }
+
     final GeoCoordinates geoCoordinates = GeoCoordinates(
       recent.latitude,
       recent.longitude,
@@ -1339,7 +1356,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     setDestinationMarker();
   }
 
-  void setDestinationMarker({final hasFocus = true}) {
+  void setDestinationMarker({
+    final hasFocus = true,
+    bool hasDestinationConfirmed = false,
+  }) async {
     final LocationPoint? destinationPoint = state.locationPoints?.lastOrNull;
     if (destinationPoint == null) return;
     // Add destination marker
@@ -1348,19 +1368,43 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       _destinationMarker = null;
     }
 
-    MapImage destIcon = MapImage.withFilePathAndWidthAndHeight(
-      AppImages.greenMapPin,
-      60,
-      100,
-    );
+    MapImage? destIcon;
+
+    if (hasDestinationConfirmed) {
+      final units = await assetToFile(AppImages.redLocationIcon);
+      if (units == null) return;
+
+      destIcon = MapImage.withImageDataImageFormatWidthAndHeight(
+        units,
+        ImageFormat.png,
+        80,
+        110,
+      );
+    } else {
+      destIcon = MapImage.withFilePathAndWidthAndHeight(
+        AppImages.greenMapPin,
+        60,
+        100,
+      );
+    }
 
     _destinationMarker = MapMarker(destinationPoint.geoCoordinates!, destIcon);
-    state.mapController?.mapScene.addMapMarker(_destinationMarker!);
 
     // 👇 THIS FIXES THE JUMPING & OFFSET
     _destinationMarker!.anchor = Anchor2D.withHorizontalAndVertical(0.5, 1.0);
 
+    state.mapController?.mapScene.addMapMarker(_destinationMarker!);
     if (hasFocus) focusDestinationWithOffset(destinationPoint.geoCoordinates!);
+  }
+
+  Future<Uint8List?> assetToFile(String assetPath) async {
+    try {
+      final data = await rootBundle.load(assetPath);
+      final bytes = data.buffer.asUint8List();
+      return bytes;
+    } catch (e) {
+      return null;
+    }
   }
 
   clearAllStopMarker() {
@@ -1384,7 +1428,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     for (var i = 0; i < (state.locationPoints ?? []).length; i++) {
       if (i == 0) continue;
       if (i == state.locationPoints!.length - 1) {
-        setDestinationMarker();
+        setDestinationMarker(hasDestinationConfirmed: true);
         continue;
       }
       await addStopMakerAt(i, hasFocus: false);
@@ -1568,6 +1612,110 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
   }
 
+  void _handleRecentBusinessPlaceForDestination(RecentSearchModel recent) {
+    // Emit loading state
+    emit(
+      state.copyWith(
+        hasTapDestination: true,
+        destinationCoordinates: recent.geoCoordinates,
+        tappedPlace: FutureData<Place>.loading(),
+      ),
+    );
+
+    // Add destination marker
+    if (_destinationMarker != null) {
+      state.mapController?.mapScene.removeMapMarker(_destinationMarker!);
+      _destinationMarker = null;
+    }
+
+    MapImage destIcon = MapImage.withFilePathAndWidthAndHeight(
+      AppImages.greenMapPin,
+      60,
+      100,
+    );
+
+    _destinationMarker = MapMarker(recent.geoCoordinates, destIcon);
+    state.mapController?.mapScene.addMapMarker(_destinationMarker!);
+    _destinationMarker!.anchor = Anchor2D.withHorizontalAndVertical(0.5, 1.0);
+
+    // Search by text using the POI name to get the actual POI place
+    // This ensures we get the POI instead of an address
+    final SearchOptions options = SearchOptions()
+      ..languageCode = LanguageCode.enUs
+      ..maxItems = 10; // Get more results to find the matching POI
+
+    TextQueryArea queryArea = TextQueryArea.withCenter(recent.geoCoordinates);
+
+    _searchEngine.suggestByText(
+      TextQuery.withArea(recent.title, queryArea),
+      options,
+      (SearchError? error, List<Suggestion>? suggestions) {
+        if (error != null) {
+          log("Search by text failed: $error");
+          // Fallback to reverse geocoding
+          _reverseGeocodeDestination(recent.geoCoordinates);
+          return;
+        }
+
+        if (suggestions == null || suggestions.isEmpty) {
+          // Fallback to reverse geocoding
+          _reverseGeocodeDestination(recent.geoCoordinates);
+          return;
+        }
+
+        // Find the suggestion that matches the coordinates and has a place
+        Place? foundPlace;
+        for (final suggestion in suggestions) {
+          if (suggestion.place != null) {
+            final place = suggestion.place!;
+            // Check if coordinates are available and close (within ~100m)
+            if (place.geoCoordinates != null) {
+              final distance = recent.geoCoordinates.distanceTo(
+                place.geoCoordinates!,
+              );
+              if (distance < 100) {
+                // Also check if it's a POI (not an address)
+                if (place.placeType == PlaceType.poi) {
+                  foundPlace = place;
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        // If we found a matching POI, use it; otherwise fallback to reverse geocoding
+        if (foundPlace != null) {
+          final List<LocationPoint> _list = [];
+          if (state.currentPlace?.data != null) {
+            _list.add(
+              LocationPoint(
+                place: state.currentPlace!.data!,
+                isMyLocation: true,
+                pointType: LocationPointType.starting,
+              ),
+            );
+          }
+          _list.add(
+            LocationPoint(
+              place: foundPlace,
+              pointType: LocationPointType.destination,
+            ),
+          );
+          emit(
+            state.copyWith(
+              locationPoints: _list,
+              tappedPlace: FutureData.completed(foundPlace),
+            ),
+          );
+        } else {
+          // Fallback to reverse geocoding if no matching POI found
+          _reverseGeocodeDestination(recent.geoCoordinates);
+        }
+      },
+    );
+  }
+
   void _reverseGeocodeDestination(GeoCoordinates coords) {
     final SearchOptions options = SearchOptions()
       ..languageCode = LanguageCode.enUs
@@ -1650,7 +1798,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _list.insert(newIndex, removed);
     emit(state.copyWith(locationPoints: _list));
     calculateRoute();
-    await refreshStopAndDestinationMarker();
+    // await refreshStopAndDestinationMarker();
   }
 
   void addStop(dynamic place) {
@@ -1685,7 +1833,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _list.insert(addIndex, item);
     emit(state.copyWith(locationPoints: _list));
     // addStopMakerAt(addIndex);
-    refreshStopAndDestinationMarker();
+    // refreshStopAndDestinationMarker();
     calculateRoute();
   }
 

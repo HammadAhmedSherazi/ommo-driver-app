@@ -240,7 +240,7 @@ class TruckNavigationStaticDetails {
     MapViewModel(
       label: "Satellite",
       icon: AppImages.satelliteMapImg,
-      scheme: MapScheme.satellite,
+      scheme: MapScheme.hybridDay,
     ),
     // MapViewModel(label: "Hybrid", icon: AppImages.satelliteMapImg, scheme: MapScheme.hybridDay),
   ];

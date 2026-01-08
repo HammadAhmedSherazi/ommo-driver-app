@@ -7,7 +7,7 @@ class AppImages {
 
   static const String defaultMapImg = "${imagePath}default_map_img.png";
   static const String redMapPin = "${imagePath}red_map_pin.png";
-  static const String redLocationIcon = "${imagePath}Map pin.png";
+  static const String redLocationIcon = "${imagePath}destination_pin (2).png";
   static const String greenMarker = "${imagePath}green_marker.png";
   static const String greenMapPin = "${imagePath}green_map_pin.png";
   static const String satelliteMapImg = "${imagePath}satellite_map_img.png";
