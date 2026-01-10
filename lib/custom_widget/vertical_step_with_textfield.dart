@@ -6,6 +6,7 @@ class VerticalStepWithTextField extends StatefulWidget {
   final VoidCallback removeFieldTap;
   final VoidCallback? onDestinationFieldTap;
   final List<bool> readOnly;
+  final int autoFocusIndex;
 
   const VerticalStepWithTextField({
     super.key,
@@ -14,6 +15,7 @@ class VerticalStepWithTextField extends StatefulWidget {
     required this.textControllers,
     required this.removeFieldTap,
     required this.focusNode,
+    this.autoFocusIndex = -1,
   });
 
   @override
@@ -119,7 +121,7 @@ class _VerticalStepWithTextFieldState extends State<VerticalStepWithTextField> {
                 focusNode: widget.focusNode[index],
                 controller: widget.textControllers[index],
                 onTap: widget.onDestinationFieldTap,
-
+                autoFocus: widget.autoFocusIndex == index,
                 readOnly: widget.readOnly[index],
                 hintText: "Enter a location",
               );

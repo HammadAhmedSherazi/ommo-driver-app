@@ -116,6 +116,7 @@ class _TripDestinationWidgetState extends State<TripDestinationWidget> {
                   child: ReorderableListView.builder(
                     itemCount: points.length,
                     shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
                     padding: EdgeInsets.zero,
                     cacheExtent: 45,
                     itemExtent: 45,
@@ -143,8 +144,8 @@ class _TripDestinationWidgetState extends State<TripDestinationWidget> {
                                   },
                                 ),
                                 onLongPress: () {
-                                  if (isFirst || isLast || points.length <= 2)
-                                    return;
+                                  // if (isFirst || isLast || points.length <= 2)
+                                  if (points.length <= 2) return;
                                   showDeleteDialog(
                                     context,
                                     isFirst: isFirst,

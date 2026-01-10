@@ -62,7 +62,6 @@ class _CreateTripViewState extends State<CreateTripView> {
     // Set initial start point
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _cubit.setInitialStartPoint();
-      destinationFocus.requestFocus();
     });
   }
 
@@ -72,6 +71,7 @@ class _CreateTripViewState extends State<CreateTripView> {
     destinationController.dispose();
     startFocus.dispose();
     destinationFocus.dispose();
+
     super.dispose();
   }
 
@@ -96,9 +96,12 @@ class _CreateTripViewState extends State<CreateTripView> {
                 focusNode: [startFocus, destinationFocus],
                 removeFieldTap: () {},
                 readOnly: [false, false],
+                autoFocusIndex: 1,
               ),
               SizedBox(height: 20),
-              buildContent(context),
+              Expanded(
+                child: SingleChildScrollView(child: buildContent(context)),
+              ),
             ],
           ),
         ),
@@ -183,8 +186,11 @@ class _CreateTripViewState extends State<CreateTripView> {
         return Column(
           children: [
             if (state.showYourLocationTab) ...[
-              GestureDetector(
-                onTap: cubit.selectCurrentAsStartingPlace,
+              InkWell(
+                onTap: () {
+                  startController.text = "Your Location";
+                  cubit.selectCurrentAsStartingPlace();
+                },
                 child: Row(
                   children: [
                     CircleAvatar(

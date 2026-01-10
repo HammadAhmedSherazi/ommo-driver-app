@@ -27,6 +27,7 @@ import 'package:ommo/map_sdk/HEREPositioningSimulator.dart';
 import 'package:ommo/models/location_point_model.dart';
 import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 import 'package:ommo/utils/constants/constants.dart';
+import 'package:ommo/utils/extension/place_extension.dart';
 import 'package:ommo/utils/extension/recent_search_model_extension.dart';
 import 'package:ommo/utils/generics/generics.dart';
 import 'package:ommo/utils/snacks/snackbar_utils.dart';
@@ -763,11 +764,25 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     return [];
   }
 
-  void setDestinationCoordinate(Suggestion suggestion) {
+  void selectSuggestionAsDestination(Suggestion suggestion) {
+    if (suggestion.place?.isBusiness == true) {
+      searchBusinessDetailsByPlaceId(
+        suggestion.place?.id,
+        (place) => setDestination(place, suggestion),
+        (e) => setDestination(suggestion.place, suggestion),
+      );
+    } else {
+      setDestination(suggestion.place, suggestion);
+    }
+  }
+
+  void setDestination(Place? place, Suggestion suggestion) {
+    if (place == null) return;
     final destinationPoint = LocationPoint(
-      place: suggestion.place!,
+      place: place,
       pointType: LocationPointType.destination,
     );
+
     final List<LocationPoint> _list = [];
     _list.add(
       LocationPoint(
@@ -781,10 +796,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     emit(
       state.copyWith(
         selectedSuggestion: suggestion,
-        destinationCoordinates: suggestion.place?.geoCoordinates,
+        destinationCoordinates: place.geoCoordinates,
         locationPoints: _list,
         hasTapDestination: true,
-        tappedPlace: FutureData<Place>.completed(suggestion.place),
+        tappedPlace: FutureData<Place>.completed(place),
       ),
     );
     setDestinationMarker();
@@ -1170,6 +1185,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         destinationCoordinates: removeDestination ? 'null' : null,
         currentRoute: 'null',
         hasDirection: false,
+        tappedPlace: 'null',
         nextTargetIndex: 1,
         isNavigating: false,
         destinationFromRecent: 'null',
@@ -1509,107 +1525,111 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   void _handlePickedPlaceForDestination(PickedPlace pickedPlace) {
-    // Emit loading state
-    emit(
-      state.copyWith(
-        hasTapDestination: true,
-        destinationCoordinates: pickedPlace.coordinates,
-        tappedPlace: FutureData<Place>.loading(),
-      ),
-    );
+    try {
+      // Emit loading state
+      emit(
+        state.copyWith(
+          hasTapDestination: true,
+          destinationCoordinates: pickedPlace.coordinates,
+          tappedPlace: FutureData<Place>.loading(),
+        ),
+      );
 
-    // Add destination marker
-    if (_destinationMarker != null) {
-      state.mapController?.mapScene.removeMapMarker(_destinationMarker!);
-      _destinationMarker = null;
-    }
+      // Search by text using the POI name to get the actual POI place
+      // This ensures we get the POI instead of an address
+      final SearchOptions options = SearchOptions()
+        ..languageCode = LanguageCode.enUs
+        ..maxItems = 10; // Get more results to find the matching POI
 
-    MapImage destIcon = MapImage.withFilePathAndWidthAndHeight(
-      AppImages.greenMapPin,
-      60,
-      100,
-    );
+      TextQueryArea queryArea = TextQueryArea.withCenter(
+        pickedPlace.coordinates,
+      );
 
-    _destinationMarker = MapMarker(pickedPlace.coordinates, destIcon);
-    state.mapController?.mapScene.addMapMarker(_destinationMarker!);
-    _destinationMarker!.anchor = Anchor2D.withHorizontalAndVertical(0.5, 1.0);
+      _searchEngine.suggestByText(
+        TextQuery.withArea(pickedPlace.name, queryArea),
+        options,
+        (SearchError? error, List<Suggestion>? suggestions) {
+          if (error != null) {
+            log("Search by text failed: $error");
+            // Fallback to reverse geocoding
+            _reverseGeocodeDestination(pickedPlace.coordinates);
+            return;
+          }
 
-    // Search by text using the POI name to get the actual POI place
-    // This ensures we get the POI instead of an address
-    final SearchOptions options = SearchOptions()
-      ..languageCode = LanguageCode.enUs
-      ..maxItems = 10; // Get more results to find the matching POI
+          if (suggestions == null || suggestions.isEmpty) {
+            // Fallback to reverse geocoding
+            _reverseGeocodeDestination(pickedPlace.coordinates);
+            return;
+          }
 
-    TextQueryArea queryArea = TextQueryArea.withCenter(pickedPlace.coordinates);
-
-    _searchEngine.suggestByText(
-      TextQuery.withArea(pickedPlace.name, queryArea),
-      options,
-      (SearchError? error, List<Suggestion>? suggestions) {
-        if (error != null) {
-          log("Search by text failed: $error");
-          // Fallback to reverse geocoding
-          _reverseGeocodeDestination(pickedPlace.coordinates);
-          return;
-        }
-
-        if (suggestions == null || suggestions.isEmpty) {
-          // Fallback to reverse geocoding
-          _reverseGeocodeDestination(pickedPlace.coordinates);
-          return;
-        }
-
-        // Find the suggestion that matches the coordinates and has a place
-        Place? foundPlace;
-        for (final suggestion in suggestions) {
-          if (suggestion.place != null) {
-            final place = suggestion.place!;
-            // Check if coordinates are available and close (within ~100m)
-            if (place.geoCoordinates != null) {
-              final distance = pickedPlace.coordinates.distanceTo(
-                place.geoCoordinates!,
-              );
-              if (distance < 100) {
-                // Also check if it's a POI (not an address)
-                if (place.placeType == PlaceType.poi) {
-                  foundPlace = place;
-                  break;
+          // Find the suggestion that matches the coordinates and has a place
+          Place? foundPlace;
+          for (final suggestion in suggestions) {
+            if (suggestion.place != null) {
+              final place = suggestion.place!;
+              // Check if coordinates are available and close (within ~100m)
+              if (place.geoCoordinates != null) {
+                final distance = pickedPlace.coordinates.distanceTo(
+                  place.geoCoordinates!,
+                );
+                if (distance < 100) {
+                  // Also check if it's a POI (not an address)
+                  if (place.placeType == PlaceType.poi) {
+                    foundPlace = place;
+                    break;
+                  }
                 }
               }
             }
           }
-        }
 
-        // If we found a matching POI, use it; otherwise fallback to reverse geocoding
-        if (foundPlace != null) {
-          final List<LocationPoint> _list = [];
-          if (state.currentPlace?.data != null) {
-            _list.add(
-              LocationPoint(
-                place: state.currentPlace!.data!,
-                isMyLocation: true,
-                pointType: LocationPointType.starting,
-              ),
-            );
+          // If we found a matching POI, use it; otherwise fallback to reverse geocoding
+          if (foundPlace != null) {
+            if (foundPlace.isBusiness) {
+              searchBusinessDetailsByPlaceId(
+                foundPlace.id,
+                (p) => onPickedPlaceFound(p),
+                (error) => onPickedPlaceFound(foundPlace),
+              );
+            } else {
+              onPickedPlaceFound(foundPlace);
+            }
+          } else {
+            // Fallback to reverse geocoding if no matching POI found
+            _reverseGeocodeDestination(pickedPlace.coordinates);
           }
-          _list.add(
-            LocationPoint(
-              place: foundPlace,
-              pointType: LocationPointType.destination,
-            ),
-          );
-          emit(
-            state.copyWith(
-              locationPoints: _list,
-              tappedPlace: FutureData.completed(foundPlace),
-            ),
-          );
-        } else {
-          // Fallback to reverse geocoding if no matching POI found
-          _reverseGeocodeDestination(pickedPlace.coordinates);
-        }
-      },
+        },
+      );
+    } catch (e) {
+      log(e.toString());
+    }
+  }
+
+  void onPickedPlaceFound(Place? foundPlace) {
+    if (foundPlace == null) return;
+    final List<LocationPoint> _list = [];
+    if (state.currentPlace?.data != null) {
+      _list.add(
+        LocationPoint(
+          place: state.currentPlace!.data!,
+          isMyLocation: true,
+          pointType: LocationPointType.starting,
+        ),
+      );
+    }
+    _list.add(
+      LocationPoint(
+        place: foundPlace,
+        pointType: LocationPointType.destination,
+      ),
     );
+    emit(
+      state.copyWith(
+        locationPoints: _list,
+        tappedPlace: FutureData.completed(foundPlace),
+      ),
+    );
+    setDestinationMarker();
   }
 
   void _handleRecentBusinessPlaceForDestination(RecentSearchModel recent) {
@@ -1621,22 +1641,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         tappedPlace: FutureData<Place>.loading(),
       ),
     );
-
-    // Add destination marker
-    if (_destinationMarker != null) {
-      state.mapController?.mapScene.removeMapMarker(_destinationMarker!);
-      _destinationMarker = null;
-    }
-
-    MapImage destIcon = MapImage.withFilePathAndWidthAndHeight(
-      AppImages.greenMapPin,
-      60,
-      100,
-    );
-
-    _destinationMarker = MapMarker(recent.geoCoordinates, destIcon);
-    state.mapController?.mapScene.addMapMarker(_destinationMarker!);
-    _destinationMarker!.anchor = Anchor2D.withHorizontalAndVertical(0.5, 1.0);
 
     // Search by text using the POI name to get the actual POI place
     // This ensures we get the POI instead of an address
@@ -1686,28 +1690,15 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
         // If we found a matching POI, use it; otherwise fallback to reverse geocoding
         if (foundPlace != null) {
-          final List<LocationPoint> _list = [];
-          if (state.currentPlace?.data != null) {
-            _list.add(
-              LocationPoint(
-                place: state.currentPlace!.data!,
-                isMyLocation: true,
-                pointType: LocationPointType.starting,
-              ),
+          if (foundPlace.isBusiness) {
+            searchBusinessDetailsByPlaceId(
+              foundPlace.id,
+              (p) => onPickedPlaceFound(p),
+              (error) => onPickedPlaceFound(foundPlace),
             );
+          } else {
+            onPickedPlaceFound(foundPlace);
           }
-          _list.add(
-            LocationPoint(
-              place: foundPlace,
-              pointType: LocationPointType.destination,
-            ),
-          );
-          emit(
-            state.copyWith(
-              locationPoints: _list,
-              tappedPlace: FutureData.completed(foundPlace),
-            ),
-          );
         } else {
           // Fallback to reverse geocoding if no matching POI found
           _reverseGeocodeDestination(recent.geoCoordinates);
@@ -1864,11 +1855,25 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     final List<LocationPoint> _list = List.from(state.locationPoints ?? []);
     if (_list.isEmpty) return;
     if (_list.length <= 2) return;
-    if (index == 0) return;
-    if (index >= (state.locationPoints?.length ?? 0) - 1) return;
+    // if (index == 0) return;
+    // if (index >= (state.locationPoints?.length ?? 0) - 1) return;
     _list.removeAt(index);
     emit(state.copyWith(locationPoints: _list));
     clearStopMarkerAt(index);
     calculateRoute();
+  }
+
+  void searchBusinessDetailsByPlaceId(
+    placeId,
+    Function(Place? place) onSuccess,
+    Function(String? error) onError,
+  ) {
+    _searchEngine.searchByPlaceId(PlaceIdQuery(placeId), LanguageCode.enUs, (
+      error,
+      place,
+    ) {
+      if (error != null) onError(error.name);
+      onSuccess(place);
+    });
   }
 }

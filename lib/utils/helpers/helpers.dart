@@ -107,12 +107,14 @@ class Helpers {
       clipBehavior: Clip.none,
       isScrollControlled: true,
       showDragHandle: true,
+      useSafeArea: true,
       barrierColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => Padding(
         padding: EdgeInsets.only(
+          top: 20,
           bottom: MediaQuery.of(
             context,
           ).viewInsets.bottom, // moves up with keyboard

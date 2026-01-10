@@ -90,6 +90,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
       vsync: this,
     );
 
+    sheetScrollController.addListener(_handleSheetChange);
+
     textController.add(searchTextEditController);
     focusNode.add(FocusNode());
     searchFieldFocusNode.addListener(() {
@@ -122,9 +124,20 @@ class _HomeMobileViewState extends State<HomeMobileView>
     });
   }
 
+  void _handleSheetChange() {
+    // sheet size ranges from minChildSize → maxChildSize
+    final double size = sheetScrollController.size;
+
+    // When sheet is almost minimized
+    if (size <= 0.26) {
+      // adjust threshold if needed
+      FocusManager.instance.primaryFocus?.unfocus();
+    }
+  }
+
   makeHalfBottomSheet() {
     sheetScrollController.animateTo(
-      0.95,
+      0.55,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
     );
@@ -144,6 +157,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
     );
+    searchFieldFocusNode.unfocus();
   }
 
   _setDirectionIcon(int index) {
@@ -369,10 +383,10 @@ class _HomeMobileViewState extends State<HomeMobileView>
       ValueListenableBuilder(
         valueListenable: _selectedStation,
         builder: (context, selectedStation, child) {
-          if (hasDirection) {
-            return CustomDragableWidget(
-              scrollController: sheetScrollController,
-              childrens: [
+          return CustomDragableWidget(
+            scrollController: sheetScrollController,
+            childrens: [
+              if (hasDirection) ...[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -395,6 +409,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                             .read<TruckNavigationCubit>()
                             .clearCurrentRouteDetail();
                         searchTextEditController.clear();
+                        // searchFieldFocusNode.unfocus();
                       },
                       icon: Icon(Icons.close, color: Colors.black),
                     ),
@@ -609,40 +624,35 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     ),
                   ),
                 ),
-              ],
-            );
-          } else if (hasTapDirection) {
-            return BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
-              buildWhen: (p, c) => p.tappedPlace != c.tappedPlace,
-              builder: (context, state) {
-                if (state.hasdestinationFromRecent) {
-                  return showTappedAddressDetails();
-                } else {
-                  return FutureDataBuilder(
-                    future: state.tappedPlace,
-                    loader: ClipRRect(
-                      borderRadius: BorderRadiusGeometry.circular(10),
-                      child: Shimmer(
-                        color: Colors.greenAccent,
-                        child: SizedBox(width: double.infinity, height: 80),
-                      ),
-                    ),
-                    onSuccess: (place) {
-                      if (place?.placeType == PlaceType.poi) {
-                        return showTappedBusinessDetails(place);
-                      } else {
-                        return showTappedAddressDetails();
-                      }
-                    },
-                  );
-                  // return showTappedBusinessDetails();
-                }
-              },
-            );
-          } else if (selectedStation != null) {
-            return CustomDragableWidget(
-              scrollController: sheetScrollController,
-              childrens: [
+              ] else if (hasTapDirection) ...[
+                BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+                  buildWhen: (p, c) => p.tappedPlace != c.tappedPlace,
+                  builder: (context, state) {
+                    if (state.hasdestinationFromRecent) {
+                      return showTappedAddressDetails();
+                    } else {
+                      return FutureDataBuilder(
+                        future: state.tappedPlace,
+                        loader: ClipRRect(
+                          borderRadius: BorderRadiusGeometry.circular(10),
+                          child: Shimmer(
+                            color: Colors.greenAccent,
+                            child: SizedBox(width: double.infinity, height: 80),
+                          ),
+                        ),
+                        onSuccess: (place) {
+                          if (place?.placeType == PlaceType.poi) {
+                            return showTappedBusinessDetails(place);
+                          } else {
+                            return showTappedAddressDetails();
+                          }
+                        },
+                      );
+                      // return showTappedBusinessDetails();
+                    }
+                  },
+                ),
+              ] else if (selectedStation != null) ...[
                 Row(
                   children: [
                     GestureDetector(
@@ -1036,12 +1046,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     ),
                   ),
                 ),
-              ],
-            );
-          } else {
-            return CustomDragableWidget(
-              scrollController: sheetScrollController,
-              childrens: [
+              ] else ...[
                 Row(
                   children: [
                     Expanded(
@@ -1087,31 +1092,16 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       width: 100,
                       child: CustomButtonWidget(
                         title: 'Trip',
-                        onPressed: () => Helpers.openBottomSheet(
-                          context: context,
-                          whenComplete: () {
-                            sheetScrollController.animateTo(
-                              0.34,
-                              duration: Durations.medium2,
-                              curve: Curves.bounceIn,
-                            );
-                          },
-                          child: CreateTripView(),
-                        ),
-                        // HomeUtils.openTripBottomSheet(
-                        //   context,
-                        //   onContinue: (destinationText) {
-                        //     if ((destinationText ?? '').isNotEmpty) {
-                        //       searchTextEditController.text =
-                        //           destinationText ?? "";
-                        //     }
-                        //     sheetScrollController.animateTo(
-                        //       0.34,
-                        //       duration: Durations.medium2,
-                        //       curve: Curves.bounceIn,
-                        //     );
-                        //   },
-                        // ),
+                        onPressed: () {
+                          Helpers.openBottomSheet(
+                            context: context,
+                            whenComplete: () {
+                              minimizeBottomSheet();
+                            },
+                            child: CreateTripView(),
+                          );
+                        },
+
                         radius: 50,
                         icon: Icon(Icons.directions, color: Colors.white),
                       ),
@@ -1526,7 +1516,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
 
                                           context
                                               .read<TruckNavigationCubit>()
-                                              .setDestinationCoordinate(item);
+                                              .selectSuggestionAsDestination(
+                                                item,
+                                              );
                                           context
                                               .read<RecentSearchCubit>()
                                               .addSearchFromPlace(item.place!);
@@ -1602,18 +1594,17 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   ),
                 ],
               ],
-            );
-          }
+            ],
+          );
         },
       ),
     ];
   }
 
   Widget showTappedAddressDetails() {
-    return CustomDragableWidget(
-      // scrollController: sheetScrollController,
-      initialSize: 0.34,
-      childrens: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Row(
           children: [
             GestureDetector(
@@ -1659,10 +1650,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
     final double? rating = place?.details.ratings.firstOrNull?.average;
     final int? ratingCount = place?.details.ratings.firstOrNull?.count;
 
-    return CustomDragableWidget(
-      // scrollController: sheetScrollController,
-      initialSize: 0.34,
-      childrens: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         // 15.h,
         ListTile(
           contentPadding: EdgeInsets.zero,

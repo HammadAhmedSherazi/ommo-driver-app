@@ -70,7 +70,7 @@ class TruckNavigationState extends Equatable {
     FutureData<List<Suggestion>>? destinationSuggestions,
     FutureData<List<Place>>? nearbyTruckStops,
     dynamic destinationCoordinates,
-    FutureData<Place>? tappedPlace,
+    dynamic tappedPlace,
     bool? hasdestinationFromRecent,
     dynamic currentRoute,
     bool? hasFocusedLocation,
@@ -106,7 +106,7 @@ class TruckNavigationState extends Equatable {
       destinationFromRecent: destinationFromRecent == 'null'
           ? null
           : (destinationFromRecent ?? this.destinationFromRecent),
-      tappedPlace: tappedPlace ?? this.tappedPlace,
+      tappedPlace: tappedPlace == 'null' ? null : tappedPlace ?? this.tappedPlace,
       currentRoute: currentRoute == 'null'
           ? null
           : (currentRoute ?? this.currentRoute),

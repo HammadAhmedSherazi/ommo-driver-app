@@ -14,9 +14,11 @@ class CustomTextfieldWidget extends StatefulWidget {
   final VoidCallback? onTap;
   final VoidCallback? onEditingComplete;
   final bool readOnly;
+  final bool autoFocus;
   const CustomTextfieldWidget({
     super.key,
     this.readOnly = false,
+    this.autoFocus = false,
     this.onEditingComplete,
 
     this.controller,
@@ -63,15 +65,13 @@ class _CustomTextfieldWidgetState extends State<CustomTextfieldWidget> {
     return IgnorePointer(
       ignoring: widget.readOnly,
       child: TextFormField(
-        onTapOutside:
-            widget.onTapOutside ??
-            (event) {
-              FocusScope.of(context).unfocus();
-            },
+        onTapOutside: widget.onTapOutside,
         onEditingComplete: () {
           FocusScope.of(context).unfocus();
           if (widget.onEditingComplete != null) widget.onEditingComplete!();
         },
+
+        autofocus: widget.autoFocus,
         onChanged: widget.onChanged,
         focusNode: widget.focusNode,
         onTap: widget.onTap,

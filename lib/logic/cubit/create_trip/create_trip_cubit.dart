@@ -42,16 +42,15 @@ class CreateTripCubit extends Cubit<CreateTripState> {
 
   void searchSuggestions(String query, bool isStart) {
     if (isStart) {
-      searchPlaces(
-        query,
-        (suggestions) => emit(state.copyWith(startSuggestions: suggestions)),
-      );
+      searchPlaces(query, (suggestions) {
+        if (!isClosed) emit(state.copyWith(startSuggestions: suggestions));
+      });
     } else {
-      searchPlaces(
-        query,
-        (suggestions) =>
-            emit(state.copyWith(destinationSuggestions: suggestions)),
-      );
+      searchPlaces(query, (suggestions) {
+        if (!isClosed) {
+          emit(state.copyWith(destinationSuggestions: suggestions));
+        }
+      });
     }
   }
 
@@ -74,6 +73,7 @@ class CreateTripCubit extends Cubit<CreateTripState> {
     emit(
       state.copyWith(
         hasStartFocus: hasFocus ? hasFocus : null,
+        showRecentTab: value.isEmpty,
         showYourLocationTab: hasFocus && value != "Your Location",
       ),
     );
@@ -81,7 +81,13 @@ class CreateTripCubit extends Cubit<CreateTripState> {
 
   void onDestinationFocusChanged(bool hasFocus, String value) {
     if (hasFocus) {
-      emit(state.copyWith(hasStartFocus: false, showYourLocationTab: false));
+      emit(
+        state.copyWith(
+          showRecentTab: value.isEmpty,
+          hasStartFocus: false,
+          showYourLocationTab: false,
+        ),
+      );
     }
     _debouncedSearch(value, false);
   }
@@ -91,7 +97,6 @@ class CreateTripCubit extends Cubit<CreateTripState> {
     emit(
       state.copyWith(
         startPoint: state.currentStartPoint,
-        
         showYourLocationTab: false,
       ),
     );
