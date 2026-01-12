@@ -15,6 +15,8 @@ class CreateTripState extends Equatable {
   final List<Suggestion> startSuggestions;
   final List<Suggestion> destinationSuggestions;
 
+  bool get isMyLocationSelected => startPoint == currentStartPoint;
+
   const CreateTripState({
     this.startPoint,
     this.destinationPoint,

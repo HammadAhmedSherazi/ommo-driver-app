@@ -42,6 +42,13 @@ class _CreateTripViewState extends State<CreateTripView> {
 
     // Focus listeners
     startFocus.addListener(() {
+      if (startFocus.hasFocus && _cubit.state.isMyLocationSelected) {
+        startController.clear();
+      }
+      if (!startFocus.hasFocus && _cubit.state.isMyLocationSelected) {
+        startController.text = 'Your Location';
+      }
+
       _cubit.onStartFocusChanged(startFocus.hasFocus, startController.text);
     });
     destinationFocus.addListener(() {
@@ -135,11 +142,14 @@ class _CreateTripViewState extends State<CreateTripView> {
                 if (state.hasStartFocus) {
                   if ((item.place?.formattedTitle ?? '').isNotEmpty) {
                     startController.text = item.place?.formattedTitle ?? '';
+
+                    destinationFocus.requestFocus();
                   }
                 } else {
                   if ((item.place?.formattedTitle ?? '').isNotEmpty) {
                     destinationController.text =
                         item.place?.formattedTitle ?? '';
+                    destinationFocus.unfocus();
                   }
                 }
               },
@@ -243,11 +253,13 @@ class _CreateTripViewState extends State<CreateTripView> {
                         if (state.hasStartFocus) {
                           if (searchHistory.formattedTitle.isNotEmpty) {
                             startController.text = searchHistory.formattedTitle;
+                            destinationFocus.requestFocus();
                           }
                         } else {
                           if (searchHistory.formattedTitle.isNotEmpty) {
                             destinationController.text =
                                 searchHistory.formattedTitle;
+                            destinationFocus.unfocus();
                           }
                         }
                         context

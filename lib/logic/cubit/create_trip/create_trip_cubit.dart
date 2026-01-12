@@ -74,7 +74,7 @@ class CreateTripCubit extends Cubit<CreateTripState> {
       state.copyWith(
         hasStartFocus: hasFocus ? hasFocus : null,
         showRecentTab: value.isEmpty,
-        showYourLocationTab: hasFocus && value != "Your Location",
+        showYourLocationTab: hasFocus && !state.isMyLocationSelected,
       ),
     );
   }
