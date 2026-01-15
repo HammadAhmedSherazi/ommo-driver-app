@@ -32,6 +32,7 @@ class TruckNavigationState extends Equatable {
   final FutureData<List<Place>>? categorySearchResults;
   final List<String>? availableBrands;
   final String? selectedBrand;
+  final Place? businessAtAddress;
 
   const TruckNavigationState({
     this.mapController,
@@ -57,6 +58,7 @@ class TruckNavigationState extends Equatable {
     this.categorySearchResults,
     this.availableBrands,
     this.selectedBrand,
+    this.businessAtAddress,
   });
 
   // GeoCoordinates? get destinationCoordinates =>
@@ -86,6 +88,7 @@ class TruckNavigationState extends Equatable {
     FutureData<List<Place>>? categorySearchResults,
     List<String>? availableBrands,
     String? selectedBrand,
+    dynamic businessAtAddress,
   }) {
     return TruckNavigationState(
       nextTargetIndex: nextTargetIndex ?? this.nextTargetIndex,
@@ -106,7 +109,9 @@ class TruckNavigationState extends Equatable {
       destinationFromRecent: destinationFromRecent == 'null'
           ? null
           : (destinationFromRecent ?? this.destinationFromRecent),
-      tappedPlace: tappedPlace == 'null' ? null : tappedPlace ?? this.tappedPlace,
+      tappedPlace: tappedPlace == 'null'
+          ? null
+          : tappedPlace ?? this.tappedPlace,
       currentRoute: currentRoute == 'null'
           ? null
           : (currentRoute ?? this.currentRoute),
@@ -121,9 +126,15 @@ class TruckNavigationState extends Equatable {
           cameraControlledByNavigator ?? this.cameraControlledByNavigator,
       hasDirection: hasDirection ?? this.hasDirection,
       hasTapDestination: hasTapDestination ?? this.hasTapDestination,
-      categorySearchResults: categorySearchResults ?? this.categorySearchResults,
+      categorySearchResults:
+          categorySearchResults ?? this.categorySearchResults,
       availableBrands: availableBrands ?? this.availableBrands,
-      selectedBrand: selectedBrand == 'null' ? null : (selectedBrand ?? this.selectedBrand),
+      selectedBrand: selectedBrand == 'null'
+          ? null
+          : (selectedBrand ?? this.selectedBrand),
+      businessAtAddress: businessAtAddress == "null"
+          ? null
+          : businessAtAddress ?? this.businessAtAddress,
     );
   }
 
@@ -149,5 +160,6 @@ class TruckNavigationState extends Equatable {
     categorySearchResults,
     availableBrands,
     selectedBrand,
+    businessAtAddress,
   ];
 }

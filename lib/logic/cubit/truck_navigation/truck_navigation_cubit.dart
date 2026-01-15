@@ -1,5 +1,4 @@
 import 'dart:developer';
-import 'dart:io';
 import 'dart:math' as m;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -768,15 +767,31 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     if (suggestion.place?.isBusiness == true) {
       searchBusinessDetailsByPlaceId(
         suggestion.place?.id,
-        (place) => setDestination(place, suggestion),
-        (e) => setDestination(suggestion.place, suggestion),
+        (place) => setDestination(place),
+        (e) => setDestination(suggestion.place),
       );
     } else {
-      setDestination(suggestion.place, suggestion);
+      setDestination(suggestion.place);
     }
   }
 
-  void setDestination(Place? place, Suggestion suggestion) {
+  void selectBusinessSuggestionAsDestination(Place place) {
+    try {
+      if (place.isBusiness == true) {
+        searchBusinessDetailsByPlaceId(
+          place.id,
+          (place) => setDestination(place),
+          (e) => setDestination(place),
+        );
+      } else {
+        setDestination(place);
+      }
+    } catch (e) {
+      print("bussiness suggestion error  $e");
+    }
+  }
+
+  void setDestination(Place? place) {
     if (place == null) return;
     final destinationPoint = LocationPoint(
       place: place,
@@ -795,14 +810,24 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     emit(
       state.copyWith(
-        selectedSuggestion: suggestion,
+        selectedSuggestion: 'null',
         destinationCoordinates: place.geoCoordinates,
         locationPoints: _list,
         hasTapDestination: true,
+        hasdestinationFromRecent: false,
         tappedPlace: FutureData<Place>.completed(place),
+        businessAtAddress: 'null',
       ),
     );
     setDestinationMarker();
+
+    // If it's an address (not a POI), search for businesses at that address
+    if (place.placeType != PlaceType.poi && place.geoCoordinates != null) {
+      _searchBusinessesAtAddress(place.geoCoordinates!);
+    } else {
+      // Clear businesses if it's already a POI
+      emit(state.copyWith(businessAtAddress: 'null'));
+    }
   }
 
   /// Set destination from a Place object (used for category search results)
@@ -828,6 +853,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         destinationCoordinates: place.geoCoordinates,
         locationPoints: _list,
         hasTapDestination: true,
+        businessAtAddress: 'null',
+
         tappedPlace: FutureData<Place>.completed(place),
       ),
     );
@@ -1189,6 +1216,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         nextTargetIndex: 1,
         isNavigating: false,
         destinationFromRecent: 'null',
+        businessAtAddress: 'null',
         hasdestinationFromRecent: false,
         locationPoints: [],
         hasTapDestination: false,
@@ -1369,6 +1397,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         destinationCoordinates: geoCoordinates,
       ),
     );
+    if (!recent.isBussiness) {
+      _searchBusinessesAtAddress(recent.geoCoordinates);
+    }
     setDestinationMarker();
   }
 
@@ -1775,8 +1806,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         destinationCoordinates: 'null',
         destinationFromRecent: 'null',
         selectedSuggestion: 'null',
-
         tappedPlace: FutureData<Place>.initial(),
+        businessAtAddress: 'null',
       ),
     );
   }
@@ -1874,6 +1905,23 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     ) {
       if (error != null) onError(error.name);
       onSuccess(place);
+    });
+  }
+
+  /// Search for businesses at a specific address/coordinates
+  void _searchBusinessesAtAddress(GeoCoordinates coordinates) {
+    final SearchOptions searchOptions = SearchOptions()
+      ..languageCode = LanguageCode.enUs
+      ..maxItems = 10;
+
+    _searchEngine.searchByCoordinates(coordinates, searchOptions, (
+      SearchError? error,
+      List<Place>? places,
+    ) {
+      final int bussinessIndex = places?.indexWhere((p) => p.isBusiness) ?? -1;
+      if (bussinessIndex != -1) {
+        emit(state.copyWith(businessAtAddress: places?[bussinessIndex]));
+      }
     });
   }
 }

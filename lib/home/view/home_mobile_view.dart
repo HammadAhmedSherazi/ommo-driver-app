@@ -1417,11 +1417,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                             context
                                 .read<TruckNavigationCubit>()
                                 .selectRecentAsDestination(searchHistory);
-                            sheetScrollController.animateTo(
-                              0.34,
-                              duration: Durations.medium2,
-                              curve: Curves.bounceIn,
-                            );
+                            makeHalfBottomSheet();
                           },
                         ),
                         // ListView(
@@ -1527,11 +1523,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                           //     .read<TruckNavigationCubit>()
                                           //     .confirmDestination();
 
-                                          sheetScrollController.animateTo(
-                                            0.34,
-                                            duration: Durations.medium2,
-                                            curve: Curves.bounceIn,
-                                          );
+                                          makeHalfBottomSheet();
                                           // context.read<MapCubit>().setDestinationCoordinate(item.place!.geoCoordinates!);
                                         },
                                         contentPadding: EdgeInsets.zero,
@@ -1631,6 +1623,58 @@ class _HomeMobileViewState extends State<HomeMobileView>
         20.h,
         DashedLine(color: Color(0xffEBEEF2)),
         20.h,
+        // Business suggestions at this address
+        BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+          buildWhen: (p, c) => p.businessAtAddress != c.businessAtAddress,
+          builder: (context, state) {
+            if (state.businessAtAddress == null) {
+              return SizedBox.shrink();
+            }
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    'Business suggestion',
+                    style: AppTextTheme().bodyText.copyWith(
+                      fontWeight: AppFontWeight.medium,
+                      fontSize: 14,
+                      color: AppColorTheme().grey,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                  onTap: () {
+                    context
+                        .read<TruckNavigationCubit>()
+                        .selectBusinessSuggestionAsDestination(
+                          state.businessAtAddress!,
+                        );
+                    context.read<RecentSearchCubit>().addSearchFromPlace(
+                      state.businessAtAddress!,
+                    );
+
+                    makeHalfBottomSheet();
+                  },
+                  leading: CircleAvatar(
+                    backgroundColor: AppColorTheme().primary.withValues(
+                      alpha: 0.52,
+                    ),
+                    radius: 20,
+                    child: Icon(Icons.store),
+                  ),
+                  title: state.businessAtAddress?.buildSuggestionTitleWidget(),
+                  subtitle: state.businessAtAddress
+                      ?.buildSuggestionSubtitleWidget(),
+                ),
+                20.h,
+              ],
+            );
+          },
+        ),
         simpleTextTileWithIcon(AppImages.bookmarkIcon, 'Saved Place'),
         16.h,
         simpleTextTileWithIcon(
