@@ -692,6 +692,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                   GestureDetector(
                                     onTap: () {
                                       _selectedStation.value = null;
+                                      context
+                                          .read<TruckNavigationCubit>()
+                                          .clearAllTruckStops();
                                     },
                                     child: CircleAvatar(
                                       radius: 25,
@@ -2448,9 +2451,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
 
       CustomDragableWidget(
         initialSize: 0.32,
-        miniSize: 0.32,
+        miniSize: 0.24,
         maxSize: 0.95,
-        snapSizes: [0.32, 0.55, 0.95],
+        snapSizes: [0.24, 0.32, 0.55, 0.95],
 
         bottomWidget: Padding(
           padding: EdgeInsets.all(20),

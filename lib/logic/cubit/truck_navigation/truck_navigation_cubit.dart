@@ -937,33 +937,35 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         _placeMarkers.remove(existingMarker);
       }
 
-      // Get first letter of brand
-      final brandLetter = brand.isNotEmpty ? brand[0] : '?';
-      final brandColor = _getBrandColor(brand);
+      if (isSelected) {
+        // Get first letter of brand
+        final brandLetter = brand.isNotEmpty ? brand[0] : '?';
+        final brandColor = _getBrandColor(brand);
 
-      // Create marker image with appropriate opacity
-      final markerImage = await _createBrandMarkerImage(
-        brandLetter,
-        brandColor,
-        opacity,
-      );
-      final marker = MapMarker(coordinates, markerImage);
+        // Create marker image with appropriate opacity
+        final markerImage = await _createBrandMarkerImage(
+          brandLetter,
+          brandColor,
+          opacity,
+        );
+        final marker = MapMarker(coordinates, markerImage);
 
-      // Set anchor point to bottom center of pin
-      marker.anchor = Anchor2D.withHorizontalAndVertical(0.5, 1.0);
+        // Set anchor point to bottom center of pin
+        marker.anchor = Anchor2D.withHorizontalAndVertical(0.5, 1.0);
 
-      // Add metadata for tap handling
-      final metadata = Metadata();
-      metadata.setString("place_id", place.id);
-      metadata.setString("place_title", place.title);
-      marker.metadata = metadata;
+        // Add metadata for tap handling
+        final metadata = Metadata();
+        metadata.setString("place_id", place.id);
+        metadata.setString("place_title", place.title);
+        marker.metadata = metadata;
 
-      mapController.mapScene.addMapMarker(marker);
-      _placeMarkers.add(marker);
-      _placeMarkersMap[place.id] = marker;
-      _markerBrandMap[place.id] = brand;
-      _placeDataMap[place.id] = place; // Store place data
-      markerCoordinates.add(coordinates);
+        mapController.mapScene.addMapMarker(marker);
+        _placeMarkers.add(marker);
+        _placeMarkersMap[place.id] = marker;
+        _markerBrandMap[place.id] = brand;
+        _placeDataMap[place.id] = place; // Store place data
+        markerCoordinates.add(coordinates);
+      }
     }
 
     // Zoom out to show all markers only on first load
@@ -1016,11 +1018,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       maxLng,
     );
 
-    // Use the larger distance and add 30% padding
+    // Use the larger distance and add more padding for better zoom out
     final maxDistance =
-        (latDistance > lngDistance ? latDistance : lngDistance) * 1.3;
+        (latDistance > lngDistance ? latDistance : lngDistance) * 10.0;
 
-    // Zoom to show all markers
+    // Zoom to show all markers with more zoom out
     final mapMeasure = MapMeasure(MapMeasureKind.distanceInMeters, maxDistance);
     mapController.camera.lookAtPointWithMeasure(center, mapMeasure);
   }
@@ -1051,6 +1053,18 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   void clearSelectedTruckStop() {
     emit(
       state.copyWith(
+        selectedTruckStop: 'null',
+        showBusinessOverviewModal: false,
+      ),
+    );
+  }
+
+  void clearAllTruckStops() {
+    _clearPlaceMarkers();
+    emit(
+      state.copyWith(
+        selectedBrands: [],
+        categorySearchResults: FutureData<List<Place>>.initial(),
         selectedTruckStop: 'null',
         showBusinessOverviewModal: false,
       ),
@@ -1272,15 +1286,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         isMyLocation: false,
       ),
     ];
-    _clearPlaceMarkers();
-    emit(
-      state.copyWith(
-        showBusinessOverviewModal: false,
-        selectedTruckStop: 'null',
-        selectedBrands: [],
-        categorySearchResults: FutureData<List<Place>>.initial(),
-      ),
-    );
+
+    clearAllTruckStops();
 
     createTrip(points);
   }
