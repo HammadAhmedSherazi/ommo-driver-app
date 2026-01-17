@@ -56,5 +56,16 @@ class AppColorTheme {
   Color get dark2 => const Color(0xFF828282);
   // transparent
   Color get transparent => const Color(0x00000000);
+  
+  
+  
+  // brand colors 
   Color get orange => const Color(0xFFFF9029);
+  Color get blue => const Color(0xFF4676F6);
+  Color get yellowLight => const Color(0xFFFFC300);
+  Color get red4 => const Color(0xFFD0082C);
+  
+
+
+
 }

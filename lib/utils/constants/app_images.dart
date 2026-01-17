@@ -27,4 +27,14 @@ class AppImages {
   static const String pointDragIcon = "${imagePath}si_drag-handle-duotone.png";
   static const String addCircle = "${imagePath}Frame.png";
   static const String blackPointPin = "${imagePath}black_map_pin.png";
+  
+  
+  
+  static const String loveLogo = "${imagePath}image 2.png";
+  static const String kwikTripLogo = "${imagePath}kwik_trip_icon.png";
+  static const String pilotLogo = "${imagePath}Circle.png";
+  static const String taPetroLogo = "${imagePath}ta_petro_icon.png";
+  
+
+  
 }

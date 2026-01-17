@@ -10,6 +10,7 @@ import 'package:here_sdk/mapview.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/custom_widget/future_data_builder.dart';
+import 'package:ommo/data/response/get_data.dart';
 import 'package:ommo/home/view/create_trip_view.dart';
 import 'package:ommo/home/view/home_app_bar.dart';
 import 'package:ommo/home/view/home_utils.dart';
@@ -116,6 +117,11 @@ class _HomeMobileViewState extends State<HomeMobileView>
               placeTypeName,
             );
           }
+          // When station is selected, ensure sheet is at most half
+          final currentSize = sheetScrollController.size;
+          if (currentSize > 0.55) {
+            makeHalfBottomSheet();
+          }
         } else {
           // Clear brands when place type is deselected
           context.read<TruckNavigationCubit>().clearBrandFilter();
@@ -201,6 +207,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
     );
   }
 
+  /// Show business overview in modal bottom sheet
   List<Widget> buildInitialUi(
     BuildContext context,
     bool hasDirection,
@@ -383,8 +390,12 @@ class _HomeMobileViewState extends State<HomeMobileView>
       ValueListenableBuilder(
         valueListenable: _selectedStation,
         builder: (context, selectedStation, child) {
+          // When station is selected, limit sheet to half (0.55) max
+          final bool isStationSelected = selectedStation != null;
           return CustomDragableWidget(
             scrollController: sheetScrollController,
+            maxSize: isStationSelected ? 0.55 : 0.95,
+            snapSizes: isStationSelected ? [0.26, 0.55] : [0.26, 0.55, 0.95],
             childrens: [
               if (hasDirection) ...[
                 Row(
@@ -653,398 +664,514 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   },
                 ),
               ] else if (selectedStation != null) ...[
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        _selectedStation.value = null;
-                      },
-                      child: CircleAvatar(
-                        radius: 25,
-                        backgroundColor: AppColorTheme().whiteShade,
-                        child: const Icon(
-                          Icons.arrow_back_ios,
-                          color: Colors.black,
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                    16.w,
-                    Expanded(
-                      child: SizedBox(
-                        height: context.screenHeight * 0.042,
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          scrollDirection: Axis.horizontal,
-
-                          itemCount:
-                              TruckNavigationStaticDetails.placeTypes.length,
-                          separatorBuilder: (_, i) => 8.w,
-                          itemBuilder: (_, i) => InkWell(
-                            onTap: () {
-                              _selectedStation.value =
-                                  TruckNavigationStaticDetails.placeTypes[i];
-                            },
-                            child: HomeUtils.placeTypeChip(
-                              TruckNavigationStaticDetails.placeTypes[i],
-                              isSelected:
-                                  selectedStation['name'] ==
-                                  TruckNavigationStaticDetails
-                                      .placeTypes[i]['name'],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                44.h,
-                // Dynamic brands from search results
                 BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
-                  buildWhen: (previous, current) =>
-                      previous.availableBrands != current.availableBrands ||
-                      previous.selectedBrand != current.selectedBrand,
+                  buildWhen: (p, c) =>
+                      p.showBusinessOverviewModal !=
+                      c.showBusinessOverviewModal,
                   builder: (context, state) {
-                    final brands = state.availableBrands ?? [];
-                    final selectedBrand = state.selectedBrand;
-
-                    if (brands.isEmpty) {
-                      return Center(child: Text('No brands found'));
-                    }
-
-                    // if (brands.isEmpty) {
-                    //   // Show static brands if no search results yet
-                    //   return Padding(
-                    //     padding: EdgeInsets.symmetric(
-                    //       horizontal: context.screenWidth * 0.026,
-                    //     ),
-                    //     child: Row(
-                    //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    //       children: List.generate(
-                    //         TruckNavigationStaticDetails.truckStops.length,
-                    //         (i) => Column(
-                    //           children: [
-                    //             CircleAvatar(
-                    //               radius: 12,
-                    //               backgroundImage: AssetImage(
-                    //                 TruckNavigationStaticDetails
-                    //                         .truckStops[i]['icon'] ??
-                    //                     '',
-                    //               ),
-                    //             ),
-                    //             8.h,
-                    //             Text(
-                    //               TruckNavigationStaticDetails
-                    //                       .truckStops[i]['name'] ??
-                    //                   '',
-                    //               style: AppTextTheme().lightText.copyWith(
-                    //                 color: const Color(0xFF000301),
-                    //                 height: 1.40,
-                    //               ),
-                    //             ),
-                    //           ],
-                    //         ),
-                    //       ),
-                    //     ),
-                    //   );
-                    // }
-
-                    // Show dynamic brands from search results
-                    return Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: context.screenWidth * 0.026,
-                      ),
-                      child: SizedBox(
-                        height: 70,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: brands.length,
-                          separatorBuilder: (_, __) => 12.w,
-                          itemBuilder: (context, index) {
-                            final brand = brands[index];
-                            final isSelected = selectedBrand == brand;
-
-                            return InkWell(
-                              onTap: () {
-                                context
-                                    .read<TruckNavigationCubit>()
-                                    .filterByBrand(isSelected ? null : brand);
-                              },
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: isSelected
-                                            ? AppColorTheme().primary
-                                            : Colors.grey.shade300,
-                                        width: isSelected ? 2 : 1,
-                                      ),
-                                      color: isSelected
-                                          ? AppColorTheme().primary.withOpacity(
-                                              0.1,
-                                            )
-                                          : Colors.grey.shade100,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        brand.length > 8
-                                            ? brand.substring(0, 8)
-                                            : brand,
-                                        style: AppTextTheme().bodyText.copyWith(
-                                          fontSize: 10,
-                                          fontWeight: isSelected
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
-                                          color: isSelected
-                                              ? AppColorTheme().primary
-                                              : Colors.black87,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
-                                  4.h,
-                                  SizedBox(
-                                    width: 60,
-                                    child: Text(
-                                      brand,
-                                      style: AppTextTheme().lightText.copyWith(
-                                        color: isSelected
-                                            ? AppColorTheme().primary
-                                            : const Color(0xFF000301),
-                                        height: 1.40,
-                                        fontSize: 10,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                40.h,
-                DefaultTabController(
-                  length: TruckNavigationStaticDetails.placeTypeTabOpt.length,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: context.screenWidth * 0.026,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: CustomTabBarWidget(
-                                options: TruckNavigationStaticDetails
-                                    .placeTypeTabOpt,
-                              ),
-                            ),
-                            10.w,
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(50),
-                                color: const Color(0xffF5F7F9),
-                              ),
-                              child: Row(
-                                children: [
-                                  Image.asset(
-                                    AppImages.filterIcon,
-                                    height: 24,
-                                    width: 24,
-                                  ),
-                                  Text(
-                                    "Filter",
-                                    style: AppTextTheme().bodyText.copyWith(
-                                      color: AppColorTheme().secondary,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        41.h,
-                        SizedBox(
-                          height: context.screenHeight * 0.6,
-                          child: TabBarView(
+                    return state.showBusinessOverviewModal
+                        ? showTappedBusinessDetails(
+                            state.selectedTruckStop,
+                            onBackPressed: () {
+                              context
+                                  .read<TruckNavigationCubit>()
+                                  .clearSelectedTruckStop();
+                            },
+                            onTripPressed: () {
+                              context
+                                  .read<TruckNavigationCubit>()
+                                  .calculateRouteWithBusinessOverview();
+                              _selectedStation.value = null;
+                            },
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Category search results
+                              Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      _selectedStation.value = null;
+                                    },
+                                    child: CircleAvatar(
+                                      radius: 25,
+                                      backgroundColor:
+                                          AppColorTheme().whiteShade,
+                                      child: const Icon(
+                                        Icons.arrow_back_ios,
+                                        color: Colors.black,
+                                        size: 18,
+                                      ),
+                                    ),
+                                  ),
+                                  16.w,
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: context.screenHeight * 0.042,
+                                      child: ListView.separated(
+                                        shrinkWrap: true,
+                                        scrollDirection: Axis.horizontal,
+
+                                        itemCount: TruckNavigationStaticDetails
+                                            .placeTypes
+                                            .length,
+                                        separatorBuilder: (_, i) => 8.w,
+                                        itemBuilder: (_, i) => InkWell(
+                                          onTap: () {
+                                            _selectedStation.value =
+                                                TruckNavigationStaticDetails
+                                                    .placeTypes[i];
+                                          },
+                                          child: HomeUtils.placeTypeChip(
+                                            TruckNavigationStaticDetails
+                                                .placeTypes[i],
+                                            isSelected:
+                                                selectedStation['name'] ==
+                                                TruckNavigationStaticDetails
+                                                    .placeTypes[i]['name'],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              15.h,
+                              // Dynamic brands from search results
                               BlocBuilder<
                                 TruckNavigationCubit,
                                 TruckNavigationState
                               >(
                                 buildWhen: (previous, current) =>
-                                    previous.categorySearchResults !=
-                                        current.categorySearchResults ||
-                                    previous.selectedBrand !=
-                                        current.selectedBrand,
+                                    previous.availableBrands !=
+                                        current.availableBrands ||
+                                    previous.selectedBrands !=
+                                        current.selectedBrands,
                                 builder: (context, state) {
-                                  return FutureDataBuilder<List<Place>>(
-                                    future: state.categorySearchResults,
-                                    onSuccess: (places) {
-                                      if (places == null || places.isEmpty) {
-                                        return Center(
-                                          child: Padding(
-                                            padding: EdgeInsets.all(20),
-                                            child: Text(
-                                              'No ${selectedStation['name'] ?? 'places'} found nearby',
-                                              style: AppTextTheme().bodyText
-                                                  .copyWith(
-                                                    color: AppColorTheme()
-                                                        .secondary,
-                                                  ),
-                                            ),
-                                          ),
-                                        );
-                                      }
+                                  final brands = state.availableBrands ?? [];
+                                  final selectedBrands =
+                                      state.selectedBrands ?? [];
 
-                                      // Filter places by selected brand (only if brand is selected)
-                                      final selectedBrand = state.selectedBrand;
-                                      List<Place> filteredPlaces = places;
+                                  if (brands.isEmpty) {
+                                    return SizedBox.shrink();
+                                  }
 
-                                      // Only filter if a brand is explicitly selected
-                                      // When selectedBrand is null, show all places
-                                      if (selectedBrand != null &&
-                                          selectedBrand.isNotEmpty) {
-                                        filteredPlaces = places.where((place) {
-                                          final title = place.title
-                                              .toLowerCase();
-                                          return title.contains(
-                                            selectedBrand.toLowerCase(),
-                                          );
-                                        }).toList();
+                                  // Helper function to get deterministic color from brand name
+                                  // Uses same colors as cubit for consistency
+                                  Color getBrandColor(String brand) {
+                                    // List of predefined brand colors from AppColorTheme
+                                    final brandColors = [
+                                      const Color(0xFFFF9029), // orange
+                                      const Color(0xFF4676F6), // blue
+                                      const Color(0xFFFFC300), // yellowLight
+                                      const Color(0xFFD0082C), // red4
+                                    ];
 
-                                        if (filteredPlaces.isEmpty) {
-                                          return Center(
-                                            child: Padding(
-                                              padding: EdgeInsets.all(20),
-                                              child: Text(
-                                                'No $selectedBrand locations found',
-                                                style: AppTextTheme().bodyText
-                                                    .copyWith(
-                                                      color: AppColorTheme()
-                                                          .secondary,
-                                                    ),
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      }
-                                      // If selectedBrand is null, filteredPlaces = places (all places shown)
+                                    // Use brand name hash to deterministically select a color
+                                    final hash = brand.hashCode;
+                                    final colorIndex =
+                                        hash.abs() % brandColors.length;
 
-                                      return ListView.builder(
-                                        physics: BouncingScrollPhysics(),
-                                        itemCount: filteredPlaces.length,
+                                    return brandColors[colorIndex];
+                                  }
+
+                                  // if (brands.isEmpty) {
+                                  //   // Show static brands if no search results yet
+                                  //   return Padding(
+                                  //     padding: EdgeInsets.symmetric(
+                                  //       horizontal: context.screenWidth * 0.026,
+                                  //     ),
+                                  //     child: Row(
+                                  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  //       children: List.generate(
+                                  //         TruckNavigationStaticDetails.truckStops.length,
+                                  //         (i) => Column(
+                                  //           children: [
+                                  //             CircleAvatar(
+                                  //               radius: 12,
+                                  //               backgroundImage: AssetImage(
+                                  //                 TruckNavigationStaticDetails
+                                  //                         .truckStops[i]['icon'] ??
+                                  //                     '',
+                                  //               ),
+                                  //             ),
+                                  //             8.h,
+                                  //             Text(
+                                  //               TruckNavigationStaticDetails
+                                  //                       .truckStops[i]['name'] ??
+                                  //                   '',
+                                  //               style: AppTextTheme().lightText.copyWith(
+                                  //                 color: const Color(0xFF000301),
+                                  //                 height: 1.40,
+                                  //               ),
+                                  //             ),
+                                  //           ],
+                                  //         ),
+                                  //       ),
+                                  //     ),
+                                  //   );
+                                  // }
+
+                                  // Show dynamic brands from search results
+                                  return Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: context.screenWidth * 0.026,
+                                    ),
+                                    child: SizedBox(
+                                      height: 50,
+                                      child: ListView.separated(
+                                        scrollDirection: Axis.horizontal,
+                                        itemCount: brands.length,
+                                        separatorBuilder: (_, __) => 12.w,
                                         itemBuilder: (context, index) {
-                                          final place = filteredPlaces[index];
-                                          return GestureDetector(
+                                          final brand = brands[index];
+                                          final isSelected = selectedBrands
+                                              .contains(brand);
+                                          final brandColor = getBrandColor(
+                                            brand,
+                                          );
+                                          final brandLetter = brand.isNotEmpty
+                                              ? brand[0].toUpperCase()
+                                              : '?';
+
+                                          return InkWell(
                                             onTap: () {
                                               context
                                                   .read<TruckNavigationCubit>()
-                                                  .setDestinationFromPlace(
-                                                    place,
-                                                  );
-                                              _selectedStation.value = null;
+                                                  .toggleBrand(brand);
                                             },
-                                            child: Padding(
-                                              padding: EdgeInsets.only(
-                                                bottom: 16,
-                                              ),
-                                              child: PlaceDisplayWidget(
-                                                place: place.toPlaceDataModel,
-                                                isSaved: false,
-                                              ),
+                                            child: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Container(
+                                                  width: 30,
+                                                  height: 30,
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(
+                                                      color: isSelected
+                                                          ? AppColorTheme()
+                                                                .primary
+                                                          : Colors.grey,
+                                                      width: isSelected ? 2 : 1,
+                                                    ),
+                                                    color: brandColor
+                                                        .withValues(
+                                                          alpha: isSelected
+                                                              ? 1
+                                                              : 0.5,
+                                                        ),
+                                                  ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      brandLetter,
+                                                      style: AppTextTheme()
+                                                          .bodyText
+                                                          .copyWith(
+                                                            fontSize: 18,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color: Colors.white,
+                                                          ),
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                    ),
+                                                  ),
+                                                ),
+                                                4.h,
+                                                SizedBox(
+                                                  width: 60,
+                                                  child: Text(
+                                                    brand,
+                                                    style: AppTextTheme()
+                                                        .lightText
+                                                        .copyWith(
+                                                          color: isSelected
+                                                              ? const Color(
+                                                                  0xFF000301,
+                                                                )
+                                                              : Colors.grey,
+                                                          height: 1.40,
+                                                          fontSize: 10,
+                                                        ),
+                                                    textAlign: TextAlign.center,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           );
                                         },
-                                      );
-                                    },
-                                    loader: Column(
-                                      spacing: 10,
-                                      children: List.generate(
-                                        3,
-                                        (i) => Padding(
-                                          padding: EdgeInsets.only(bottom: 16),
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                            child: Shimmer(
-                                              color: Colors.greenAccent,
-                                              child: SizedBox(
-                                                width: double.infinity,
-                                                height: 80,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
                                       ),
                                     ),
                                   );
                                 },
                               ),
-                              ListView.builder(
-                                physics: NeverScrollableScrollPhysics(),
-                                itemBuilder: (context, index) => GestureDetector(
-                                  // onTap: () {
-                                  //   setState(() {
-                                  //     searchTextEditController.text =
-                                  //         TruckNavigationStaticDetails
-                                  //             .placess[index]
-                                  //             .address;
-                                  //     place = TruckNavigationStaticDetails
-                                  //         .placess[index];
-                                  //   });
-                                  // },
-                                  child: PlaceDisplayWidget(
-                                    place: TruckNavigationStaticDetails
-                                        .placess[index],
-                                    isSaved: true,
+                              10.h,
+                              DefaultTabController(
+                                length: TruckNavigationStaticDetails
+                                    .placeTypeTabOpt
+                                    .length,
+                                child: Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: context.screenWidth * 0.026,
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: CustomTabBarWidget(
+                                              options:
+                                                  TruckNavigationStaticDetails
+                                                      .placeTypeTabOpt,
+                                            ),
+                                          ),
+                                          10.w,
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 8,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(50),
+                                              color: const Color(0xffF5F7F9),
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Image.asset(
+                                                  AppImages.filterIcon,
+                                                  height: 24,
+                                                  width: 24,
+                                                ),
+                                                Text(
+                                                  "Filter",
+                                                  style: AppTextTheme().bodyText
+                                                      .copyWith(
+                                                        color: AppColorTheme()
+                                                            .secondary,
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      41.h,
+                                      SizedBox(
+                                        height: context.screenHeight * 0.6,
+                                        child: TabBarView(
+                                          children: [
+                                            // Category search results
+                                            BlocBuilder<
+                                              TruckNavigationCubit,
+                                              TruckNavigationState
+                                            >(
+                                              buildWhen: (previous, current) =>
+                                                  previous.categorySearchResults !=
+                                                      current
+                                                          .categorySearchResults ||
+                                                  previous.selectedBrands !=
+                                                      current.selectedBrands,
+                                              builder: (context, state) {
+                                                return FutureDataBuilder<
+                                                  List<Place>
+                                                >(
+                                                  future: state
+                                                      .categorySearchResults,
+                                                  onSuccess: (places) {
+                                                    if (places == null ||
+                                                        places.isEmpty) {
+                                                      return Center(
+                                                        child: Padding(
+                                                          padding:
+                                                              EdgeInsets.all(
+                                                                20,
+                                                              ),
+                                                          child: Text(
+                                                            'No ${selectedStation['name'] ?? 'places'} found nearby',
+                                                            style: AppTextTheme()
+                                                                .bodyText
+                                                                .copyWith(
+                                                                  color: AppColorTheme()
+                                                                      .secondary,
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }
+
+                                                    // Filter places by selected brands
+                                                    final selectedBrands =
+                                                        state.selectedBrands ??
+                                                        [];
+                                                    List<Place> filteredPlaces =
+                                                        places;
+
+                                                    // Filter if brands are selected
+                                                    if (selectedBrands
+                                                        .isNotEmpty) {
+                                                      filteredPlaces = places.where((
+                                                        place,
+                                                      ) {
+                                                        final title = place
+                                                            .title
+                                                            .toLowerCase();
+                                                        // Check if place title contains any of the selected brands
+                                                        return selectedBrands.any(
+                                                          (
+                                                            brand,
+                                                          ) => title.contains(
+                                                            brand.toLowerCase(),
+                                                          ),
+                                                        );
+                                                      }).toList();
+
+                                                      if (filteredPlaces
+                                                          .isEmpty) {
+                                                        return Center(
+                                                          child: Padding(
+                                                            padding:
+                                                                EdgeInsets.all(
+                                                                  20,
+                                                                ),
+                                                            child: Text(
+                                                              'No locations found for selected brands',
+                                                              style: AppTextTheme()
+                                                                  .bodyText
+                                                                  .copyWith(
+                                                                    color: AppColorTheme()
+                                                                        .secondary,
+                                                                  ),
+                                                            ),
+                                                          ),
+                                                        );
+                                                      }
+                                                    }
+                                                    // If no brands selected, show all places
+
+                                                    return ListView.builder(
+                                                      physics:
+                                                          BouncingScrollPhysics(),
+                                                      itemCount:
+                                                          filteredPlaces.length,
+                                                      itemBuilder: (context, index) {
+                                                        final place =
+                                                            filteredPlaces[index];
+                                                        return GestureDetector(
+                                                          onTap: () {
+                                                            context
+                                                                .read<
+                                                                  TruckNavigationCubit
+                                                                >()
+                                                                .showBusinessOverviewModal(
+                                                                  place,
+                                                                );
+                                                          },
+                                                          child: Padding(
+                                                            padding:
+                                                                EdgeInsets.only(
+                                                                  bottom: 16,
+                                                                ),
+                                                            child: PlaceDisplayWidget(
+                                                              place: place
+                                                                  .toPlaceDataModel,
+                                                              isSaved: false,
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
+                                                    );
+                                                  },
+                                                  loader: Column(
+                                                    spacing: 10,
+                                                    children: List.generate(
+                                                      3,
+                                                      (i) => Padding(
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                              bottom: 16,
+                                                            ),
+                                                        child: ClipRRect(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                10,
+                                                              ),
+                                                          child: Shimmer(
+                                                            color: Colors
+                                                                .greenAccent,
+                                                            child: SizedBox(
+                                                              width: double
+                                                                  .infinity,
+                                                              height: 80,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                            ListView.builder(
+                                              physics:
+                                                  NeverScrollableScrollPhysics(),
+                                              itemBuilder: (context, index) => GestureDetector(
+                                                // onTap: () {
+                                                //   setState(() {
+                                                //     searchTextEditController.text =
+                                                //         TruckNavigationStaticDetails
+                                                //             .placess[index]
+                                                //             .address;
+                                                //     place = TruckNavigationStaticDetails
+                                                //         .placess[index];
+                                                //   });
+                                                // },
+                                                child: PlaceDisplayWidget(
+                                                  place:
+                                                      TruckNavigationStaticDetails
+                                                          .placess[index],
+                                                  isSaved: true,
+                                                ),
+                                              ),
+                                              itemCount:
+                                                  TruckNavigationStaticDetails
+                                                      .placess
+                                                      .length,
+                                            ),
+
+                                            ListView.builder(
+                                              physics:
+                                                  NeverScrollableScrollPhysics(),
+                                              itemBuilder: (context, index) =>
+                                                  PlaceDisplayWidget(
+                                                    place:
+                                                        TruckNavigationStaticDetails
+                                                            .terminals[index],
+                                                    isSaved: true,
+                                                  ),
+                                              itemCount:
+                                                  TruckNavigationStaticDetails
+                                                      .terminals
+                                                      .length,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                itemCount:
-                                    TruckNavigationStaticDetails.placess.length,
-                              ),
-
-                              ListView.builder(
-                                physics: NeverScrollableScrollPhysics(),
-                                itemBuilder: (context, index) =>
-                                    PlaceDisplayWidget(
-                                      place: TruckNavigationStaticDetails
-                                          .terminals[index],
-                                      isSaved: true,
-                                    ),
-                                itemCount: TruckNavigationStaticDetails
-                                    .terminals
-                                    .length,
                               ),
                             ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                          );
+                  },
                 ),
               ] else ...[
                 Row(
@@ -1686,7 +1813,11 @@ class _HomeMobileViewState extends State<HomeMobileView>
     );
   }
 
-  Widget showTappedBusinessDetails(Place? place) {
+  Widget showTappedBusinessDetails(
+    Place? place, {
+    VoidCallback? onBackPressed,
+    VoidCallback? onTripPressed,
+  }) {
     final String image = place?.getImage ?? '';
     final bool? isOpened = place?.details.openingHours.firstOrNull?.isOpen;
     final String? time =
@@ -1702,10 +1833,12 @@ class _HomeMobileViewState extends State<HomeMobileView>
           contentPadding: EdgeInsets.zero,
 
           trailing: GestureDetector(
-            onTap: () {
-              context.read<TruckNavigationCubit>().removeTapDestination();
-              searchTextEditController.clear();
-            },
+            onTap:
+                onBackPressed ??
+                () {
+                  context.read<TruckNavigationCubit>().removeTapDestination();
+                  searchTextEditController.clear();
+                },
             child: const Icon(Icons.close, color: Colors.grey, size: 25),
           ),
           leading: Container(
@@ -1782,12 +1915,14 @@ class _HomeMobileViewState extends State<HomeMobileView>
           children: [
             Expanded(
               child: CustomButtonWidget(
-                onPressed: () {
-                  if ((place?.title ?? '').isNotEmpty) {
-                    searchTextEditController.text = place?.title ?? '';
-                  }
-                  context.read<TruckNavigationCubit>().calculateRoute();
-                },
+                onPressed:
+                    onTripPressed ??
+                    () {
+                      if ((place?.title ?? '').isNotEmpty) {
+                        searchTextEditController.text = place?.title ?? '';
+                      }
+                      context.read<TruckNavigationCubit>().calculateRoute();
+                    },
                 title: "Trip",
                 icon: Icon(Icons.directions, color: Colors.white),
               ),
@@ -2312,7 +2447,11 @@ class _HomeMobileViewState extends State<HomeMobileView>
       ),
 
       CustomDragableWidget(
-        initialSize: 0.24,
+        initialSize: 0.32,
+        miniSize: 0.32,
+        maxSize: 0.95,
+        snapSizes: [0.32, 0.55, 0.95],
+
         bottomWidget: Padding(
           padding: EdgeInsets.all(20),
           child: CustomButtonWidget(

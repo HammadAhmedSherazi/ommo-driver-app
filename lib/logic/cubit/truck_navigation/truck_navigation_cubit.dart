@@ -48,6 +48,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   MapMarker? _destinationMarker;
   Map<int, MapMarker> _stopMarkers = {};
   List<MapMarker> _truckRestrictionMarkers = [];
+  List<MapMarker> _placeMarkers = [];
+  Map<String, MapMarker> _placeMarkersMap = {}; // place.id -> marker
+  Map<String, String> _markerBrandMap = {}; // place.id -> brand
+  Map<String, Place> _placeDataMap = {}; // place.id -> Place
+  bool _isFirstTimeMarkersLoaded = true;
   final loc.Location _location = loc.Location();
   bool isFirstTimeLocationGet = true;
   Future<MapImage> _createStopMarkerImage(int index) async {
@@ -175,6 +180,23 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
             }
           }
         } else if (!state.isNavigating && !state.hasDirection) {
+          // Check if a place marker was tapped
+          if ((result.mapItems?.markers ?? []).isNotEmpty) {
+            final MapMarker? pickedMarker =
+                result.mapItems?.markers.firstOrNull;
+            if (pickedMarker != null) {
+              final String? placeId = pickedMarker.metadata?.getString(
+                "place_id",
+              );
+              if (placeId != null && _placeDataMap.containsKey(placeId)) {
+                final Place place = _placeDataMap[placeId]!;
+                showBusinessOverviewModal(place);
+                return;
+              }
+            }
+          }
+
+          // Handle regular place picks
           final PickedPlace? pickedPlace =
               result.mapContent?.pickedPlaces.firstOrNull;
           if (pickedPlace == null) return;
@@ -517,7 +539,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
             "Unable to search: current location not available",
           ),
           availableBrands: [], // Clear brands on error
-          selectedBrand: 'null', // Clear selected brand
+          selectedBrands: [], // Clear selected brands
         ),
       );
       return;
@@ -532,7 +554,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
             "No category found for: $placeTypeName",
           ),
           availableBrands: [], // Clear brands on error
-          selectedBrand: 'null', // Clear selected brand
+          selectedBrands: [], // Clear selected brands
         ),
       );
       return;
@@ -543,7 +565,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       state.copyWith(
         categorySearchResults: FutureData<List<Place>>.loading(),
         availableBrands: [], // Clear previous brands
-        selectedBrand: 'null', // Clear selected brand when place type changes
+        selectedBrands: [], // Clear selected brands when place type changes
       ),
     );
 
@@ -611,22 +633,27 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       if (places != null && places.isNotEmpty) {
         // Extract unique brands from search results
         final brands = _extractBrandsFromPlaces(places);
+        // Initially select all brands
         emit(
           state.copyWith(
             categorySearchResults: FutureData.completed(places),
             availableBrands: brands,
-            selectedBrand:
-                null, // Always reset to null - show all places initially
+            selectedBrands: brands, // Initially select all brands
           ),
         );
+        // Add markers to map (don't await to avoid blocking)
+        _addPlaceMarkersToMap(places).catchError((error) {
+          log("Error adding place markers: $error");
+        });
       } else {
         emit(
           state.copyWith(
             categorySearchResults: FutureData.completed([]),
             availableBrands: [],
-            selectedBrand: 'null', // Always reset to null
+            selectedBrands: [], // Clear selected brands
           ),
         );
+        _clearPlaceMarkers();
       }
     });
   }
@@ -688,20 +715,346 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     return brandSet.toList()..sort();
   }
 
-  /// Filter places by selected brand
-  void filterByBrand(String? brand) {
-    if (brand == null || brand.isEmpty) {
-      // Clear filter - show all results
-      emit(state.copyWith(selectedBrand: 'null'));
-      return;
+  /// Toggle brand selection (add/remove from selected brands list)
+  void toggleBrand(String brand) {
+    final currentSelected = state.selectedBrands ?? [];
+    final List<String> newSelected;
+
+    if (currentSelected.contains(brand)) {
+      // Remove brand from selection
+      newSelected = List<String>.from(currentSelected)..remove(brand);
+    } else {
+      // Add brand to selection
+      newSelected = List<String>.from(currentSelected)..add(brand);
     }
 
-    emit(state.copyWith(selectedBrand: brand));
+    emit(state.copyWith(selectedBrands: newSelected));
+
+    // Update markers based on new selection
+    final places = state.categorySearchResults?.data;
+    if (places != null && places.isNotEmpty) {
+      _addPlaceMarkersToMap(places).catchError((error) {
+        log("Error updating place markers: $error");
+      });
+    }
   }
 
   /// Clear brand filter and available brands
   void clearBrandFilter() {
-    emit(state.copyWith(availableBrands: [], selectedBrand: 'null'));
+    emit(state.copyWith(availableBrands: [], selectedBrands: []));
+    _clearPlaceMarkers();
+  }
+
+  /// Get brand name from place title (matches logic from _extractBrandsFromPlaces)
+  String? _getBrandFromPlace(Place place) {
+    final title = place.title.trim();
+    if (title.isEmpty) return null;
+
+    // Common truck stop brands to look for (same as in _extractBrandsFromPlaces)
+    final knownBrands = [
+      "Love's",
+      "Loves",
+      "Pilot",
+      "Flying J",
+      "TA",
+      "Petro",
+      "KwikTrip",
+      "Kwik Trip",
+      "TravelCenters",
+      "Travel Centers",
+      "Speedco",
+      "Flying J Travel Plaza",
+      "Pilot Travel Center",
+    ];
+
+    // Check if title contains known brand (check longer brands first to avoid partial matches)
+    final sortedBrands = List<String>.from(knownBrands)
+      ..sort((a, b) => b.length.compareTo(a.length));
+
+    for (final brand in sortedBrands) {
+      if (title.toLowerCase().contains(brand.toLowerCase())) {
+        return brand;
+      }
+    }
+
+    // If no known brand found, try to extract first word
+    final words = title.split(' ');
+    if (words.isNotEmpty) {
+      final firstWord = words.first.trim();
+      // Skip if it's too short or common words
+      if (firstWord.length > 2 &&
+          !['the', 'a', 'an'].contains(firstWord.toLowerCase())) {
+        // Only return if it looks like a brand name (capitalized, reasonable length)
+        if (firstWord[0].toUpperCase() == firstWord[0] &&
+            firstWord.length <= 20) {
+          return firstWord;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /// Get deterministic color for a brand from predefined brand colors
+  ui.Color _getBrandColor(String brand) {
+    // List of predefined brand colors from AppColorTheme
+    final brandColors = [
+      ui.Color(0xFFFF9029), // orange
+      ui.Color(0xFF4676F6), // blue
+      ui.Color(0xFFFFC300), // yellowLight
+      ui.Color(0xFFD0082C), // red4
+    ];
+
+    // Use brand name hash to deterministically select a color
+    final hash = brand.hashCode;
+    final colorIndex = hash.abs() % brandColors.length;
+
+    return brandColors[colorIndex];
+  }
+
+  /// Create a parking pin style marker with brand first letter
+  Future<MapImage> _createBrandMarkerImage(
+    String brandLetter,
+    ui.Color backgroundColor, [
+    double opacity = 1.0,
+  ]) async {
+    const double pinHeight = 140.0; // Increased from 100.0
+    const double pinWidth = 100.0; // Increased from 70.0
+    const double circleRadius = 42.0; // Increased from 30.0
+    const double circleCenterY = 42.0; // Increased from 30.0
+    const double circleCenterX = pinWidth / 2;
+
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final ui.Canvas canvas = ui.Canvas(recorder);
+
+    // Draw white pin shape (outer circle + triangle) - always full opacity
+    final ui.Paint whitePaint = ui.Paint()
+      ..color = ui.Color(0xFFFFFFFF)
+      ..style = ui.PaintingStyle.fill;
+
+    // Draw outer white circle
+    canvas.drawCircle(
+      ui.Offset(circleCenterX, circleCenterY),
+      circleRadius,
+      whitePaint,
+    );
+
+    // Draw white triangle (pin point)
+    final ui.Path trianglePath = ui.Path()
+      ..moveTo(circleCenterX - 15, circleCenterY + circleRadius)
+      ..lineTo(circleCenterX + 15, circleCenterY + circleRadius)
+      ..lineTo(circleCenterX, pinHeight - 5)
+      ..close();
+    canvas.drawPath(trianglePath, whitePaint);
+
+    // Draw colored inner circle (brand background) with opacity
+    final ui.Paint brandPaint = ui.Paint()
+      ..color = ui.Color.fromARGB(
+        (backgroundColor.alpha * opacity).toInt(),
+        backgroundColor.red,
+        backgroundColor.green,
+        backgroundColor.blue,
+      )
+      ..style = ui.PaintingStyle.fill;
+
+    canvas.drawCircle(
+      ui.Offset(circleCenterX, circleCenterY),
+      circleRadius - 5,
+      brandPaint,
+    );
+
+    // Draw brand letter with opacity
+    final ui.ParagraphBuilder paragraphBuilder = ui.ParagraphBuilder(
+      ui.ParagraphStyle(
+        textAlign: TextAlign.center,
+        fontSize: 40.0, // Increased from 28.0
+        fontWeight: ui.FontWeight.bold,
+      ),
+    );
+
+    paragraphBuilder.pushStyle(
+      ui.TextStyle(
+        color: ui.Color.fromARGB((255 * opacity).toInt(), 255, 255, 255),
+      ),
+    );
+    paragraphBuilder.addText(brandLetter.toUpperCase());
+
+    final ui.Paragraph paragraph = paragraphBuilder.build();
+    paragraph.layout(ui.ParagraphConstraints(width: pinWidth));
+
+    canvas.drawParagraph(
+      paragraph,
+      ui.Offset(0, circleCenterY - paragraph.height / 2),
+    );
+
+    // Draw small circle at pin tip - always full opacity
+    final ui.Paint tipPaint = ui.Paint()
+      ..color = backgroundColor
+      ..style = ui.PaintingStyle.fill;
+
+    canvas.drawCircle(ui.Offset(circleCenterX, pinHeight - 7), 7, tipPaint);
+
+    final ui.Picture picture = recorder.endRecording();
+    final ui.Image image = await picture.toImage(
+      pinWidth.toInt(),
+      pinHeight.toInt(),
+    );
+    final ByteData? byteData = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+
+    return MapImage.withPixelDataAndImageFormat(
+      byteData!.buffer.asUint8List(),
+      ImageFormat.png,
+    );
+  }
+
+  /// Add place markers to map based on selected brands
+  Future<void> _addPlaceMarkersToMap(List<Place> places) async {
+    final selectedBrands = state.selectedBrands ?? [];
+    final mapController = state.mapController;
+    if (mapController == null) return;
+
+    final List<GeoCoordinates> markerCoordinates = [];
+    final bool shouldZoom = _isFirstTimeMarkersLoaded;
+
+    // Update or create markers for all places
+    for (final place in places) {
+      final brand = _getBrandFromPlace(place);
+      if (brand == null) continue;
+
+      final coordinates = place.geoCoordinates;
+      if (coordinates == null) continue;
+
+      final isSelected = selectedBrands.contains(brand);
+      final opacity = isSelected ? 1.0 : 0.5;
+
+      // Check if marker already exists
+      if (_placeMarkersMap.containsKey(place.id)) {
+        // Update existing marker by removing and recreating with new opacity
+        final existingMarker = _placeMarkersMap[place.id]!;
+        mapController.mapScene.removeMapMarker(existingMarker);
+        _placeMarkers.remove(existingMarker);
+      }
+
+      // Get first letter of brand
+      final brandLetter = brand.isNotEmpty ? brand[0] : '?';
+      final brandColor = _getBrandColor(brand);
+
+      // Create marker image with appropriate opacity
+      final markerImage = await _createBrandMarkerImage(
+        brandLetter,
+        brandColor,
+        opacity,
+      );
+      final marker = MapMarker(coordinates, markerImage);
+
+      // Set anchor point to bottom center of pin
+      marker.anchor = Anchor2D.withHorizontalAndVertical(0.5, 1.0);
+
+      // Add metadata for tap handling
+      final metadata = Metadata();
+      metadata.setString("place_id", place.id);
+      metadata.setString("place_title", place.title);
+      marker.metadata = metadata;
+
+      mapController.mapScene.addMapMarker(marker);
+      _placeMarkers.add(marker);
+      _placeMarkersMap[place.id] = marker;
+      _markerBrandMap[place.id] = brand;
+      _placeDataMap[place.id] = place; // Store place data
+      markerCoordinates.add(coordinates);
+    }
+
+    // Zoom out to show all markers only on first load
+    if (shouldZoom && markerCoordinates.isNotEmpty) {
+      _zoomToShowAllMarkers(markerCoordinates);
+      _isFirstTimeMarkersLoaded = false;
+    }
+  }
+
+  /// Zoom map to show all markers
+  void _zoomToShowAllMarkers(List<GeoCoordinates> coordinates) {
+    final mapController = state.mapController;
+    if (mapController == null || coordinates.isEmpty) return;
+
+    if (coordinates.length == 1) {
+      // Single marker - zoom to it
+      focusOnCurrentLocation(distanceInMeters: 5000);
+      return;
+    }
+
+    // Calculate bounding box
+    double minLat = coordinates.first.latitude;
+    double maxLat = coordinates.first.latitude;
+    double minLng = coordinates.first.longitude;
+    double maxLng = coordinates.first.longitude;
+
+    for (final coord in coordinates) {
+      if (coord.latitude < minLat) minLat = coord.latitude;
+      if (coord.latitude > maxLat) maxLat = coord.latitude;
+      if (coord.longitude < minLng) minLng = coord.longitude;
+      if (coord.longitude > maxLng) maxLng = coord.longitude;
+    }
+
+    // Calculate center
+    final centerLat = (minLat + maxLat) / 2;
+    final centerLng = (minLng + maxLng) / 2;
+    final center = GeoCoordinates(centerLat, centerLng);
+
+    // Calculate distance to cover all markers with padding
+    final latDistance = calculateDistanceInMeters(
+      minLat,
+      centerLng,
+      maxLat,
+      centerLng,
+    );
+    final lngDistance = calculateDistanceInMeters(
+      centerLat,
+      minLng,
+      centerLat,
+      maxLng,
+    );
+
+    // Use the larger distance and add 30% padding
+    final maxDistance =
+        (latDistance > lngDistance ? latDistance : lngDistance) * 1.3;
+
+    // Zoom to show all markers
+    final mapMeasure = MapMeasure(MapMeasureKind.distanceInMeters, maxDistance);
+    mapController.camera.lookAtPointWithMeasure(center, mapMeasure);
+  }
+
+  /// Clear all place markers from map
+  void _clearPlaceMarkers() {
+    final mapController = state.mapController;
+    if (mapController == null) return;
+
+    for (final marker in _placeMarkers) {
+      mapController.mapScene.removeMapMarker(marker);
+    }
+    _placeMarkers.clear();
+    _placeMarkersMap.clear();
+    _markerBrandMap.clear();
+    _placeDataMap.clear();
+    _isFirstTimeMarkersLoaded = true; // Reset flag when clearing
+  }
+
+  /// Show business overview in modal bottom sheet
+  void showBusinessOverviewModal(Place place) {
+    emit(
+      state.copyWith(selectedTruckStop: place, showBusinessOverviewModal: true),
+    );
+  }
+
+  /// Clear selected truck stop
+  void clearSelectedTruckStop() {
+    emit(
+      state.copyWith(
+        selectedTruckStop: 'null',
+        showBusinessOverviewModal: false,
+      ),
+    );
   }
 
   /// Map place type names to HERE SDK category codes
@@ -901,6 +1254,35 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
 
     state.mapController?.camera.lookAtPointWithMeasure(shiftedCoords, measure);
+  }
+
+  void calculateRouteWithBusinessOverview() {
+    final Place? place = state.selectedTruckStop;
+    if (place == null || place.geoCoordinates == null) return;
+
+    final List<LocationPoint> points = [
+      LocationPoint(
+        place: state.currentPlace?.data,
+        pointType: LocationPointType.starting,
+        isMyLocation: true,
+      ),
+      LocationPoint(
+        place: state.selectedTruckStop,
+        pointType: LocationPointType.destination,
+        isMyLocation: false,
+      ),
+    ];
+    _clearPlaceMarkers();
+    emit(
+      state.copyWith(
+        showBusinessOverviewModal: false,
+        selectedTruckStop: 'null',
+        selectedBrands: [],
+        categorySearchResults: FutureData<List<Place>>.initial(),
+      ),
+    );
+
+    createTrip(points);
   }
 
   void calculateRoute() {
@@ -1203,6 +1585,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     clearAllStopMarker();
 
+    _clearPlaceMarkers();
+
     _clearTruckPreviousMarkers();
 
     emit(
@@ -1219,6 +1603,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         businessAtAddress: 'null',
         hasdestinationFromRecent: false,
         locationPoints: [],
+        selectedTruckStop: 'null',
+        showBusinessOverviewModal: false,
         hasTapDestination: false,
       ),
     );
@@ -1759,6 +2145,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       }
       if (places != null && places.isNotEmpty) {
         final List<LocationPoint> _list = [];
+
+        if (places.firstOrNull?.isBusiness == false &&
+            places.firstOrNull?.geoCoordinates != null) {
+          _searchBusinessesAtAddress(places.first.geoCoordinates!);
+        }
         if (state.currentPlace?.data != null) {
           _list.add(
             LocationPoint(

@@ -4,6 +4,8 @@ class CustomDragableWidget extends StatelessWidget {
   final List<Widget> childrens;
   final Widget? bottomWidget;
   final double? initialSize, miniSize;
+  final double? maxSize;
+  final List<double>? snapSizes;
   final DraggableScrollableController? scrollController;
   const CustomDragableWidget({
     super.key,
@@ -11,6 +13,8 @@ class CustomDragableWidget extends StatelessWidget {
     this.bottomWidget,
     this.initialSize,
     this.miniSize,
+    this.maxSize,
+    this.snapSizes,
     this.scrollController,
   });
 
@@ -21,8 +25,8 @@ class CustomDragableWidget extends StatelessWidget {
       minChildSize: miniSize ?? 0.24,
       controller: scrollController,
       snap: true,
-      snapSizes: [0.26, 0.55, 0.95],
-      maxChildSize: 0.95,
+      snapSizes: snapSizes ?? [0.26, 0.55, 0.95],
+      maxChildSize: maxSize ?? 0.95,
       builder: (context, scrollController) {
         return Container(
           decoration: const BoxDecoration(
