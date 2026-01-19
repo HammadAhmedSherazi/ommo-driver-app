@@ -21,6 +21,8 @@ import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_utils.dart';
+import 'package:ommo/logic/cubit/truck_stops/truck_stop_cubit.dart';
+import 'package:ommo/logic/cubit/truck_stops/truck_stops_state.dart';
 import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
 import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 import 'package:ommo/utils/extension/place_extension.dart';
@@ -112,10 +114,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
           final placeTypeName = selected['name'] ?? '';
           if (placeTypeName.isNotEmpty) {
             // Clear previous brands and selected brand when place type changes
-            context.read<TruckNavigationCubit>().clearBrandFilter();
-            context.read<TruckNavigationCubit>().searchByCategory(
-              placeTypeName,
-            );
+            context.read<TruckStopCubit>().clearBrandFilter();
+            context.read<TruckStopCubit>().searchByCategory(placeTypeName);
           }
           // When station is selected, ensure sheet is at most half
           final currentSize = sheetScrollController.size;
@@ -124,7 +124,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
           }
         } else {
           // Clear brands when place type is deselected
-          context.read<TruckNavigationCubit>().clearBrandFilter();
+          context.read<TruckStopCubit>().clearBrandFilter();
         }
       }
     });
@@ -664,7 +664,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   },
                 ),
               ] else if (selectedStation != null) ...[
-                BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+                BlocBuilder<TruckStopCubit, TruckStopsState>(
                   buildWhen: (p, c) =>
                       p.showBusinessOverviewModal !=
                       c.showBusinessOverviewModal,
@@ -674,13 +674,13 @@ class _HomeMobileViewState extends State<HomeMobileView>
                             state.selectedTruckStop,
                             onBackPressed: () {
                               context
-                                  .read<TruckNavigationCubit>()
+                                  .read<TruckStopCubit>()
                                   .clearSelectedTruckStop();
                             },
                             onTripPressed: () {
                               context
-                                  .read<TruckNavigationCubit>()
-                                  .calculateRouteWithBusinessOverview();
+                                  .read<TruckStopCubit>()
+                                  .createTripWithBusinessOverview();
                               _selectedStation.value = null;
                             },
                           )
@@ -693,7 +693,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                     onTap: () {
                                       _selectedStation.value = null;
                                       context
-                                          .read<TruckNavigationCubit>()
+                                          .read<TruckStopCubit>()
                                           .clearAllTruckStops();
                                     },
                                     child: CircleAvatar(
@@ -740,27 +740,38 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                 ],
                               ),
                               15.h,
-                              // Dynamic brands from search results
-                              BlocBuilder<
-                                TruckNavigationCubit,
-                                TruckNavigationState
-                              >(
+                              // Static brands filter UI - always shows default brands
+                              BlocBuilder<TruckStopCubit, TruckStopsState>(
                                 buildWhen: (previous, current) =>
                                     previous.availableBrands !=
                                         current.availableBrands ||
                                     previous.selectedBrands !=
                                         current.selectedBrands,
                                 builder: (context, state) {
+                                  // Always show default brands + "Other" if in availableBrands
                                   final brands = state.availableBrands ?? [];
                                   final selectedBrands =
                                       state.selectedBrands ?? [];
 
-                                  if (brands.isEmpty) {
-                                    return SizedBox.shrink();
+                                  // If no brands, show default brands anyway (static)
+                                  final displayBrands = brands.isEmpty
+                                      ? TruckStopCubit.defaultBrands
+                                            .map((b) => b['name']!)
+                                            .toList()
+                                      : brands;
+
+                                  // Helper function to get brand icon path
+                                  String? getBrandIcon(String brand) {
+                                    for (final defaultBrand
+                                        in TruckStopCubit.defaultBrands) {
+                                      if (defaultBrand['name'] == brand) {
+                                        return defaultBrand['icon'];
+                                      }
+                                    }
+                                    return null;
                                   }
 
                                   // Helper function to get deterministic color from brand name
-                                  // Uses same colors as cubit for consistency
                                   Color getBrandColor(String brand) {
                                     // List of predefined brand colors from AppColorTheme
                                     final brandColors = [
@@ -778,44 +789,6 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                     return brandColors[colorIndex];
                                   }
 
-                                  // if (brands.isEmpty) {
-                                  //   // Show static brands if no search results yet
-                                  //   return Padding(
-                                  //     padding: EdgeInsets.symmetric(
-                                  //       horizontal: context.screenWidth * 0.026,
-                                  //     ),
-                                  //     child: Row(
-                                  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  //       children: List.generate(
-                                  //         TruckNavigationStaticDetails.truckStops.length,
-                                  //         (i) => Column(
-                                  //           children: [
-                                  //             CircleAvatar(
-                                  //               radius: 12,
-                                  //               backgroundImage: AssetImage(
-                                  //                 TruckNavigationStaticDetails
-                                  //                         .truckStops[i]['icon'] ??
-                                  //                     '',
-                                  //               ),
-                                  //             ),
-                                  //             8.h,
-                                  //             Text(
-                                  //               TruckNavigationStaticDetails
-                                  //                       .truckStops[i]['name'] ??
-                                  //                   '',
-                                  //               style: AppTextTheme().lightText.copyWith(
-                                  //                 color: const Color(0xFF000301),
-                                  //                 height: 1.40,
-                                  //               ),
-                                  //             ),
-                                  //           ],
-                                  //         ),
-                                  //       ),
-                                  //     ),
-                                  //   );
-                                  // }
-
-                                  // Show dynamic brands from search results
                                   return Padding(
                                     padding: EdgeInsets.symmetric(
                                       horizontal: context.screenWidth * 0.026,
@@ -824,15 +797,16 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                       height: 50,
                                       child: ListView.separated(
                                         scrollDirection: Axis.horizontal,
-                                        itemCount: brands.length,
+                                        itemCount: displayBrands.length,
                                         separatorBuilder: (_, __) => 12.w,
                                         itemBuilder: (context, index) {
-                                          final brand = brands[index];
+                                          final brand = displayBrands[index];
                                           final isSelected = selectedBrands
                                               .contains(brand);
-                                          final brandColor = getBrandColor(
-                                            brand,
-                                          );
+                                          final brandIcon = getBrandIcon(brand);
+                                          final brandColor = brandIcon == null
+                                              ? getBrandColor(brand)
+                                              : null;
                                           final brandLetter = brand.isNotEmpty
                                               ? brand[0].toUpperCase()
                                               : '?';
@@ -840,7 +814,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                           return InkWell(
                                             onTap: () {
                                               context
-                                                  .read<TruckNavigationCubit>()
+                                                  .read<TruckStopCubit>()
                                                   .toggleBrand(brand);
                                             },
                                             child: Column(
@@ -858,28 +832,49 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                                           : Colors.grey,
                                                       width: isSelected ? 2 : 1,
                                                     ),
-                                                    color: brandColor
-                                                        .withValues(
-                                                          alpha: isSelected
-                                                              ? 1
-                                                              : 0.5,
-                                                        ),
+                                                    color: brandIcon == null
+                                                        ? brandColor
+                                                              ?.withValues(
+                                                                alpha:
+                                                                    isSelected
+                                                                    ? 1
+                                                                    : 0.5,
+                                                              )
+                                                        : null,
                                                   ),
-                                                  child: Center(
-                                                    child: Text(
-                                                      brandLetter,
-                                                      style: AppTextTheme()
-                                                          .bodyText
-                                                          .copyWith(
-                                                            fontSize: 18,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            color: Colors.white,
+                                                  child: brandIcon != null
+                                                      // Show brand image for default brands
+                                                      ? ClipOval(
+                                                          child: Opacity(
+                                                            opacity: isSelected
+                                                                ? 1.0
+                                                                : 0.5,
+                                                            child: Image.asset(
+                                                              brandIcon,
+                                                              width: 30,
+                                                              height: 30,
+                                                              fit: BoxFit.cover,
+                                                            ),
                                                           ),
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                    ),
-                                                  ),
+                                                        )
+                                                      // Show first letter for "Other"
+                                                      : Center(
+                                                          child: Text(
+                                                            brandLetter,
+                                                            style: AppTextTheme()
+                                                                .bodyText
+                                                                .copyWith(
+                                                                  fontSize: 18,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  color: Colors
+                                                                      .white,
+                                                                ),
+                                                            textAlign: TextAlign
+                                                                .center,
+                                                          ),
+                                                        ),
                                                 ),
                                                 4.h,
                                                 SizedBox(
@@ -974,8 +969,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                           children: [
                                             // Category search results
                                             BlocBuilder<
-                                              TruckNavigationCubit,
-                                              TruckNavigationState
+                                              TruckStopCubit,
+                                              TruckStopsState
                                             >(
                                               buildWhen: (previous, current) =>
                                                   previous.categorySearchResults !=
@@ -1015,6 +1010,11 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                                     final selectedBrands =
                                                         state.selectedBrands ??
                                                         [];
+                                                    final truckStopCubit =
+                                                        context
+                                                            .read<
+                                                              TruckStopCubit
+                                                            >();
                                                     List<Place> filteredPlaces =
                                                         places;
 
@@ -1024,17 +1024,19 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                                       filteredPlaces = places.where((
                                                         place,
                                                       ) {
-                                                        final title = place
-                                                            .title
-                                                            .toLowerCase();
-                                                        // Check if place title contains any of the selected brands
-                                                        return selectedBrands.any(
-                                                          (
-                                                            brand,
-                                                          ) => title.contains(
-                                                            brand.toLowerCase(),
-                                                          ),
-                                                        );
+                                                        // Use the same brand categorization logic as cubit
+                                                        final placeBrand =
+                                                            truckStopCubit
+                                                                .getBrandFromPlace(
+                                                                  place,
+                                                                );
+                                                        // Include place if its categorized brand is in selected brands
+                                                        return placeBrand !=
+                                                                null &&
+                                                            selectedBrands
+                                                                .contains(
+                                                                  placeBrand,
+                                                                );
                                                       }).toList();
 
                                                       if (filteredPlaces
@@ -1072,7 +1074,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                                           onTap: () {
                                                             context
                                                                 .read<
-                                                                  TruckNavigationCubit
+                                                                  TruckStopCubit
                                                                 >()
                                                                 .showBusinessOverviewModal(
                                                                   place,

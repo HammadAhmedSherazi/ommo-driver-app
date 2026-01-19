@@ -12,7 +12,7 @@ class AppKeys {
   static const String onboardingCacheKey = '__onboarding_cache_key__';
 
   final String accessKeyId = "nD9uaWDaZEmcHFyirUGFZw";
-  final bool isSimulation = false;
+  final bool isSimulation = true;
   // New york
   // final GeoCoordinates startCoordinates = GeoCoordinates(52.534924, 13.199499);
   // final GeoCoordinates endCoordinates = GeoCoordinates(52.532767, 13.198141);
@@ -25,8 +25,10 @@ class AppKeys {
   //   -87.3228214,
   // );
   final GeoCoordinates startCoordinates = GeoCoordinates(
-    33.682070,
-    -112.203014,
+    33.5311318,
+    -112.1854356,
+    // 33.682070,
+    // -112.203014,
   );
   // final GeoCoordinates startCoordinates = GeoCoordinates(
   //   41.585905,

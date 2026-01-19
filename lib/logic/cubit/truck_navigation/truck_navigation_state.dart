@@ -29,12 +29,7 @@ class TruckNavigationState extends Equatable {
   final ManeuverProgress? maneuverProgress;
   final List<LocationPoint>? locationPoints;
   final int nextTargetIndex;
-  final FutureData<List<Place>>? categorySearchResults;
-  final List<String>? availableBrands;
-  final List<String>? selectedBrands;
   final Place? businessAtAddress;
-  final Place? selectedTruckStop;
-  final bool showBusinessOverviewModal;
 
   const TruckNavigationState({
     this.mapController,
@@ -57,12 +52,7 @@ class TruckNavigationState extends Equatable {
     this.destinationSuggestions,
     this.locationPoints,
     this.nextTargetIndex = 1,
-    this.categorySearchResults,
-    this.availableBrands,
-    this.selectedBrands,
     this.businessAtAddress,
-    this.selectedTruckStop,
-    this.showBusinessOverviewModal = false,
   });
 
   // GeoCoordinates? get destinationCoordinates =>
@@ -90,11 +80,7 @@ class TruckNavigationState extends Equatable {
     dynamic maneuverProgress,
     List<LocationPoint>? locationPoints,
     int? nextTargetIndex,
-    FutureData<List<Place>>? categorySearchResults,
-    List<String>? availableBrands,
-    List<String>? selectedBrands,
     dynamic businessAtAddress,
-    dynamic selectedTruckStop,
   }) {
     return TruckNavigationState(
       nextTargetIndex: nextTargetIndex ?? this.nextTargetIndex,
@@ -132,19 +118,9 @@ class TruckNavigationState extends Equatable {
           cameraControlledByNavigator ?? this.cameraControlledByNavigator,
       hasDirection: hasDirection ?? this.hasDirection,
       hasTapDestination: hasTapDestination ?? this.hasTapDestination,
-      categorySearchResults:
-          categorySearchResults ?? this.categorySearchResults,
-      availableBrands: availableBrands ?? this.availableBrands,
-      selectedBrands: selectedBrands ?? this.selectedBrands,
       businessAtAddress: businessAtAddress == "null"
           ? null
           : businessAtAddress ?? this.businessAtAddress,
-      selectedTruckStop: selectedTruckStop == 'null'
-          ? null
-          : (selectedTruckStop ?? this.selectedTruckStop),
-
-      showBusinessOverviewModal:
-          showBusinessOverviewModal ?? this.showBusinessOverviewModal,
     );
   }
 
@@ -156,8 +132,6 @@ class TruckNavigationState extends Equatable {
     destinationSuggestions,
     mapController,
     currentPlace,
-    showBusinessOverviewModal,
-    // nearbyTruckStops,
     destinationFromRecent,
     hasdestinationFromRecent,
     startCoordinates,
@@ -168,10 +142,6 @@ class TruckNavigationState extends Equatable {
     isNavigating,
     isMapLoading,
     hasTapDestination,
-    categorySearchResults,
-    availableBrands,
-    selectedBrands,
     businessAtAddress,
-    selectedTruckStop,
   ];
 }

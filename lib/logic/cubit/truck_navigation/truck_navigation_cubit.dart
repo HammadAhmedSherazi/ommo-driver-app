@@ -22,6 +22,7 @@ import 'package:ommo/data/response/get_data.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specification_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state.dart';
+import 'package:ommo/logic/cubit/truck_stops/truck_stop_cubit.dart';
 import 'package:ommo/map_sdk/HEREPositioningSimulator.dart';
 import 'package:ommo/models/location_point_model.dart';
 import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
@@ -48,13 +49,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   MapMarker? _destinationMarker;
   Map<int, MapMarker> _stopMarkers = {};
   List<MapMarker> _truckRestrictionMarkers = [];
-  List<MapMarker> _placeMarkers = [];
-  Map<String, MapMarker> _placeMarkersMap = {}; // place.id -> marker
-  Map<String, String> _markerBrandMap = {}; // place.id -> brand
-  Map<String, Place> _placeDataMap = {}; // place.id -> Place
-  bool _isFirstTimeMarkersLoaded = true;
   final loc.Location _location = loc.Location();
   bool isFirstTimeLocationGet = true;
+
   Future<MapImage> _createStopMarkerImage(int index) async {
     const double size = 70.0;
     const double borderWidth = 5.0;
@@ -180,6 +177,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
             }
           }
         } else if (!state.isNavigating && !state.hasDirection) {
+          final Map<String, Place> placeDataMap =
+              navigatorKey.currentContext
+                  ?.read<TruckStopCubit>()
+                  .placeDataMap ??
+              {};
           // Check if a place marker was tapped
           if ((result.mapItems?.markers ?? []).isNotEmpty) {
             final MapMarker? pickedMarker =
@@ -188,9 +190,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
               final String? placeId = pickedMarker.metadata?.getString(
                 "place_id",
               );
-              if (placeId != null && _placeDataMap.containsKey(placeId)) {
-                final Place place = _placeDataMap[placeId]!;
-                showBusinessOverviewModal(place);
+              if (placeDataMap.isEmpty) return;
+              if (placeId != null && placeDataMap.containsKey(placeId)) {
+                final Place place = placeDataMap[placeId]!;
+                navigatorKey.currentContext
+                    ?.read<TruckStopCubit>()
+                    .showBusinessOverviewModal(place);
                 return;
               }
             }
@@ -530,606 +535,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
   }
 
-  /// Search places by category (e.g., Truck stops, Rest areas, Weight stations)
-  void searchByCategory(String placeTypeName) {
-    if (state.startCoordinates == null) {
-      emit(
-        state.copyWith(
-          categorySearchResults: FutureData.error(
-            "Unable to search: current location not available",
-          ),
-          availableBrands: [], // Clear brands on error
-          selectedBrands: [], // Clear selected brands
-        ),
-      );
-      return;
-    }
-
-    // Get category codes for the place type
-    List<String> categoryCodes = _getCategoryCodesForPlaceType(placeTypeName);
-    if (categoryCodes.isEmpty) {
-      emit(
-        state.copyWith(
-          categorySearchResults: FutureData.error(
-            "No category found for: $placeTypeName",
-          ),
-          availableBrands: [], // Clear brands on error
-          selectedBrands: [], // Clear selected brands
-        ),
-      );
-      return;
-    }
-
-    // Emit loading state and clear previous brands/brand selection
-    emit(
-      state.copyWith(
-        categorySearchResults: FutureData<List<Place>>.loading(),
-        availableBrands: [], // Clear previous brands
-        selectedBrands: [], // Clear selected brands when place type changes
-      ),
-    );
-
-    // Create category list
-    List<PlaceCategory> placeCategoryList = categoryCodes
-        .map((code) => PlaceCategory(code))
-        .toList();
-
-    // Create search area around current location
-    // Create a valid corridor with at least 2 points (required for GeoCorridor)
-    final center = state.startCoordinates!;
-    const int halfWidthInMeters = 50000; // 50km radius
-
-    // Create a small line segment near the center to form a valid polyline
-    // Add a second point slightly offset to create a valid corridor
-    const double offsetInDegrees = 0.01; // Small offset (~1km)
-    final GeoCoordinates secondPoint = GeoCoordinates(
-      center.latitude + offsetInDegrees,
-      center.longitude,
-    );
-
-    // Create corridor with at least 2 points
-    final List<GeoCoordinates> routeVertices = [center, secondPoint];
-    final GeoCorridor routeCorridor = GeoCorridor(
-      routeVertices,
-      halfWidthInMeters,
-    );
-
-    CategoryQueryArea categoryQueryArea =
-        CategoryQueryArea.withCorridorAndCenter(routeCorridor, center);
-
-    // Create category query
-    CategoryQuery categoryQuery = CategoryQuery.withCategoriesInArea(
-      placeCategoryList,
-      categoryQueryArea,
-    );
-
-    // Set search options
-    SearchOptions searchOptions = SearchOptions();
-    searchOptions.languageCode = LanguageCode.enUs;
-    searchOptions.maxItems = 50;
-
-    // For truck-related categories, set custom option
-    if (placeTypeName.toLowerCase().contains('truck') ||
-        placeTypeName.toLowerCase().contains('weight') ||
-        placeTypeName.toLowerCase().contains('rest area')) {
-      _searchEngine.setCustomOption("show", "truck");
-    }
-
-    // Perform search
-    _searchEngine.searchByCategory(categoryQuery, searchOptions, (
-      SearchError? searchError,
-      List<Place>? places,
-    ) {
-      if (searchError != null) {
-        log("Category search error: $searchError");
-        emit(
-          state.copyWith(
-            categorySearchResults: FutureData.error(searchError.toString()),
-          ),
-        );
-        return;
-      }
-
-      if (places != null && places.isNotEmpty) {
-        // Extract unique brands from search results
-        final brands = _extractBrandsFromPlaces(places);
-        // Initially select all brands
-        emit(
-          state.copyWith(
-            categorySearchResults: FutureData.completed(places),
-            availableBrands: brands,
-            selectedBrands: brands, // Initially select all brands
-          ),
-        );
-        // Add markers to map (don't await to avoid blocking)
-        _addPlaceMarkersToMap(places).catchError((error) {
-          log("Error adding place markers: $error");
-        });
-      } else {
-        emit(
-          state.copyWith(
-            categorySearchResults: FutureData.completed([]),
-            availableBrands: [],
-            selectedBrands: [], // Clear selected brands
-          ),
-        );
-        _clearPlaceMarkers();
-      }
-    });
-  }
-
-  /// Extract unique brand names from places
-  List<String> _extractBrandsFromPlaces(List<Place> places) {
-    final Set<String> brandSet = {};
-
-    for (final place in places) {
-      // Try to extract brand from place title
-      final title = place.title.trim();
-      if (title.isEmpty) continue;
-
-      // Common truck stop brands to look for
-      final knownBrands = [
-        "Love's",
-        "Loves",
-        "Pilot",
-        "Flying J",
-        "TA",
-        "Petro",
-        "KwikTrip",
-        "Kwik Trip",
-        "TravelCenters",
-        "Travel Centers",
-        "Speedco",
-        "Flying J Travel Plaza",
-        "Pilot Travel Center",
-      ];
-
-      // Check if title contains known brand
-      bool foundKnownBrand = false;
-      for (final brand in knownBrands) {
-        if (title.toLowerCase().contains(brand.toLowerCase())) {
-          brandSet.add(brand);
-          foundKnownBrand = true;
-          break;
-        }
-      }
-
-      // If no known brand found, try to extract first word
-      if (!foundKnownBrand) {
-        final words = title.split(' ');
-        if (words.isNotEmpty) {
-          final firstWord = words.first.trim();
-          // Skip if it's too short or common words
-          if (firstWord.length > 2 &&
-              !['the', 'a', 'an', 'the'].contains(firstWord.toLowerCase())) {
-            // Only add if it looks like a brand name (capitalized, reasonable length)
-            if (firstWord[0].toUpperCase() == firstWord[0] &&
-                firstWord.length <= 20) {
-              brandSet.add(firstWord);
-            }
-          }
-        }
-      }
-    }
-
-    return brandSet.toList()..sort();
-  }
-
-  /// Toggle brand selection (add/remove from selected brands list)
-  void toggleBrand(String brand) {
-    final currentSelected = state.selectedBrands ?? [];
-    final List<String> newSelected;
-
-    if (currentSelected.contains(brand)) {
-      // Remove brand from selection
-      newSelected = List<String>.from(currentSelected)..remove(brand);
-    } else {
-      // Add brand to selection
-      newSelected = List<String>.from(currentSelected)..add(brand);
-    }
-
-    emit(state.copyWith(selectedBrands: newSelected));
-
-    // Update markers based on new selection
-    final places = state.categorySearchResults?.data;
-    if (places != null && places.isNotEmpty) {
-      _addPlaceMarkersToMap(places).catchError((error) {
-        log("Error updating place markers: $error");
-      });
-    }
-  }
-
-  /// Clear brand filter and available brands
-  void clearBrandFilter() {
-    emit(state.copyWith(availableBrands: [], selectedBrands: []));
-    _clearPlaceMarkers();
-  }
-
-  /// Get brand name from place title (matches logic from _extractBrandsFromPlaces)
-  String? _getBrandFromPlace(Place place) {
-    final title = place.title.trim();
-    if (title.isEmpty) return null;
-
-    // Common truck stop brands to look for (same as in _extractBrandsFromPlaces)
-    final knownBrands = [
-      "Love's",
-      "Loves",
-      "Pilot",
-      "Flying J",
-      "TA",
-      "Petro",
-      "KwikTrip",
-      "Kwik Trip",
-      "TravelCenters",
-      "Travel Centers",
-      "Speedco",
-      "Flying J Travel Plaza",
-      "Pilot Travel Center",
-    ];
-
-    // Check if title contains known brand (check longer brands first to avoid partial matches)
-    final sortedBrands = List<String>.from(knownBrands)
-      ..sort((a, b) => b.length.compareTo(a.length));
-
-    for (final brand in sortedBrands) {
-      if (title.toLowerCase().contains(brand.toLowerCase())) {
-        return brand;
-      }
-    }
-
-    // If no known brand found, try to extract first word
-    final words = title.split(' ');
-    if (words.isNotEmpty) {
-      final firstWord = words.first.trim();
-      // Skip if it's too short or common words
-      if (firstWord.length > 2 &&
-          !['the', 'a', 'an'].contains(firstWord.toLowerCase())) {
-        // Only return if it looks like a brand name (capitalized, reasonable length)
-        if (firstWord[0].toUpperCase() == firstWord[0] &&
-            firstWord.length <= 20) {
-          return firstWord;
-        }
-      }
-    }
-
-    return null;
-  }
-
-  /// Get deterministic color for a brand from predefined brand colors
-  ui.Color _getBrandColor(String brand) {
-    // List of predefined brand colors from AppColorTheme
-    final brandColors = [
-      ui.Color(0xFFFF9029), // orange
-      ui.Color(0xFF4676F6), // blue
-      ui.Color(0xFFFFC300), // yellowLight
-      ui.Color(0xFFD0082C), // red4
-    ];
-
-    // Use brand name hash to deterministically select a color
-    final hash = brand.hashCode;
-    final colorIndex = hash.abs() % brandColors.length;
-
-    return brandColors[colorIndex];
-  }
-
-  /// Create a parking pin style marker with brand first letter
-  Future<MapImage> _createBrandMarkerImage(
-    String brandLetter,
-    ui.Color backgroundColor, [
-    double opacity = 1.0,
-  ]) async {
-    const double pinHeight = 140.0; // Increased from 100.0
-    const double pinWidth = 100.0; // Increased from 70.0
-    const double circleRadius = 42.0; // Increased from 30.0
-    const double circleCenterY = 42.0; // Increased from 30.0
-    const double circleCenterX = pinWidth / 2;
-
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder);
-
-    // Draw white pin shape (outer circle + triangle) - always full opacity
-    final ui.Paint whitePaint = ui.Paint()
-      ..color = ui.Color(0xFFFFFFFF)
-      ..style = ui.PaintingStyle.fill;
-
-    // Draw outer white circle
-    canvas.drawCircle(
-      ui.Offset(circleCenterX, circleCenterY),
-      circleRadius,
-      whitePaint,
-    );
-
-    // Draw white triangle (pin point)
-    final ui.Path trianglePath = ui.Path()
-      ..moveTo(circleCenterX - 15, circleCenterY + circleRadius)
-      ..lineTo(circleCenterX + 15, circleCenterY + circleRadius)
-      ..lineTo(circleCenterX, pinHeight - 5)
-      ..close();
-    canvas.drawPath(trianglePath, whitePaint);
-
-    // Draw colored inner circle (brand background) with opacity
-    final ui.Paint brandPaint = ui.Paint()
-      ..color = ui.Color.fromARGB(
-        (backgroundColor.alpha * opacity).toInt(),
-        backgroundColor.red,
-        backgroundColor.green,
-        backgroundColor.blue,
-      )
-      ..style = ui.PaintingStyle.fill;
-
-    canvas.drawCircle(
-      ui.Offset(circleCenterX, circleCenterY),
-      circleRadius - 5,
-      brandPaint,
-    );
-
-    // Draw brand letter with opacity
-    final ui.ParagraphBuilder paragraphBuilder = ui.ParagraphBuilder(
-      ui.ParagraphStyle(
-        textAlign: TextAlign.center,
-        fontSize: 40.0, // Increased from 28.0
-        fontWeight: ui.FontWeight.bold,
-      ),
-    );
-
-    paragraphBuilder.pushStyle(
-      ui.TextStyle(
-        color: ui.Color.fromARGB((255 * opacity).toInt(), 255, 255, 255),
-      ),
-    );
-    paragraphBuilder.addText(brandLetter.toUpperCase());
-
-    final ui.Paragraph paragraph = paragraphBuilder.build();
-    paragraph.layout(ui.ParagraphConstraints(width: pinWidth));
-
-    canvas.drawParagraph(
-      paragraph,
-      ui.Offset(0, circleCenterY - paragraph.height / 2),
-    );
-
-    // Draw small circle at pin tip - always full opacity
-    final ui.Paint tipPaint = ui.Paint()
-      ..color = backgroundColor
-      ..style = ui.PaintingStyle.fill;
-
-    canvas.drawCircle(ui.Offset(circleCenterX, pinHeight - 7), 7, tipPaint);
-
-    final ui.Picture picture = recorder.endRecording();
-    final ui.Image image = await picture.toImage(
-      pinWidth.toInt(),
-      pinHeight.toInt(),
-    );
-    final ByteData? byteData = await image.toByteData(
-      format: ui.ImageByteFormat.png,
-    );
-
-    return MapImage.withPixelDataAndImageFormat(
-      byteData!.buffer.asUint8List(),
-      ImageFormat.png,
-    );
-  }
-
-  /// Add place markers to map based on selected brands
-  Future<void> _addPlaceMarkersToMap(List<Place> places) async {
-    final selectedBrands = state.selectedBrands ?? [];
-    final mapController = state.mapController;
-    if (mapController == null) return;
-
-    final List<GeoCoordinates> markerCoordinates = [];
-    final bool shouldZoom = _isFirstTimeMarkersLoaded;
-
-    // Update or create markers for all places
-    for (final place in places) {
-      final brand = _getBrandFromPlace(place);
-      if (brand == null) continue;
-
-      final coordinates = place.geoCoordinates;
-      if (coordinates == null) continue;
-
-      final isSelected = selectedBrands.contains(brand);
-      final opacity = isSelected ? 1.0 : 0.5;
-
-      // Check if marker already exists
-      if (_placeMarkersMap.containsKey(place.id)) {
-        // Update existing marker by removing and recreating with new opacity
-        final existingMarker = _placeMarkersMap[place.id]!;
-        mapController.mapScene.removeMapMarker(existingMarker);
-        _placeMarkers.remove(existingMarker);
-      }
-
-      if (isSelected) {
-        // Get first letter of brand
-        final brandLetter = brand.isNotEmpty ? brand[0] : '?';
-        final brandColor = _getBrandColor(brand);
-
-        // Create marker image with appropriate opacity
-        final markerImage = await _createBrandMarkerImage(
-          brandLetter,
-          brandColor,
-          opacity,
-        );
-        final marker = MapMarker(coordinates, markerImage);
-
-        // Set anchor point to bottom center of pin
-        marker.anchor = Anchor2D.withHorizontalAndVertical(0.5, 1.0);
-
-        // Add metadata for tap handling
-        final metadata = Metadata();
-        metadata.setString("place_id", place.id);
-        metadata.setString("place_title", place.title);
-        marker.metadata = metadata;
-
-        mapController.mapScene.addMapMarker(marker);
-        _placeMarkers.add(marker);
-        _placeMarkersMap[place.id] = marker;
-        _markerBrandMap[place.id] = brand;
-        _placeDataMap[place.id] = place; // Store place data
-        markerCoordinates.add(coordinates);
-      }
-    }
-
-    // Zoom out to show all markers only on first load
-    if (shouldZoom && markerCoordinates.isNotEmpty) {
-      _zoomToShowAllMarkers(markerCoordinates);
-      _isFirstTimeMarkersLoaded = false;
-    }
-  }
-
-  /// Zoom map to show all markers
-  void _zoomToShowAllMarkers(List<GeoCoordinates> coordinates) {
-    final mapController = state.mapController;
-    if (mapController == null || coordinates.isEmpty) return;
-
-    if (coordinates.length == 1) {
-      // Single marker - zoom to it
-      focusOnCurrentLocation(distanceInMeters: 5000);
-      return;
-    }
-
-    // Calculate bounding box
-    double minLat = coordinates.first.latitude;
-    double maxLat = coordinates.first.latitude;
-    double minLng = coordinates.first.longitude;
-    double maxLng = coordinates.first.longitude;
-
-    for (final coord in coordinates) {
-      if (coord.latitude < minLat) minLat = coord.latitude;
-      if (coord.latitude > maxLat) maxLat = coord.latitude;
-      if (coord.longitude < minLng) minLng = coord.longitude;
-      if (coord.longitude > maxLng) maxLng = coord.longitude;
-    }
-
-    // Calculate center
-    final centerLat = (minLat + maxLat) / 2;
-    final centerLng = (minLng + maxLng) / 2;
-    final center = GeoCoordinates(centerLat, centerLng);
-
-    // Calculate distance to cover all markers with padding
-    final latDistance = calculateDistanceInMeters(
-      minLat,
-      centerLng,
-      maxLat,
-      centerLng,
-    );
-    final lngDistance = calculateDistanceInMeters(
-      centerLat,
-      minLng,
-      centerLat,
-      maxLng,
-    );
-
-    // Use the larger distance and add more padding for better zoom out
-    final maxDistance =
-        (latDistance > lngDistance ? latDistance : lngDistance) * 10.0;
-
-    // Zoom to show all markers with more zoom out
-    final mapMeasure = MapMeasure(MapMeasureKind.distanceInMeters, maxDistance);
-    mapController.camera.lookAtPointWithMeasure(center, mapMeasure);
-  }
-
-  /// Clear all place markers from map
-  void _clearPlaceMarkers() {
-    final mapController = state.mapController;
-    if (mapController == null) return;
-
-    for (final marker in _placeMarkers) {
-      mapController.mapScene.removeMapMarker(marker);
-    }
-    _placeMarkers.clear();
-    _placeMarkersMap.clear();
-    _markerBrandMap.clear();
-    _placeDataMap.clear();
-    _isFirstTimeMarkersLoaded = true; // Reset flag when clearing
-  }
-
-  /// Show business overview in modal bottom sheet
-  void showBusinessOverviewModal(Place place) {
-    emit(
-      state.copyWith(selectedTruckStop: place, showBusinessOverviewModal: true),
-    );
-  }
-
-  /// Clear selected truck stop
-  void clearSelectedTruckStop() {
-    emit(
-      state.copyWith(
-        selectedTruckStop: 'null',
-        showBusinessOverviewModal: false,
-      ),
-    );
-  }
-
-  void clearAllTruckStops() {
-    _clearPlaceMarkers();
-    emit(
-      state.copyWith(
-        selectedBrands: [],
-        categorySearchResults: FutureData<List<Place>>.initial(),
-        selectedTruckStop: 'null',
-        showBusinessOverviewModal: false,
-      ),
-    );
-  }
-
-  /// Map place type names to HERE SDK category codes
-  List<String> _getCategoryCodesForPlaceType(String placeTypeName) {
-    final name = placeTypeName.toLowerCase();
-
-    // Truck stops - use truck stop plaza category
-    if (name.contains('truck stop')) {
-      return ['700-7900-0132']; // Truck stop plaza
-    }
-
-    // Parking - use truck parking category
-    if (name.contains('parking')) {
-      return ['700-7900-0131']; // Truck parking
-    }
-
-    // Rest areas
-    if (name.contains('rest area')) {
-      return [
-        '700-7900-0133', // Rest area
-        '700-7900-0131', // Also include truck parking
-      ];
-    }
-
-    // Weight stations / Scales
-    if (name.contains('weight station') || name.contains('scales')) {
-      return ['700-7900-0134']; // Weigh station
-    }
-
-    // Fuel
-    if (name.contains('fuel')) {
-      return [
-        '700-7600-0000', // Gas station / Fuel
-        '700-7900-0132', // Also truck stops which have fuel
-      ];
-    }
-
-    // Truck Washes
-    if (name.contains('wash')) {
-      return ['700-7900-0135']; // Truck wash
-    }
-
-    // Restaurant
-    if (name.contains('restaurant')) {
-      return ['100-1000-0000']; // Restaurant
-    }
-
-    // Hotel
-    if (name.contains('hotel')) {
-      return [PlaceCategory.accommodation];
-    }
-
-    // Store
-    if (name.contains('store')) {
-      return [PlaceCategory.shopping];
-    }
-
-    // Return empty list if no match
-    return [];
-  }
-
   void selectSuggestionAsDestination(Suggestion suggestion) {
     if (suggestion.place?.isBusiness == true) {
       searchBusinessDetailsByPlaceId(
@@ -1270,10 +675,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     state.mapController?.camera.lookAtPointWithMeasure(shiftedCoords, measure);
   }
 
-  void calculateRouteWithBusinessOverview() {
-    final Place? place = state.selectedTruckStop;
+  void calculateRouteWithBusinessOverview(Place? place) {
     if (place == null || place.geoCoordinates == null) return;
-
     final List<LocationPoint> points = [
       LocationPoint(
         place: state.currentPlace?.data,
@@ -1281,14 +684,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         isMyLocation: true,
       ),
       LocationPoint(
-        place: state.selectedTruckStop,
+        place: place,
         pointType: LocationPointType.destination,
         isMyLocation: false,
       ),
     ];
-
-    clearAllTruckStops();
-
     createTrip(points);
   }
 
@@ -1592,8 +992,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     clearAllStopMarker();
 
-    _clearPlaceMarkers();
-
     _clearTruckPreviousMarkers();
 
     emit(
@@ -1610,7 +1008,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         businessAtAddress: 'null',
         hasdestinationFromRecent: false,
         locationPoints: [],
-        selectedTruckStop: 'null',
         showBusinessOverviewModal: false,
         hasTapDestination: false,
       ),
