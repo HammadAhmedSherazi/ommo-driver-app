@@ -8,6 +8,9 @@ class TruckStopsState extends Equatable {
   final bool showBusinessOverviewModal;
   final List<String>? availableBrands;
   final List<String>? selectedBrands;
+  final bool isCameraListenerActive;
+  final Set<String> searchedCoordinates; // Track searched areas to avoid duplicates
+  final String? currentPlaceType; // Track current search category
 
   const TruckStopsState({
     this.categorySearchResults,
@@ -15,6 +18,9 @@ class TruckStopsState extends Equatable {
     this.selectedBrands,
     this.selectedTruckStop,
     this.showBusinessOverviewModal = false,
+    this.isCameraListenerActive = false,
+    this.searchedCoordinates = const {},
+    this.currentPlaceType,
   });
 
   TruckStopsState copyWith({
@@ -23,6 +29,9 @@ class TruckStopsState extends Equatable {
     List<String>? selectedBrands,
     dynamic selectedTruckStop,
     bool? showBusinessOverviewModal,
+    bool? isCameraListenerActive,
+    Set<String>? searchedCoordinates,
+    String? currentPlaceType,
   }) {
     return TruckStopsState(
       selectedTruckStop: selectedTruckStop == 'null'
@@ -34,6 +43,10 @@ class TruckStopsState extends Equatable {
       selectedBrands: selectedBrands ?? this.selectedBrands,
       showBusinessOverviewModal:
           showBusinessOverviewModal ?? this.showBusinessOverviewModal,
+      isCameraListenerActive:
+          isCameraListenerActive ?? this.isCameraListenerActive,
+      searchedCoordinates: searchedCoordinates ?? this.searchedCoordinates,
+      currentPlaceType: currentPlaceType ?? this.currentPlaceType,
     );
   }
 
@@ -44,5 +57,8 @@ class TruckStopsState extends Equatable {
     categorySearchResults,
     availableBrands,
     selectedBrands,
+    isCameraListenerActive,
+    searchedCoordinates,
+    currentPlaceType,
   ];
 }

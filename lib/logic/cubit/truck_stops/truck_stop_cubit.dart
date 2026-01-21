@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' show log;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -7,7 +8,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:here_sdk/core.dart';
 import 'package:here_sdk/mapview.dart'
-    show MapMeasureKind, MapMeasure, MapImage, ImageFormat, MapMarker;
+    show
+        MapMeasureKind,
+        MapMeasure,
+        MapImage,
+        ImageFormat,
+        MapMarker,
+        MapCameraListener,
+        MapCameraState;
 import 'package:here_sdk/search.dart'
     show
         PlaceCategory,
@@ -29,7 +37,12 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
   Map<String, MapMarker> _placeMarkersMap = {}; // place.id -> marker
   Map<String, String> _markerBrandMap = {}; // place.id -> brand
   Map<String, Place> placeDataMap = {}; // place.id -> Place
+  Map<String, String> placesLogoMap = {}; // place.id -> Image
   bool _isFirstTimeMarkersLoaded = true;
+  MapCameraListener? _cameraListener;
+  Timer? _cameraDebounceTimer;
+  static const double _coordinatePrecision =
+      0.01; // ~1km precision for duplicate detection
 
   static const List<Map<String, String?>> defaultBrands = [
     {'name': "Love's", 'icon': 'assets/images/image 2.png'},
@@ -47,77 +60,180 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
 
   // final List <>
   void searchByCategory(String placeTypeName) {
-    final startCoordinates = navigatorKey.currentContext
+    final mapController = navigatorKey.currentContext
         ?.read<TruckNavigationCubit>()
         .state
-        .startCoordinates;
+        .mapController;
 
-    if (startCoordinates == null) {
+    if (mapController == null) {
       emit(
         state.copyWith(
           categorySearchResults: FutureData.error(
-            "Unable to search: current location not available",
+            "Unable to search: map controller not available",
           ),
           availableBrands: [], // Clear brands on error
           selectedBrands: [], // Clear selected brands
         ),
       );
-
       return;
     }
 
+    // Get map camera's target coordinates (focused location)
+    final cameraState = mapController.camera.state;
+    final centerCoordinates = cameraState.targetCoordinates;
+
+    // Clear previous search results and reset searched coordinates if it's a new category
+    if (state.currentPlaceType != placeTypeName) {
+      emit(
+        state.copyWith(
+          categorySearchResults: FutureData<List<Place>>.loading(),
+          availableBrands: [],
+          selectedBrands: [],
+          searchedCoordinates: {},
+          currentPlaceType: placeTypeName,
+        ),
+      );
+      _clearPlaceMarkers();
+      _isFirstTimeMarkersLoaded = true;
+    }
+
+    // Setup camera listener if not already active
+    if (!state.isCameraListenerActive) {
+      _setupCameraListener(placeTypeName);
+    }
+
+    // Perform search with map-focused location
+    _performSearch(placeTypeName, centerCoordinates, isAppending: false);
+  }
+
+  /// Setup camera listener to track map movements
+  void _setupCameraListener(String placeTypeName) {
+    final mapController = navigatorKey.currentContext
+        ?.read<TruckNavigationCubit>()
+        .state
+        .mapController;
+
+    if (mapController == null) return;
+
+    // Remove existing listener if any
+    _removeCameraListener();
+
+    // Create new listener
+    _cameraListener = MapCameraListener((MapCameraState mapState) {
+      final targetCoords = mapState.targetCoordinates;
+
+      // Debounce camera changes to avoid too many API calls
+      _cameraDebounceTimer?.cancel();
+      _cameraDebounceTimer = Timer(const Duration(milliseconds: 800), () {
+        // Check if this area has already been searched
+        final coordKey = _getCoordinateKey(targetCoords);
+        if (state.searchedCoordinates.contains(coordKey)) {
+          log("Area already searched, skipping: $coordKey");
+          return;
+        }
+
+        // Append new results for this location
+        _performSearch(placeTypeName, targetCoords, isAppending: true);
+      });
+    });
+
+    // Add listener to camera
+    mapController.camera.addListener(_cameraListener!);
+
+    emit(state.copyWith(isCameraListenerActive: true));
+  }
+
+  /// Remove camera listener
+  void _removeCameraListener() {
+    _cameraDebounceTimer?.cancel();
+    _cameraDebounceTimer = null;
+
+    final mapController = navigatorKey.currentContext
+        ?.read<TruckNavigationCubit>()
+        .state
+        .mapController;
+
+    if (mapController != null && _cameraListener != null) {
+      mapController.camera.removeListener(_cameraListener!);
+      _cameraListener = null;
+    }
+  }
+
+  /// Generate a coordinate key for duplicate detection (rounded to ~1km precision)
+  String _getCoordinateKey(GeoCoordinates coords) {
+    final roundedLat =
+        (coords.latitude / _coordinatePrecision).round() * _coordinatePrecision;
+    final roundedLng =
+        (coords.longitude / _coordinatePrecision).round() *
+        _coordinatePrecision;
+    return '${roundedLat.toStringAsFixed(4)}_${roundedLng.toStringAsFixed(4)}';
+  }
+
+  /// Perform search at given coordinates (can append to existing results)
+  void _performSearch(
+    String placeTypeName,
+    GeoCoordinates centerCoordinates, {
+    required bool isAppending,
+  }) {
     // Get category codes for the place type
     List<String> categoryCodes = _getCategoryCodesForPlaceType(placeTypeName);
     if (categoryCodes.isEmpty) {
-      emit(
-        state.copyWith(
-          categorySearchResults: FutureData.error(
-            "No category found for: $placeTypeName",
+      if (!isAppending) {
+        emit(
+          state.copyWith(
+            categorySearchResults: FutureData.error(
+              "No category found for: $placeTypeName",
+            ),
+            availableBrands: [],
+            selectedBrands: [],
           ),
-          availableBrands: [], // Clear brands on error
-          selectedBrands: [], // Clear selected brands
-        ),
-      );
+        );
+      }
       return;
     }
 
-    // Emit loading state and clear previous brands/brand selection
-    emit(
-      state.copyWith(
-        categorySearchResults: FutureData<List<Place>>.loading(),
-        availableBrands: [], // Clear previous brands
-        selectedBrands: [], // Clear selected brands when place type changes
-      ),
-    );
-    log("state: $state");
+    // Mark this coordinate as searched
+    final coordKey = _getCoordinateKey(centerCoordinates);
+    final updatedSearchedCoords = Set<String>.from(state.searchedCoordinates)
+      ..add(coordKey);
+
+    // Emit loading state only if not appending
+    if (!isAppending) {
+      emit(
+        state.copyWith(
+          categorySearchResults: FutureData<List<Place>>.loading(),
+          searchedCoordinates: updatedSearchedCoords,
+        ),
+      );
+    }
 
     // Create category list
     List<PlaceCategory> placeCategoryList = categoryCodes
         .map((code) => PlaceCategory(code))
         .toList();
 
-    // Create search area around current location
-    // Create a valid corridor with at least 2 points (required for GeoCorridor)
-    final center = startCoordinates;
+    // Create search area around map-focused location
     const int halfWidthInMeters = 50000; // 50km radius
 
     // Create a small line segment near the center to form a valid polyline
-    // Add a second point slightly offset to create a valid corridor
     const double offsetInDegrees = 0.01; // Small offset (~1km)
     final GeoCoordinates secondPoint = GeoCoordinates(
-      center.latitude + offsetInDegrees,
-      center.longitude,
+      centerCoordinates.latitude + offsetInDegrees,
+      centerCoordinates.longitude,
     );
 
     // Create corridor with at least 2 points
-    final List<GeoCoordinates> routeVertices = [center, secondPoint];
+    final List<GeoCoordinates> routeVertices = [centerCoordinates, secondPoint];
     final GeoCorridor routeCorridor = GeoCorridor(
       routeVertices,
       halfWidthInMeters,
     );
 
     CategoryQueryArea categoryQueryArea =
-        CategoryQueryArea.withCorridorAndCenter(routeCorridor, center);
+        CategoryQueryArea.withCorridorAndCenter(
+          routeCorridor,
+          centerCoordinates,
+        );
 
     // Create category query
     CategoryQuery categoryQuery = CategoryQuery.withCategoriesInArea(
@@ -144,20 +260,37 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     ) {
       if (searchError != null) {
         log("Category search error: $searchError");
-        emit(
-          state.copyWith(
-            categorySearchResults: FutureData.error(searchError.toString()),
-          ),
-        );
+        if (!isAppending) {
+          emit(
+            state.copyWith(
+              categorySearchResults: FutureData.error(searchError.toString()),
+            ),
+          );
+        }
         return;
       }
 
       if (places != null && places.isNotEmpty) {
+        // Get existing places if appending
+        final existingPlaces =
+            isAppending && state.categorySearchResults?.data != null
+            ? List<Place>.from(state.categorySearchResults!.data!)
+            : <Place>[];
+
+        // Filter out duplicates by place ID
+        final existingPlaceIds = existingPlaces.map((p) => p.id).toSet();
+        final newPlaces = places
+            .where((p) => !existingPlaceIds.contains(p.id))
+            .toList();
+
+        // Combine existing and new places
+        final allPlaces = [...existingPlaces, ...newPlaces];
+
         // Determine which brands have results
         final Set<String> brandsWithResults = {};
         bool hasOtherResults = false;
 
-        for (final place in places) {
+        for (final place in allPlaces) {
           final brand = getBrandFromPlace(place);
           if (brand != null) {
             if (_defaultBrandNames.contains(brand)) {
@@ -177,34 +310,45 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
         }
 
         // Auto-select brands that have results, including "Other" if it has results
-        final selectedBrands = List<String>.from(brandsWithResults);
-        if (hasOtherResults) {
+        // Only update selected brands if not appending (to preserve user selection)
+        final selectedBrands = isAppending
+            ? (state.selectedBrands ?? [])
+            : List<String>.from(brandsWithResults);
+        if (!isAppending && hasOtherResults) {
           selectedBrands.add("Other");
         }
 
         emit(
           state.copyWith(
-            categorySearchResults: FutureData.completed(places),
+            categorySearchResults: FutureData.completed(allPlaces),
             availableBrands: availableBrands,
-            selectedBrands: selectedBrands, // Only select brands with results
+            selectedBrands: selectedBrands,
+            searchedCoordinates: updatedSearchedCoords,
           ),
         );
-        // Add markers to map (don't await to avoid blocking)
-        _addPlaceMarkersToMap(places).catchError((error) {
-          log("Error adding place markers: $error");
-        });
+
+        // Add markers to map (only new places if appending)
+        final placesToAdd = isAppending ? newPlaces : allPlaces;
+        if (placesToAdd.isNotEmpty) {
+          _addPlaceMarkersToMap(placesToAdd).catchError((error) {
+            log("Error adding place markers: $error");
+          });
+        }
       } else {
-        // Even with no results, show default brands in UI (but not selected)
-        emit(
-          state.copyWith(
-            categorySearchResults: FutureData.completed([]),
-            availableBrands: List<String>.from(
-              _defaultBrandNames,
-            ), // Always show default brands
-            selectedBrands: [], // No brands selected when no results
-          ),
-        );
-        _clearPlaceMarkers();
+        // Update searched coordinates even if no results
+        emit(state.copyWith(searchedCoordinates: updatedSearchedCoords));
+
+        // Only show empty state if not appending
+        if (!isAppending) {
+          emit(
+            state.copyWith(
+              categorySearchResults: FutureData.completed([]),
+              availableBrands: List<String>.from(_defaultBrandNames),
+              selectedBrands: [],
+            ),
+          );
+          _clearPlaceMarkers();
+        }
       }
     });
   }
@@ -235,7 +379,16 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
 
   /// Clear brand filter and available brands
   void clearBrandFilter() {
-    emit(state.copyWith(availableBrands: [], selectedBrands: []));
+    _removeCameraListener();
+    emit(
+      state.copyWith(
+        availableBrands: [],
+        selectedBrands: [],
+        isCameraListenerActive: false,
+        searchedCoordinates: {},
+        currentPlaceType: null,
+      ),
+    );
     _clearPlaceMarkers();
   }
 
@@ -565,6 +718,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
         _placeMarkersMap[place.id] = marker;
         _markerBrandMap[place.id] = brand;
         placeDataMap[place.id] = place; // Store place data
+        placesLogoMap[place.id] = iconPath ?? '';
         markerCoordinates.add(coordinates);
       }
     }
@@ -641,6 +795,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     _placeMarkersMap.clear();
     _markerBrandMap.clear();
     placeDataMap.clear();
+    placesLogoMap.clear();
     _isFirstTimeMarkersLoaded = true; // Reset flag when clearing
   }
 
@@ -662,6 +817,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
   }
 
   void clearAllTruckStops() {
+    _removeCameraListener();
     _clearPlaceMarkers();
     emit(
       state.copyWith(
@@ -669,6 +825,9 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
         categorySearchResults: FutureData<List<Place>>.initial(),
         selectedTruckStop: 'null',
         showBusinessOverviewModal: false,
+        isCameraListenerActive: false,
+        searchedCoordinates: {},
+        currentPlaceType: null,
       ),
     );
   }

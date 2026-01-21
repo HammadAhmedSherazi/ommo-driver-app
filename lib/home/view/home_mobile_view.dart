@@ -672,6 +672,13 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     return state.showBusinessOverviewModal
                         ? showTappedBusinessDetails(
                             state.selectedTruckStop,
+                            assetImage:
+                                context
+                                    .read<TruckStopCubit>()
+                                    .placesLogoMap[state
+                                    .selectedTruckStop
+                                    ?.id] ??
+                                '',
                             onBackPressed: () {
                               context
                                   .read<TruckStopCubit>()
@@ -1088,6 +1095,14 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                                             child: PlaceDisplayWidget(
                                                               place: place
                                                                   .toPlaceDataModel,
+                                                              image:
+                                                                  context
+                                                                      .read<
+                                                                        TruckStopCubit
+                                                                      >()
+                                                                      .placesLogoMap[place
+                                                                      .id] ??
+                                                                  '',
                                                               isSaved: false,
                                                             ),
                                                           ),
@@ -1822,6 +1837,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
     Place? place, {
     VoidCallback? onBackPressed,
     VoidCallback? onTripPressed,
+    String? assetImage,
   }) {
     final String image = place?.getImage ?? '';
     final bool? isOpened = place?.details.openingHours.firstOrNull?.isOpen;
@@ -1854,6 +1870,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
               shape: BoxShape.circle,
               image: image.isNotEmpty
                   ? DecorationImage(image: NetworkImage(image))
+                  : assetImage != null
+                  ? DecorationImage(image: AssetImage(assetImage))
                   : null,
             ),
           ),
@@ -2976,7 +2994,13 @@ class _HomeMobileViewState extends State<HomeMobileView>
 
 class PlaceDisplayWidget extends StatelessWidget {
   final bool? isSaved;
-  const PlaceDisplayWidget({super.key, this.place, this.isSaved = false});
+  final String? image;
+  const PlaceDisplayWidget({
+    super.key,
+    this.place,
+    this.isSaved = false,
+    this.image,
+  });
 
   final PlaceDataModel? place;
 
@@ -2995,6 +3019,8 @@ class PlaceDisplayWidget extends StatelessWidget {
             radius: 13,
             backgroundImage: (place?.networkImage ?? '').isNotEmpty
                 ? CachedNetworkImageProvider(place?.networkImage ?? '')
+                : (image ?? '').isNotEmpty
+                ? AssetImage(image ?? '')
                 : (place?.icon ?? '').isNotEmpty
                 ? AssetImage(place?.icon ?? '')
                 : null,
