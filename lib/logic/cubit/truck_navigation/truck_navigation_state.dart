@@ -30,6 +30,8 @@ class TruckNavigationState extends Equatable {
   final List<LocationPoint>? locationPoints;
   final int nextTargetIndex;
   final Place? businessAtAddress;
+  final String? currentSpeed;
+  final String? speedLimit;
 
   const TruckNavigationState({
     this.mapController,
@@ -52,6 +54,8 @@ class TruckNavigationState extends Equatable {
     this.locationPoints,
     this.nextTargetIndex = 1,
     this.businessAtAddress,
+    this.currentSpeed,
+    this.speedLimit,
   });
 
   // GeoCoordinates? get destinationCoordinates =>
@@ -80,6 +84,8 @@ class TruckNavigationState extends Equatable {
     List<LocationPoint>? locationPoints,
     int? nextTargetIndex,
     dynamic businessAtAddress,
+    dynamic currentSpeed,
+    dynamic speedLimit,
   }) {
     return TruckNavigationState(
       nextTargetIndex: nextTargetIndex ?? this.nextTargetIndex,
@@ -118,6 +124,10 @@ class TruckNavigationState extends Equatable {
       businessAtAddress: businessAtAddress == "null"
           ? null
           : businessAtAddress ?? this.businessAtAddress,
+      currentSpeed: currentSpeed == 'null'
+          ? null
+          : (currentSpeed ?? this.currentSpeed),
+      speedLimit: speedLimit == 'null' ? null : (speedLimit ?? this.speedLimit),
     );
   }
 
@@ -143,5 +153,7 @@ class TruckNavigationState extends Equatable {
     locationPoints,
     nextTargetIndex,
     businessAtAddress,
+    currentSpeed,
+    speedLimit,
   ];
 }

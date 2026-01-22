@@ -12,7 +12,7 @@ class AppKeys {
   static const String onboardingCacheKey = '__onboarding_cache_key__';
 
   final String accessKeyId = "nD9uaWDaZEmcHFyirUGFZw";
-  final bool isSimulation = true;
+  final bool isSimulation = false;
   final GeoCoordinates startCoordinates = GeoCoordinates(
     32.317206,
     -106.780645,

@@ -892,6 +892,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _visualNavigator?.startRendering(state.mapController!);
     setupTruckRestrictionWarnings();
     setupManeuverUpdates();
+    setupSpeedListeners();
 
     if (AppKeys().isSimulation) {
       _locationEngine?.stop();
@@ -967,7 +968,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       _simulator = null;
     }
     emit(
-      state.copyWith(cameraControlledByNavigator: false, nextTargetIndex: 1),
+      state.copyWith(
+        cameraControlledByNavigator: false,
+        nextTargetIndex: 1,
+        currentSpeed: 'null',
+        speedLimit: 'null',
+      ),
     );
 
     if (_locationEngine != null && !(AppKeys().isSimulation)) {
@@ -1022,6 +1028,42 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       RouteProgress progress,
     ) {
       emit(state.copyWith(maneuverProgresses: progress.maneuverProgress));
+    });
+  }
+
+  void setupSpeedListeners() {
+    if (_visualNavigator == null) return;
+
+    // Listen for current driving speed
+    _visualNavigator!.navigableLocationListener = NavigableLocationListener((
+      NavigableLocation currentNavigableLocation,
+    ) {
+      final drivingSpeed =
+          currentNavigableLocation.originalLocation.speedInMetersPerSecond;
+      if (drivingSpeed == null) {
+        emit(state.copyWith(currentSpeed: "n/a"));
+      } else {
+        final kmh = (drivingSpeed * 3.6).toInt();
+        // Convert km/h to mph (1 km/h = 0.621371 mph)
+        final mph = (kmh * 0.621371).round();
+        emit(state.copyWith(currentSpeed: "$mph"));
+      }
+    });
+
+    // Listen for speed limit
+    _visualNavigator!.speedLimitListener = SpeedLimitListener((speedLimit) {
+      final currentSpeedLimit = speedLimit
+          .effectiveSpeedLimitInMetersPerSecond();
+      if (currentSpeedLimit == null) {
+        emit(state.copyWith(speedLimit: "n/a"));
+      } else if (currentSpeedLimit == 0) {
+        emit(state.copyWith(speedLimit: "NSL"));
+      } else {
+        final kmh = (currentSpeedLimit * 3.6).toInt();
+        // Convert km/h to mph (1 km/h = 0.621371 mph)
+        final mph = (kmh * 0.621371).round();
+        emit(state.copyWith(speedLimit: "$mph"));
+      }
     });
   }
 
