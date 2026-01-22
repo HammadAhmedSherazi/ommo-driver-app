@@ -26,7 +26,7 @@ class TruckNavigationState extends Equatable {
   final bool hasTapDestination;
   final bool hasDirection;
   final bool cameraControlledByNavigator;
-  final ManeuverProgress? maneuverProgress;
+  final List<ManeuverProgress> maneuverProgresses;
   final List<LocationPoint>? locationPoints;
   final int nextTargetIndex;
   final Place? businessAtAddress;
@@ -35,9 +35,8 @@ class TruckNavigationState extends Equatable {
     this.mapController,
     this.currentPlace,
     this.startCoordinates,
-    this.maneuverProgress,
+    this.maneuverProgresses = const [],
     this.selectedSuggestion,
-    // this.nearbyTruckStops,
     this.destinationCoordinates,
     this.currentRoute,
     this.tappedPlace,
@@ -77,7 +76,7 @@ class TruckNavigationState extends Equatable {
     bool? showBusinessOverviewModal,
     bool? cameraControlledByNavigator,
     bool? hasDirection,
-    dynamic maneuverProgress,
+    List<ManeuverProgress>? maneuverProgresses,
     List<LocationPoint>? locationPoints,
     int? nextTargetIndex,
     dynamic businessAtAddress,
@@ -107,9 +106,7 @@ class TruckNavigationState extends Equatable {
       currentRoute: currentRoute == 'null'
           ? null
           : (currentRoute ?? this.currentRoute),
-      maneuverProgress: maneuverProgress == 'null'
-          ? null
-          : (maneuverProgress ?? this.maneuverProgress),
+      maneuverProgresses: maneuverProgresses ?? this.maneuverProgresses,
       hasdestinationFromRecent:
           hasdestinationFromRecent ?? this.hasdestinationFromRecent,
       isNavigating: isNavigating ?? this.isNavigating,
@@ -126,22 +123,25 @@ class TruckNavigationState extends Equatable {
 
   @override
   List<Object?> get props => [
-    nextTargetIndex,
-    locationPoints,
-    hasFocusedLocation,
-    destinationSuggestions,
     mapController,
     currentPlace,
-    destinationFromRecent,
-    hasdestinationFromRecent,
     startCoordinates,
+    maneuverProgresses,
     selectedSuggestion,
     destinationCoordinates,
-    tappedPlace,
     currentRoute,
-    isNavigating,
+    tappedPlace,
+    hasFocusedLocation,
     isMapLoading,
     hasTapDestination,
+    hasdestinationFromRecent,
+    destinationFromRecent,
+    isNavigating,
+    hasDirection,
+    cameraControlledByNavigator,
+    destinationSuggestions,
+    locationPoints,
+    nextTargetIndex,
     businessAtAddress,
   ];
 }

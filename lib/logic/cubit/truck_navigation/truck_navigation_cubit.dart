@@ -922,6 +922,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         state.copyWith(
           nextTargetIndex: 1,
           isNavigating: true,
+          maneuverProgresses: [],
           cameraControlledByNavigator: true,
         ),
       );
@@ -1008,6 +1009,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         businessAtAddress: 'null',
         hasdestinationFromRecent: false,
         locationPoints: [],
+        maneuverProgresses: [],
         showBusinessOverviewModal: false,
         hasTapDestination: false,
       ),
@@ -1019,11 +1021,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _visualNavigator!.routeProgressListener = RouteProgressListener((
       RouteProgress progress,
     ) {
-      if (progress.maneuverProgress.isEmpty) {
-        emit(state.copyWith(maneuverProgress: "null"));
-      } else {
-        emit(state.copyWith(maneuverProgress: progress.maneuverProgress.first));
-      }
+      emit(state.copyWith(maneuverProgresses: progress.maneuverProgress));
     });
   }
 
