@@ -1,9 +1,25 @@
 import 'package:intl/intl.dart';
 
 extension NumExtension on num {
-  String get cmtoFeetInchesFormattedString => "${cmToFeetInches['feet']}ft ${cmToFeetInches['inches']}in";
+  String get cmtoFeetInchesFormattedString =>
+      "${cmToFeetInches['feet']}ft ${cmToFeetInches['inches']}in";
 
   num get inchesToCm => this * 2.54;
+
+  String get meterInMiles {
+    const metersPerMile = 1609.34;
+    const metersPerFoot = 0.3048;
+
+    if (this < metersPerMile) {
+      // Show in feet
+      double feet = this / metersPerFoot;
+      return "${feet.toStringAsFixed(0)} ft";
+    } else {
+      // Show in miles
+      double miles = this / metersPerMile;
+      return "${miles.toStringAsFixed(1)} mi";
+    }
+  }
 
   Map<String, int> get cmToFeetInches {
     double totalInches = this / 2.54;

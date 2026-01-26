@@ -30,6 +30,7 @@ import 'package:ommo/utils/constants/constants.dart';
 import 'package:ommo/utils/extension/place_extension.dart';
 import 'package:ommo/utils/extension/recent_search_model_extension.dart';
 import 'package:ommo/utils/generics/generics.dart';
+import 'package:ommo/utils/helpers/wake_lock_utils.dart';
 import 'package:ommo/utils/snacks/snackbar_utils.dart';
 import 'package:ommo/utils/theme/theme.dart';
 
@@ -888,6 +889,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   void startNavigation() {
     if (state.currentRoute == null) return;
 
+    WakeLockUtils.enable();
+
     _visualNavigator?.route = state.currentRoute!;
     _visualNavigator?.startRendering(state.mapController!);
     setupTruckRestrictionWarnings();
@@ -955,12 +958,14 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   void toggleCameraControll() {
     if (state.cameraControlledByNavigator) {
       showRouteDisableCameraControlByNavigator();
+      animateToRoute();
     } else {
       resumeCameraControlByNavigator();
     }
   }
 
   void stopNavigation() {
+    WakeLockUtils.disable();
     _visualNavigator?.stopRendering();
 
     if (AppKeys().isSimulation) {

@@ -1,18 +1,13 @@
 import 'dart:developer';
-import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:here_sdk/core.dart';
 import 'package:here_sdk/mapview.dart';
 import 'package:here_sdk/navigation.dart';
-import 'package:here_sdk/routing.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/custom_widget/future_data_builder.dart';
-import 'package:ommo/data/response/get_data.dart';
 import 'package:ommo/home/view/create_trip_view.dart';
 import 'package:ommo/home/view/home_app_bar.dart';
 import 'package:ommo/home/view/home_utils.dart';
@@ -26,7 +21,7 @@ import 'package:ommo/home/view/truck_navigation/truck_navigation_utils.dart';
 import 'package:ommo/logic/cubit/truck_stops/truck_stop_cubit.dart';
 import 'package:ommo/logic/cubit/truck_stops/truck_stops_state.dart';
 import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
-import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
+import 'package:ommo/utils/extension/num_extension.dart';
 import 'package:ommo/utils/extension/place_extension.dart';
 import 'package:ommo/utils/extension/recent_search_model_extension.dart';
 import 'package:ommo/utils/extension/route_extension.dart';
@@ -1874,12 +1869,18 @@ class _HomeMobileViewState extends State<HomeMobileView>
           } else {
             final ManeuverProgress? nextManuever =
                 state.maneuverProgresses.firstOrNull;
-            ManeuverProgress? afterNextManuever;
-            if (state.maneuverProgresses.length > 1) {
-              afterNextManuever = state.maneuverProgresses[1];
-            }
+
             if (nextManuever == null) {
               return SizedBox();
+            }
+
+            ManeuverProgress? afterNextManuever;
+            num distanceBetweenFirstAndNextManuever = 0;
+            if (state.maneuverProgresses.length > 1) {
+              afterNextManuever = state.maneuverProgresses[1];
+              distanceBetweenFirstAndNextManuever =
+                  afterNextManuever.remainingDistanceInMeters -
+                  nextManuever.remainingDistanceInMeters;
             }
 
             return Positioned(
@@ -1933,7 +1934,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
                             ),
                             SizedBox(height: 10),
                             Text(
-                              "${nextManuever.remainingDistanceInMeters.toDouble().toStringAsFixed(0)}m",
+                              nextManuever
+                                  .remainingDistanceInMeters
+                                  .meterInMiles,
                               style: AppTextTheme().bodyText.copyWith(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -2005,7 +2008,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
                               ),
                               SizedBox(height: 5),
                               Text(
-                                "${afterNextManuever.remainingDistanceInMeters.toDouble().toStringAsFixed(0)}m",
+                                distanceBetweenFirstAndNextManuever
+                                    .meterInMiles, // "${afterNextManuever.remainingDistanceInMeters.toDouble().toStringAsFixed(0)}m",
                                 style: AppTextTheme().bodyText.copyWith(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -2070,7 +2074,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
       ),
 
       Positioned(
-        bottom: 280,
+        bottom: 285,
         left: 20,
         right: 20,
         child: BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
@@ -2081,8 +2085,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
             return Row(
               children: [
                 Container(
-                  height: 80,
-                  width: 160,
+                  height: 60,
+                  width: 120,
                   decoration: BoxDecoration(
                     color: Colors.white, // background
                     borderRadius: BorderRadius.circular(
@@ -2114,13 +2118,13 @@ class _HomeMobileViewState extends State<HomeMobileView>
                           margin: EdgeInsets.all(5),
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: Colors.black, width: 2),
                           ),
                           child: Text(
                             state.speedLimit ?? "0",
                             style: AppTextTheme().subHeadingText.copyWith(
-                              fontSize: 28,
+                              fontSize: 24,
                             ),
                           ),
                         ),
@@ -2138,10 +2142,10 @@ class _HomeMobileViewState extends State<HomeMobileView>
                               Text(
                                 state.currentSpeed ?? "0",
                                 style: AppTextTheme().subHeadingText.copyWith(
-                                  fontSize: 28,
+                                  fontSize: 24,
                                 ),
                               ),
-                              Text("mph"),
+                              Text("mph", style: AppTextTheme().lightText),
                             ],
                           ),
                         ),
@@ -2185,11 +2189,13 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       c.cameraControlledByNavigator,
                   builder: (context, state) {
                     if (state.cameraControlledByNavigator) {
-                      return Icon(
-                        Icons.pan_tool_rounded,
-                        color: Colors.black,
-                        size: 20,
-                      );
+                      return Image.asset('assets/images/ion_compass-sharp.png');
+
+                      // return Icon(
+                      //   Icons.pan_tool_rounded,
+                      //   color: Colors.black,
+                      //   size: 20,
+                      // );
                     } else {
                       return SvgPicture.asset(
                         AppIcons.navigationIconGreen,
@@ -2208,13 +2214,13 @@ class _HomeMobileViewState extends State<HomeMobileView>
       ),
 
       CustomDragableWidget(
-        initialSize: 0.32,
+        initialSize: 0.34,
         miniSize: 0.24,
         maxSize: 0.95,
-        snapSizes: [0.24, 0.33, 0.55, 0.95],
+        snapSizes: [0.24, 0.34, 0.55, 0.95],
 
         bottomWidget: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           child: CustomButtonWidget(
             bgColor: AppColorTheme().red2,
             textColor: Colors.white,
