@@ -185,7 +185,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
         buildWhen: (previous, current) =>
             (previous.isNavigating != current.isNavigating ||
             previous.hasTapDestination != current.hasTapDestination ||
-            previous.hasDirection != current.hasDirection),
+            previous.hasDirection != current.hasDirection ||
+            previous.isNavigationCompleted != current.isNavigationCompleted),
 
         builder: (context, state) {
           log("home view rebuilding");
@@ -194,7 +195,6 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 ? buildInitialUi(
                     context,
                     state.hasDirection,
-
                     state.hasTapDestination,
                   )
                 : buildNavigationUi(state),
@@ -1861,232 +1861,40 @@ class _HomeMobileViewState extends State<HomeMobileView>
   List<Widget> buildNavigationUi(TruckNavigationState state) {
     return [
       MapView(),
-      BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
-        buildWhen: (p, c) => p.maneuverProgresses != c.maneuverProgresses,
-        builder: (context, state) {
-          if (state.currentRoute == null || state.maneuverProgresses.isEmpty) {
-            return SizedBox();
-          } else {
-            final ManeuverProgress? nextManuever =
-                state.maneuverProgresses.firstOrNull;
-
-            if (nextManuever == null) {
-              return SizedBox();
-            }
-
-            ManeuverProgress? afterNextManuever;
-            num distanceBetweenFirstAndNextManuever = 0;
-            if (state.maneuverProgresses.length > 1) {
-              afterNextManuever = state.maneuverProgresses[1];
-              distanceBetweenFirstAndNextManuever =
-                  afterNextManuever.remainingDistanceInMeters -
-                  nextManuever.remainingDistanceInMeters;
-            }
-
-            return Positioned(
-              top: 20,
-              left: 20,
-              right: 20,
-              child: Container(
-                // height: 250,
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white, // background
-                  borderRadius: BorderRadius.circular(
-                    20,
-                  ), // border-radius: 20px
-                  border: Border.all(
-                    color: const Color(0xFFEBEEF2), // #EBEEF2
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color.fromRGBO(
-                        136,
-                        139,
-                        161,
-                        0.18,
-                      ), // rgba(136,139,161,0.18)
-                      offset: const Offset(4, 4), // x:4px, y:4px
-                      blurRadius: 24, // blur
-                      spreadRadius: -4, // -4px spread
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  spacing: 10,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: 10,
-                      children: [
-                        Column(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor: AppColorTheme().primary,
-                              child: Icon(
-                                state.currentRoute?.maneuverInstructionIcon(
-                                  nextManuever.maneuverIndex,
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 10),
-                            Text(
-                              nextManuever
-                                  .remainingDistanceInMeters
-                                  .meterInMiles,
-                              style: AppTextTheme().bodyText.copyWith(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: AppColorTheme().primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                state.currentRoute?.maneuverInstruction(
-                                      nextManuever.maneuverIndex,
-                                    ) ??
-                                    '',
-                                // state.currentRoute
-                                //         ?.formattedManeuverInstructionWithRemainingDistance(
-                                //           nextManuever.maneuverIndex,
-                                //           nextManuever.remainingDistanceInMeters
-                                //               .toDouble(),
-                                //         ) ??
-                                //     '',
-                                style: AppTextTheme().bodyText.copyWith(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              Text(
-                                state.currentRoute?.maneuverNextAddress(
-                                      nextManuever.maneuverIndex,
-                                    ) ??
-                                    '',
-                                style: AppTextTheme().lightText.copyWith(
-                                  color: AppColorTheme().secondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: AppColorTheme().whiteShade,
-                          child: Icon(
-                            Icons.volume_off_outlined,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                    DashedLine(),
-
-                    if (afterNextManuever != null)
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 10,
-                        children: [
-                          Column(
-                            children: [
-                              CircleAvatar(
-                                radius: 15,
-                                backgroundColor: AppColorTheme().lightGrey,
-                                child: Icon(
-                                  state.currentRoute?.maneuverInstructionIcon(
-                                    afterNextManuever.maneuverIndex,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 5),
-                              Text(
-                                distanceBetweenFirstAndNextManuever
-                                    .meterInMiles, // "${afterNextManuever.remainingDistanceInMeters.toDouble().toStringAsFixed(0)}m",
-                                style: AppTextTheme().bodyText.copyWith(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColorTheme().lightGrey,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  state.currentRoute?.maneuverInstruction(
-                                        afterNextManuever.maneuverIndex,
-                                      ) ??
-                                      '',
-                                  style: AppTextTheme().lightText.copyWith(
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  state.currentRoute?.maneuverNextAddress(
-                                        afterNextManuever.maneuverIndex,
-                                      ) ??
-                                      '',
-                                  style: AppTextTheme().bodyText.copyWith(
-                                    color: AppColorTheme().secondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    // Expanded(
-                    //   child: Container(
-                    //     decoration: BoxDecoration(
-                    //       color: AppColorTheme().whiteShade,
-                    //       borderRadius: BorderRadius.circular(12),
-                    //     ),
-                    //     child: Row(
-                    //       children: List.generate(4, (index) {
-                    //         return Expanded(
-                    //           child: Icon(
-                    //             _setDirectionIcon(index),
-                    //             color: AppColorTheme().secondary,
-                    //             size: 30,
-                    //             weight: 1.5,
-                    //           ),
-                    //         );
-                    //       }),
-                    //     ),
-                    //   ),
-                    // ),
-                  ],
-                ),
-              ),
-            );
-          }
-        },
-      ),
-
-      Positioned(
-        bottom: 285,
-        left: 20,
-        right: 20,
-        child: BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
-          buildWhen: (previous, current) =>
-              previous.speedLimit != current.speedLimit ||
-              previous.currentSpeed != current.currentSpeed,
+      if (!state.isNavigationCompleted)
+        BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+          buildWhen: (p, c) =>
+              p.maneuverProgresses != c.maneuverProgresses ||
+              p.isNavigationCompleted != c.isNavigationCompleted,
           builder: (context, state) {
-            return Row(
-              children: [
-                Container(
-                  height: 60,
-                  width: 120,
+            if (state.currentRoute == null ||
+                state.maneuverProgresses.isEmpty) {
+              return SizedBox();
+            } else {
+              final ManeuverProgress? nextManuever =
+                  state.maneuverProgresses.firstOrNull;
+
+              if (nextManuever == null) {
+                return SizedBox();
+              }
+    
+
+              ManeuverProgress? afterNextManuever;
+              num distanceBetweenFirstAndNextManuever = 0;
+              if (state.maneuverProgresses.length > 1) {
+                afterNextManuever = state.maneuverProgresses[1];
+                distanceBetweenFirstAndNextManuever =
+                    afterNextManuever.remainingDistanceInMeters -
+                    nextManuever.remainingDistanceInMeters;
+              }
+
+              return Positioned(
+                top: 20,
+                left: 20,
+                right: 20,
+                child: Container(
+                  // height: 250,
+                  padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white, // background
                     borderRadius: BorderRadius.circular(
@@ -2110,62 +1918,263 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       ),
                     ],
                   ),
-                  child: Row(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    spacing: 10,
                     children: [
-                      Expanded(
-                        child: Container(
-                          height: double.infinity,
-                          margin: EdgeInsets.all(5),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.black, width: 2),
-                          ),
-                          child: Text(
-                            state.speedLimit ?? "0",
-                            style: AppTextTheme().subHeadingText.copyWith(
-                              fontSize: 24,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          height: double.infinity,
-                          padding: EdgeInsets.all(5),
-
-                          alignment: Alignment.center,
-
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 10,
+                        children: [
+                          Column(
                             children: [
-                              Text(
-                                state.currentSpeed ?? "0",
-                                style: AppTextTheme().subHeadingText.copyWith(
-                                  fontSize: 24,
+                              CircleAvatar(
+                                radius: 20,
+                                backgroundColor: AppColorTheme().primary,
+                                child: Icon(
+
+                                  
+                                  state.currentRoute?.maneuverInstructionIcon(
+                                    nextManuever.maneuverIndex,
+                                  ),
                                 ),
                               ),
-                              Text("mph", style: AppTextTheme().lightText),
+                              SizedBox(height: 10),
+                              Text(
+                                nextManuever
+                                    .remainingDistanceInMeters
+                                    .meterInMiles,
+                                style: AppTextTheme().bodyText.copyWith(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColorTheme().primary,
+                                ),
+                              ),
                             ],
                           ),
-                        ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  state.currentRoute?.maneuverInstruction(
+                                        nextManuever.maneuverIndex,
+                                      ) ??
+                                      '',
+                                  // state.currentRoute
+                                  //         ?.formattedManeuverInstructionWithRemainingDistance(
+                                  //           nextManuever.maneuverIndex,
+                                  //           nextManuever.remainingDistanceInMeters
+                                  //               .toDouble(),
+                                  //         ) ??
+                                  //     '',
+                                  style: AppTextTheme().bodyText.copyWith(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  state.currentRoute?.maneuverNextAddress(
+                                        nextManuever.maneuverIndex,
+                                      ) ??
+                                      '',
+                                  style: AppTextTheme().lightText.copyWith(
+                                    color: AppColorTheme().secondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: AppColorTheme().whiteShade,
+                            child: Icon(
+                              Icons.volume_off_outlined,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
                       ),
+                      DashedLine(),
+
+                      if (afterNextManuever != null)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: 10,
+                          children: [
+                            Column(
+                              children: [
+                                CircleAvatar(
+                                  radius: 15,
+                                  backgroundColor: AppColorTheme().lightGrey,
+                                  child: Icon(
+                                    state.currentRoute?.maneuverInstructionIcon(
+                                      afterNextManuever.maneuverIndex,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 5),
+                                Text(
+                                  distanceBetweenFirstAndNextManuever
+                                      .meterInMiles, // "${afterNextManuever.remainingDistanceInMeters.toDouble().toStringAsFixed(0)}m",
+                                  style: AppTextTheme().bodyText.copyWith(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColorTheme().lightGrey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    state.currentRoute?.maneuverInstruction(
+                                          afterNextManuever.maneuverIndex,
+                                        ) ??
+                                        '',
+                                    style: AppTextTheme().lightText.copyWith(
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Text(
+                                    state.currentRoute?.maneuverNextAddress(
+                                          afterNextManuever.maneuverIndex,
+                                        ) ??
+                                        '',
+                                    style: AppTextTheme().bodyText.copyWith(
+                                      color: AppColorTheme().secondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      // Expanded(
+                      //   child: Container(
+                      //     decoration: BoxDecoration(
+                      //       color: AppColorTheme().whiteShade,
+                      //       borderRadius: BorderRadius.circular(12),
+                      //     ),
+                      //     child: Row(
+                      //       children: List.generate(4, (index) {
+                      //         return Expanded(
+                      //           child: Icon(
+                      //             _setDirectionIcon(index),
+                      //             color: AppColorTheme().secondary,
+                      //             size: 30,
+                      //             weight: 1.5,
+                      //           ),
+                      //         );
+                      //       }),
+                      //     ),
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
-              ],
-            );
+              );
+            }
           },
         ),
-      ),
+
+      if (!state.isNavigationCompleted)
+        Positioned(
+          bottom: 285,
+          left: 20,
+          right: 20,
+          child: BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+            buildWhen: (previous, current) =>
+                previous.speedLimit != current.speedLimit ||
+                previous.currentSpeed != current.currentSpeed,
+            builder: (context, state) {
+              return Row(
+                children: [
+                  Container(
+                    height: 60,
+                    width: 120,
+                    decoration: BoxDecoration(
+                      color: Colors.white, // background
+                      borderRadius: BorderRadius.circular(
+                        20,
+                      ), // border-radius: 20px
+                      border: Border.all(
+                        color: const Color(0xFFEBEEF2), // #EBEEF2
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromRGBO(
+                            136,
+                            139,
+                            161,
+                            0.18,
+                          ), // rgba(136,139,161,0.18)
+                          offset: const Offset(4, 4), // x:4px, y:4px
+                          blurRadius: 24, // blur
+                          spreadRadius: -4, // -4px spread
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: double.infinity,
+                            margin: EdgeInsets.all(5),
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.black, width: 2),
+                            ),
+                            child: Text(
+                              state.speedLimit ?? "0",
+                              style: AppTextTheme().subHeadingText.copyWith(
+                                fontSize: 24,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            height: double.infinity,
+                            padding: EdgeInsets.all(5),
+
+                            alignment: Alignment.center,
+
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  state.currentSpeed ?? "0",
+                                  style: AppTextTheme().subHeadingText.copyWith(
+                                    fontSize: 24,
+                                  ),
+                                ),
+                                Text("mph", style: AppTextTheme().lightText),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
 
       Positioned(
-        bottom: 300,
+        bottom: state.isNavigationCompleted ? 220 : 300,
         right: 20,
         child: Row(
           children: [
             InkWell(
               onTap: () =>
+                  // context.read<TruckNavigationCubit>().focusOnCurrentLocation(),
                   context.read<TruckNavigationCubit>().toggleCameraControll(),
               child: Container(
                 width: 48,
@@ -2214,10 +2223,12 @@ class _HomeMobileViewState extends State<HomeMobileView>
       ),
 
       CustomDragableWidget(
-        initialSize: 0.34,
-        miniSize: 0.24,
-        maxSize: 0.95,
-        snapSizes: [0.24, 0.34, 0.55, 0.95],
+        initialSize: state.isNavigationCompleted ? 0.24 : 0.34,
+        miniSize: state.isNavigationCompleted ? 0.24 : 0.24,
+        maxSize: state.isNavigationCompleted ? 0.24 : 0.95,
+        snapSizes: state.isNavigationCompleted
+            ? [0.24]
+            : [0.24, 0.34, 0.55, 0.95],
 
         bottomWidget: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
@@ -2278,6 +2289,14 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       spacing: 2,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (state.isNavigationCompleted)
+                          Text(
+                            'You’ve arrived at your destination.',
+                            style: AppTextTheme().subHeadingText.copyWith(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                         Text(
                           _state
                                   .locationPoints?[_state.nextTargetIndex]
@@ -2309,116 +2328,122 @@ class _HomeMobileViewState extends State<HomeMobileView>
           ),
           20.h,
           DashedLine(),
-          20.h,
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+          if (!state.isNavigationCompleted) ...[
+            20.h,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
 
-                children: [
-                  Text(
-                    state.currentRoute?.formattedETA(context) ?? '',
-                    style: AppTextTheme().subHeadingText.copyWith(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                  children: [
+                    Text(
+                      state.currentRoute?.formattedETA(context) ?? '',
+                      style: AppTextTheme().subHeadingText.copyWith(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'Arrival',
-                    style: AppTextTheme().subHeadingText.copyWith(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xff888BA1),
+                    Text(
+                      'Arrival',
+                      style: AppTextTheme().subHeadingText.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xff888BA1),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    state.currentRoute?.formattedDuration ?? '',
-                    style: AppTextTheme().subHeadingText.copyWith(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      state.currentRoute?.formattedDuration ?? '',
+                      style: AppTextTheme().subHeadingText.copyWith(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'hours',
-                    style: AppTextTheme().subHeadingText.copyWith(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xff888BA1),
+                    Text(
+                      'hours',
+                      style: AppTextTheme().subHeadingText.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xff888BA1),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    state.currentRoute?.distanceInMilesINNumber ?? '',
-                    style: AppTextTheme().subHeadingText.copyWith(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      state.currentRoute?.distanceInMilesINNumber ?? '',
+                      style: AppTextTheme().subHeadingText.copyWith(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'miles',
-                    style: AppTextTheme().subHeadingText.copyWith(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xff888BA1),
+                    Text(
+                      'miles',
+                      style: AppTextTheme().subHeadingText.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xff888BA1),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          20.h,
-          DashedLine(),
-          20.h,
-          Row(
-            spacing: 10,
-            children: [
-              Icon(Icons.location_on),
-              Expanded(
-                child: Text(
-                  'My Current Location',
-                  // "Times Square, New York, NY, USA",
-                  style: AppTextTheme().bodyText.copyWith(
-                    fontWeight: AppFontWeight.semiBold,
-                    fontSize: 16,
+                  ],
+                ),
+              ],
+            ),
+            20.h,
+            DashedLine(),
+            20.h,
+            Row(
+              spacing: 10,
+              children: [
+                Icon(Icons.location_on),
+                Expanded(
+                  child: Text(
+                    'My Current Location',
+                    // "Times Square, New York, NY, USA",
+                    style: AppTextTheme().bodyText.copyWith(
+                      fontWeight: AppFontWeight.semiBold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          20.h,
-          TruckNavigationUtils.buildRouteDetails(state.currentRoute!),
-          20.h,
-          Row(
-            spacing: 10,
-            children: [
-              Icon(Icons.location_on),
-              Expanded(
-                child: Text(
-                  state.hasTapDestination
-                      ? state.tappedPlace?.data?.address.addressText ?? ''
-                      : state.selectedSuggestion?.place?.address.addressText ??
-                            searchTextEditController.text,
-                  // searchTextEditController.text,
-                  // "Times Square, New York, NY, USA",
-                  style: AppTextTheme().bodyText.copyWith(
-                    fontWeight: AppFontWeight.semiBold,
-                    fontSize: 16,
+              ],
+            ),
+            20.h,
+            TruckNavigationUtils.buildRouteDetails(state.currentRoute!),
+            20.h,
+            Row(
+              spacing: 10,
+              children: [
+                Icon(Icons.location_on),
+                Expanded(
+                  child: Text(
+                    state.hasTapDestination
+                        ? state.tappedPlace?.data?.address.addressText ?? ''
+                        : state
+                                  .selectedSuggestion
+                                  ?.place
+                                  ?.address
+                                  .addressText ??
+                              searchTextEditController.text,
+                    // searchTextEditController.text,
+                    // "Times Square, New York, NY, USA",
+                    style: AppTextTheme().bodyText.copyWith(
+                      fontWeight: AppFontWeight.semiBold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          20.h,
+              ],
+            ),
+            20.h,
+          ],
         ],
       ),
     ];

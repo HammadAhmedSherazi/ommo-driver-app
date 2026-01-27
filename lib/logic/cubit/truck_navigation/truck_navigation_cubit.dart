@@ -27,6 +27,7 @@ import 'package:ommo/map_sdk/HEREPositioningSimulator.dart';
 import 'package:ommo/models/location_point_model.dart';
 import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 import 'package:ommo/utils/constants/constants.dart';
+import 'package:ommo/utils/extension/manuever_extension.dart';
 import 'package:ommo/utils/extension/place_extension.dart';
 import 'package:ommo/utils/extension/recent_search_model_extension.dart';
 import 'package:ommo/utils/generics/generics.dart';
@@ -377,7 +378,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       distanceInMeters,
     );
 
-    controller.camera.lookAtPointWithMeasure(coords, mapMeasure);
+    controller.camera.lookAtPointWithGeoOrientationAndMeasure(
+      coords,
+      GeoOrientationUpdate(0, 0),
+      mapMeasure,
+    );
   }
 
   // Location Handlers
@@ -896,6 +901,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     setupTruckRestrictionWarnings();
     setupManeuverUpdates();
     setupSpeedListeners();
+    setupHasArrivedListeners();
 
     if (AppKeys().isSimulation) {
       _locationEngine?.stop();
@@ -926,6 +932,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         state.copyWith(
           nextTargetIndex: 1,
           isNavigating: true,
+          isNavigationCompleted: false,
           maneuverProgresses: [],
           cameraControlledByNavigator: true,
         ),
@@ -1019,12 +1026,37 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         destinationFromRecent: 'null',
         businessAtAddress: 'null',
         hasdestinationFromRecent: false,
+        isNavigationCompleted: false,
         locationPoints: [],
         maneuverProgresses: [],
         showBusinessOverviewModal: false,
         hasTapDestination: false,
       ),
     );
+    resetCameraToDefault();
+    // focusOnCurrentLocation();
+  }
+
+  resetCameraToDefault() {
+    if (state.startCoordinates == null) return;
+
+    final mapMeasure = MapMeasure(MapMeasureKind.distanceInMeters, 1000);
+
+    MapCameraUpdate cameraUpdate =
+        MapCameraUpdateFactory.lookAtPointWithGeoOrientationAndMeasure(
+          GeoCoordinatesUpdate.fromGeoCoordinates(state.startCoordinates!),
+          GeoOrientationUpdate(0.0, 0.0),
+          mapMeasure,
+        );
+
+    MapCameraAnimation animation =
+        MapCameraAnimationFactory.createAnimationFromUpdateWithEasing(
+          cameraUpdate,
+          Duration(milliseconds: 2000),
+          Easing(EasingFunction.outInSine),
+        );
+
+    state.mapController!.camera.startAnimation(animation);
   }
 
   void setupManeuverUpdates() {
@@ -1070,6 +1102,16 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         emit(state.copyWith(speedLimit: "$mph"));
       }
     });
+  }
+
+  void setupHasArrivedListeners() {
+    if (_visualNavigator == null) return;
+    _visualNavigator?.destinationReachedListener = DestinationReachedListener(
+      () {
+        log("Destination reached");
+        emit(state.copyWith(isNavigationCompleted: true));
+      },
+    );
   }
 
   void setupTruckRestrictionWarnings() {

@@ -21,6 +21,7 @@ class TruckNavigationState extends Equatable {
   final RecentSearchModel? destinationFromRecent;
   final Route? currentRoute;
   final bool isNavigating;
+  final bool isNavigationCompleted;
   final bool hasFocusedLocation;
   final bool isMapLoading;
   final bool hasTapDestination;
@@ -43,6 +44,7 @@ class TruckNavigationState extends Equatable {
     this.currentRoute,
     this.tappedPlace,
     this.hasFocusedLocation = false,
+    this.isNavigationCompleted = false,
     this.isMapLoading = true,
     this.hasTapDestination = false,
     this.hasdestinationFromRecent = false,
@@ -71,6 +73,7 @@ class TruckNavigationState extends Equatable {
     dynamic destinationCoordinates,
     dynamic tappedPlace,
     bool? hasdestinationFromRecent,
+    bool? isNavigationCompleted,
     dynamic currentRoute,
     bool? hasFocusedLocation,
     bool? isNavigating,
@@ -90,6 +93,8 @@ class TruckNavigationState extends Equatable {
     return TruckNavigationState(
       nextTargetIndex: nextTargetIndex ?? this.nextTargetIndex,
       hasFocusedLocation: hasFocusedLocation ?? this.hasFocusedLocation,
+      isNavigationCompleted:
+          isNavigationCompleted ?? this.isNavigationCompleted,
       locationPoints: locationPoints ?? this.locationPoints,
       destinationSuggestions:
           destinationSuggestions ?? this.destinationSuggestions,
@@ -134,6 +139,7 @@ class TruckNavigationState extends Equatable {
   @override
   List<Object?> get props => [
     mapController,
+    isNavigationCompleted,
     currentPlace,
     startCoordinates,
     maneuverProgresses,
