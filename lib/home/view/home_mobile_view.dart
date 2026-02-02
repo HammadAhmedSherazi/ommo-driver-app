@@ -94,6 +94,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
 
     textController.add(searchTextEditController);
     focusNode.add(FocusNode());
+
     searchFieldFocusNode.addListener(() {
       setState(() {});
       if (searchFieldFocusNode.hasFocus) {
@@ -585,6 +586,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                         TruckSpecificationUtils.openSettingBottomSheet(
                           context,
                           onEditSuccess: () {
+                            minimizeBottomSheet();
                             context
                                 .read<TruckNavigationCubit>()
                                 .calculateRoute();
@@ -1701,6 +1703,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       if ((place?.title ?? '').isNotEmpty) {
                         searchTextEditController.text = place?.title ?? '';
                       }
+
+                      minimizeBottomSheet();
                       context.read<TruckNavigationCubit>().calculateRoute();
                     },
                 title: "Trip",
@@ -1861,6 +1865,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
   List<Widget> buildNavigationUi(TruckNavigationState state) {
     return [
       MapView(),
+      // Positioned(bottom: 100, top: 0, left: 0, right: 0, child: MapView()),
       if (!state.isNavigationCompleted)
         BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
           buildWhen: (p, c) =>
@@ -1877,15 +1882,21 @@ class _HomeMobileViewState extends State<HomeMobileView>
               if (nextManuever == null) {
                 return SizedBox();
               }
-    
 
               ManeuverProgress? afterNextManuever;
-              num distanceBetweenFirstAndNextManuever = 0;
+              bool showAfterNext = false;
               if (state.maneuverProgresses.length > 1) {
+                num distanceBetweenFirstAndNextManuever = 0;
                 afterNextManuever = state.maneuverProgresses[1];
+
                 distanceBetweenFirstAndNextManuever =
                     afterNextManuever.remainingDistanceInMeters -
                     nextManuever.remainingDistanceInMeters;
+
+                // checking if distance has more than 250ft
+                showAfterNext =
+                    distanceBetweenFirstAndNextManuever > 0 &&
+                    distanceBetweenFirstAndNextManuever <= 250.feetToMeters;
               }
 
               return Positioned(
@@ -1897,9 +1908,14 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white, // background
-                    borderRadius: BorderRadius.circular(
-                      20,
-                    ), // border-radius: 20px
+                    borderRadius: (showAfterNext)
+                        ? BorderRadius.only(
+                            topLeft: Radius.circular(20),
+                            // bottomLeft: Radius.circular(20),
+                            topRight: Radius.circular(20),
+                            bottomRight: Radius.circular(20),
+                          )
+                        : BorderRadius.circular(20), // border-radius: 20px
                     border: Border.all(
                       color: const Color(0xFFEBEEF2), // #EBEEF2
                       width: 1,
@@ -1932,8 +1948,6 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                 radius: 20,
                                 backgroundColor: AppColorTheme().primary,
                                 child: Icon(
-
-                                  
                                   state.currentRoute?.maneuverInstructionIcon(
                                     nextManuever.maneuverIndex,
                                   ),
@@ -1995,87 +2009,104 @@ class _HomeMobileViewState extends State<HomeMobileView>
                           ),
                         ],
                       ),
-                      DashedLine(),
-
-                      if (afterNextManuever != null)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          spacing: 10,
-                          children: [
-                            Column(
-                              children: [
-                                CircleAvatar(
-                                  radius: 15,
-                                  backgroundColor: AppColorTheme().lightGrey,
-                                  child: Icon(
-                                    state.currentRoute?.maneuverInstructionIcon(
-                                      afterNextManuever.maneuverIndex,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 5),
-                                Text(
-                                  distanceBetweenFirstAndNextManuever
-                                      .meterInMiles, // "${afterNextManuever.remainingDistanceInMeters.toDouble().toStringAsFixed(0)}m",
-                                  style: AppTextTheme().bodyText.copyWith(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColorTheme().lightGrey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    state.currentRoute?.maneuverInstruction(
-                                          afterNextManuever.maneuverIndex,
-                                        ) ??
-                                        '',
-                                    style: AppTextTheme().lightText.copyWith(
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  Text(
-                                    state.currentRoute?.maneuverNextAddress(
-                                          afterNextManuever.maneuverIndex,
-                                        ) ??
-                                        '',
-                                    style: AppTextTheme().bodyText.copyWith(
-                                      color: AppColorTheme().secondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      // Expanded(
-                      //   child: Container(
-                      //     decoration: BoxDecoration(
-                      //       color: AppColorTheme().whiteShade,
-                      //       borderRadius: BorderRadius.circular(12),
-                      //     ),
-                      //     child: Row(
-                      //       children: List.generate(4, (index) {
-                      //         return Expanded(
-                      //           child: Icon(
-                      //             _setDirectionIcon(index),
-                      //             color: AppColorTheme().secondary,
-                      //             size: 30,
-                      //             weight: 1.5,
-                      //           ),
-                      //         );
-                      //       }),
-                      //     ),
-                      //   ),
-                      // ),
                     ],
                   ),
                 ),
               );
+            }
+          },
+        ),
+      if (!state.isNavigationCompleted)
+        BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+          buildWhen: (p, c) =>
+              p.maneuverProgresses != c.maneuverProgresses ||
+              p.isNavigationCompleted != c.isNavigationCompleted,
+          builder: (context, state) {
+            if (state.currentRoute == null ||
+                state.maneuverProgresses.isEmpty) {
+              return SizedBox();
+            } else {
+              final ManeuverProgress? nextManuever =
+                  state.maneuverProgresses.firstOrNull;
+
+              if (nextManuever == null) {
+                return SizedBox();
+              }
+
+              ManeuverProgress? afterNextManuever;
+              num distanceBetweenFirstAndNextManuever = 0;
+              bool showAfterNext = false;
+
+              if (state.maneuverProgresses.length > 1) {
+                afterNextManuever = state.maneuverProgresses[1];
+
+                distanceBetweenFirstAndNextManuever =
+                    afterNextManuever.remainingDistanceInMeters -
+                    nextManuever.remainingDistanceInMeters;
+
+                //  checking if distance has more than 250ft
+                showAfterNext =
+                    distanceBetweenFirstAndNextManuever > 0 &&
+                    distanceBetweenFirstAndNextManuever <= 250.feetToMeters;
+              }
+              if (afterNextManuever != null && showAfterNext) {
+                return Positioned(
+                  top: 120,
+                  left: 20,
+                  child: Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white, // background
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(20),
+                      ), // border-radius: 20px
+                      border: Border.all(
+                        color: const Color(0xFFEBEEF2), // #EBEEF2
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromRGBO(
+                            136,
+                            139,
+                            161,
+                            0.18,
+                          ), // rgba(136,139,161,0.18)
+                          offset: const Offset(4, 4), // x:4px, y:4px
+                          blurRadius: 24, // blur
+                          spreadRadius: -4, // -4px spread
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 15,
+                          backgroundColor: AppColorTheme().lightGrey,
+                          child: Icon(
+                            state.currentRoute?.maneuverInstructionIcon(
+                              afterNextManuever.maneuverIndex,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          distanceBetweenFirstAndNextManuever
+                              .meterInMiles, // "${afterNextManuever.remainingDistanceInMeters.toDouble().toStringAsFixed(0)}m",
+                          style: AppTextTheme().bodyText.copyWith(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColorTheme().lightGrey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              } else {
+                return SizedBox.shrink();
+              }
             }
           },
         ),
@@ -2535,6 +2566,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     searchTextEditController.text =
                         state.destinationFromRecent?.title ?? '';
                   }
+
+                  minimizeBottomSheet();
                   context.read<TruckNavigationCubit>().calculateRoute();
                 },
                 child: CircleAvatar(
@@ -2561,6 +2594,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     if ((place?.title ?? '').isNotEmpty) {
                       searchTextEditController.text = place?.title ?? '';
                     }
+
+                    minimizeBottomSheet();
                     context.read<TruckNavigationCubit>().calculateRoute();
                   },
                   child: CircleAvatar(

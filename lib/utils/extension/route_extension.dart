@@ -50,15 +50,21 @@ extension RouteExtension on route.Route {
   }
 
   String formattedETA(context) {
-    DateTime etaTime = DateTime.now().add(Duration(seconds: duration.inSeconds));
+    DateTime etaTime = DateTime.now().add(
+      Duration(seconds: duration.inSeconds),
+    );
     String etaStr = TimeOfDay.fromDateTime(etaTime).format(context);
 
     return etaStr;
   }
 
-  String formattedSummary(context) => "($distanceInMiles • ${formattedETA(context)})";
+  String formattedSummary(context) =>
+      "($distanceInMiles • ${formattedETA(context)})";
 
-  String formattedManeuverInstructionWithRemainingDistance(index, distanceMeters) {
+  String formattedManeuverInstructionWithRemainingDistance(
+    index,
+    distanceMeters,
+  ) {
     return "${maneuverInstruction(index)} in ${distanceMeters.toStringAsFixed(0)} m";
   }
 
@@ -67,13 +73,15 @@ extension RouteExtension on route.Route {
     List<String> texts = [];
     for (route.Section section in sections) {
       for (route.Maneuver m in section.maneuvers) {
-        texts.add(m.text);
+        if (m.action == route.ManeuverAction.arrive) {
+          texts.add(reformatManeuver(m.text));
+        } else {
+          texts.add(m.text);
+        }
       }
     }
     return (index >= 0 && index < texts.length) ? texts[index] : "";
   }
-
-  
 
   String maneuverNextAddress(int? index) {
     if (index == null) return '';
@@ -101,6 +109,26 @@ extension RouteExtension on route.Route {
         icons.add(m.toIcon);
       }
     }
+
     return (index >= 0 && index < icons.length) ? icons[index] : null;
+  }
+
+  String reformatManeuver(String instruction) {
+    final lower = instruction.toLowerCase();
+
+    // Determine left or right
+    String side;
+    if (lower.contains('right')) {
+      side = 'right';
+    } else if (lower.contains('left')) {
+      side = 'left';
+    } else {
+      side = 'straight'; // fallback
+    }
+
+    // Choose wording based on whether it's a waypoint or destination
+    final type = instruction.contains("waypoint") ? 'waypoint' : 'destination';
+
+    return "Your $type is on your $side.";
   }
 }

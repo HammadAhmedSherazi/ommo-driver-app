@@ -444,7 +444,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         }),
       );
 
-      _locationEngine?.startWithLocationAccuracy(LocationAccuracy.navigation);
+      _locationEngine?.startWithLocationAccuracy(
+        LocationAccuracy.bestAvailable,
+      );
     }
   }
 
@@ -722,10 +724,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       if (error != null || routes == null) return;
 
       final route = routes.first;
-      _showRouteOnMap(route);
       refreshStopAndDestinationMarker();
       _processTruckRestrictionWarnings(route);
       emit(state.copyWith(currentRoute: route, hasDirection: true));
+      _showRouteOnMap(route);
     });
   }
 
@@ -838,7 +840,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     return truckSpecifications;
   }
 
-  void _showRouteOnMap(Route route) {
+  void _showRouteOnMap(Route route) async {
     final GeoPolyline polyline = route.geometry;
     late MapPolyline mapPolyline;
     mapPolyline = MapPolyline.withRepresentation(
@@ -861,22 +863,102 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     _currentRoutePolyline = mapPolyline;
     state.mapController?.mapScene.addMapPolyline(mapPolyline);
-    animateToRoute(route);
+
+    await Future.delayed(Duration(seconds: 1), () {
+      animateToRoute(route);
+      minimizeNavigationSheetOn();
+    });
   }
 
+  // void animateToRoute([Route? route]) {
+  //   final Route? _route = route ?? state.currentRoute;
+  //   if (_route == null) return;
+
+  //   final viewport = state.mapController!.viewportSize;
+
+  //   // 👇 tune these
+  //   const double leftPadding = 180;
+  //   const double rightPadding = 180;
+  //   const double topPadding = 380; // BIGGER = route appears lower
+  //   const double bottomPadding = 280; // smaller bottom padding
+
+  //   Point2D origin = Point2D(leftPadding, topPadding);
+
+  //   Size2D sizeInPixels = Size2D(
+  //     viewport.width - leftPadding - rightPadding,
+  //     viewport.height - topPadding - bottomPadding,
+  //   );
+
+  //   Rectangle2D mapViewport = Rectangle2D(origin, sizeInPixels);
+
+  //   MapCameraUpdate cameraUpdate =
+  //       MapCameraUpdateFactory.lookAtAreaWithGeoOrientationAndViewRectangle(
+  //         _route.boundingBox,
+  //         GeoOrientationUpdate(0.0, 0.0),
+  //         mapViewport,
+  //       );
+
+  //   MapCameraAnimation animation =
+  //       MapCameraAnimationFactory.createAnimationFromUpdateWithEasing(
+  //         cameraUpdate,
+  //         Duration(milliseconds: 2000),
+  //         Easing(EasingFunction.outInSine),
+  //       );
+
+  //   state.mapController?.camera.startAnimation(animation);
+  // }
   void animateToRoute([Route? route]) {
     final Route? _route = route ?? state.currentRoute;
     if (_route == null) return;
-    Point2D origin = Point2D(80, 80);
-    Size2D sizeInPixels = Size2D(
-      state.mapController!.viewportSize.width - 250,
-      state.mapController!.viewportSize.height - 250,
+
+    final viewport = state.mapController!.viewportSize;
+
+    const double leftPadding = 40;
+    const double rightPadding = 40;
+    const double topUIPadding = 280;
+    const double bottomUIPadding = 380;
+
+    const double extraTop = 20;
+    const double extraBottom = 20;
+
+    // 👇 ZOOM OUT CONTROL (bigger = more zoomed out)
+    const double zoomOutFactor = 1.25; // try 1.2 – 1.4 sweet spot
+
+    // --- Expand the bounding box ---
+    GeoBox box = _route.boundingBox;
+
+    double latSpan =
+        box.northEastCorner.latitude - box.southWestCorner.latitude;
+    double lonSpan =
+        box.northEastCorner.longitude - box.southWestCorner.longitude;
+
+    double latPadding = latSpan * (zoomOutFactor - 1) / 2;
+    double lonPadding = lonSpan * (zoomOutFactor - 1) / 2;
+
+    GeoBox expandedBox = GeoBox(
+      GeoCoordinates(
+        box.southWestCorner.latitude - latPadding,
+        box.southWestCorner.longitude - lonPadding,
+      ),
+      GeoCoordinates(
+        box.northEastCorner.latitude + latPadding,
+        box.northEastCorner.longitude + lonPadding,
+      ),
     );
+
+    // --- UI-aware viewport ---
+    Point2D origin = Point2D(leftPadding, topUIPadding + extraTop);
+
+    Size2D sizeInPixels = Size2D(
+      viewport.width - leftPadding - rightPadding,
+      viewport.height - topUIPadding - bottomUIPadding - extraTop - extraBottom,
+    );
+
     Rectangle2D mapViewport = Rectangle2D(origin, sizeInPixels);
 
     MapCameraUpdate cameraUpdate =
         MapCameraUpdateFactory.lookAtAreaWithGeoOrientationAndViewRectangle(
-          _route.boundingBox,
+          expandedBox, // 👈 use expanded box
           GeoOrientationUpdate(0.0, 0.0),
           mapViewport,
         );
@@ -888,14 +970,13 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
           Easing(EasingFunction.outInSine),
         );
 
-    state.mapController!.camera.startAnimation(animation);
+    state.mapController?.camera.startAnimation(animation);
   }
 
   void startNavigation() {
     if (state.currentRoute == null) return;
 
     WakeLockUtils.enable();
-
     _visualNavigator?.route = state.currentRoute!;
     _visualNavigator?.startRendering(state.mapController!);
     setupTruckRestrictionWarnings();
@@ -928,6 +1009,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         state.currentRoute!,
       );
     } else {
+      _locationEngine?.startWithLocationAccuracy(LocationAccuracy.navigation);
       emit(
         state.copyWith(
           nextTargetIndex: 1,
@@ -985,6 +1067,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         nextTargetIndex: 1,
         currentSpeed: 'null',
         speedLimit: 'null',
+        isNavigating: false,
+        isNavigationCompleted: false,
       ),
     );
 
@@ -993,8 +1077,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         LocationAccuracy.bestAvailable,
       );
     }
-
-    clearCurrentRouteDetail();
+  animateToRoute();
+    // clearCurrentRouteDetail();
   }
 
   void clearCurrentRouteDetail({bool removeDestination = true}) {
@@ -1022,11 +1106,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         hasDirection: false,
         tappedPlace: 'null',
         nextTargetIndex: 1,
-        isNavigating: false,
         destinationFromRecent: 'null',
         businessAtAddress: 'null',
         hasdestinationFromRecent: false,
-        isNavigationCompleted: false,
         locationPoints: [],
         maneuverProgresses: [],
         showBusinessOverviewModal: false,
@@ -1534,7 +1616,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     emit(
       state.copyWith(
         locationPoints: _list,
-        tappedPlace: FutureData.completed(foundPlace),
+        tappedPlace: FutureData<Place>.completed(foundPlace),
       ),
     );
     setDestinationMarker();
@@ -1629,7 +1711,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         log("Reverse geocoding failed: $error");
         emit(
           state.copyWith(
-            tappedPlace: FutureData.error("Unable to get location details"),
+            tappedPlace: FutureData<Place>.error(
+              "Unable to get location details",
+            ),
           ),
         );
         return;
@@ -1659,13 +1743,13 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         emit(
           state.copyWith(
             locationPoints: _list,
-            tappedPlace: FutureData.completed(places.first),
+            tappedPlace: FutureData<Place>.completed(places.first),
           ),
         );
       } else {
         emit(
           state.copyWith(
-            tappedPlace: FutureData.error(
+            tappedPlace: FutureData<Place>.error(
               "No details available for this location",
             ),
           ),
@@ -1748,7 +1832,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     // if (i >= (state.locationPoints?.length ?? 0) - 1) return;
     final isDestination = i == (state.locationPoints?.length ?? 0) - 1;
     final List<LocationPoint> _list = List.from(state.locationPoints ?? []);
-    _list[i] = _list[i].copyWith(place: place);
+    _list[i] = _list[i].copyWith(place: place, isMyLocation: false);
     emit(
       state.copyWith(
         locationPoints: _list,

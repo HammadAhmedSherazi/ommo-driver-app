@@ -7,8 +7,8 @@ extension NumExtension on num {
   num get inchesToCm => this * 2.54;
 
   String get meterInMiles {
-    const metersPerMile = 1609.34;
     const metersPerFoot = 0.3048;
+    const metersPerMile = 1609.34;
 
     if (this < metersPerMile) {
       // Show in feet
@@ -32,6 +32,10 @@ extension NumExtension on num {
     final formatter = NumberFormat.decimalPattern();
     return "${formatter.format(kgToLbs.round())}lbs";
   }
+
+  num get metersToFeet => (this * 3.28084).round();
+  
+  num get feetToMeters => (this / 3.28084).round();
 
   num get kgToLbs => (this * 2.20462).round();
 

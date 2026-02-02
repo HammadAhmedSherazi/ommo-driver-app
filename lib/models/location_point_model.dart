@@ -31,10 +31,14 @@ class LocationPoint extends Equatable {
       ? (place as RecentSearchModel).formattedSubTitle
       : (place as Place).formattedSubtitle;
 
-  LocationPoint copyWith({dynamic place, LocationPointType? pointType}) {
+  LocationPoint copyWith({
+    bool? isMyLocation,
+    dynamic place,
+    LocationPointType? pointType,
+  }) {
     return LocationPoint(
       place: place ?? this.place,
-      isMyLocation: isMyLocation,
+      isMyLocation: isMyLocation ?? this.isMyLocation,
       pointType: pointType ?? this.pointType,
     );
   }
