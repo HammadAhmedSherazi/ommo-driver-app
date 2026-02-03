@@ -666,7 +666,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 BlocBuilder<TruckStopCubit, TruckStopsState>(
                   buildWhen: (p, c) =>
                       p.showBusinessOverviewModal !=
-                      c.showBusinessOverviewModal,
+                          c.showBusinessOverviewModal ||
+                      p.selectedTruckStop != c.selectedTruckStop,
                   builder: (context, state) {
                     return state.showBusinessOverviewModal
                         ? showTappedBusinessDetails(
@@ -1084,6 +1085,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                                                 >()
                                                                 .showBusinessOverviewModal(
                                                                   place,
+                                                                  fromMap:
+                                                                      false,
                                                                 );
                                                           },
                                                           child: Padding(

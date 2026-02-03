@@ -38,6 +38,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
   Map<String, String> _markerBrandMap = {}; // place.id -> brand
   Map<String, Place> placeDataMap = {}; // place.id -> Place
   Map<String, String> placesLogoMap = {}; // place.id -> Image
+  String? _selectedPlaceId;
   bool _isFirstTimeMarkersLoaded = true;
   MapCameraListener? _cameraListener;
   Timer? _cameraDebounceTimer;
@@ -468,14 +469,14 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
   /// Create a marker with brand image embedded in pin shape
   Future<MapImage> _createMarkerWithBrandImage(
     String assetPath, [
-    double opacity = 1.0,
+    double scale = 1.0,
   ]) async {
-    const double pinHeight = 140.0;
-    const double pinWidth = 100.0;
-    const double circleRadius = 42.0;
-    const double circleCenterY = 42.0;
-    const double circleCenterX = pinWidth / 2;
-    const double imageSize = 60.0; // Size of brand image inside pin
+    final double pinHeight = 140.0 * scale;
+    final double pinWidth = 100.0 * scale;
+    final double circleRadius = 42.0 * scale;
+    final double circleCenterY = 42.0 * scale;
+    final double circleCenterX = pinWidth / 2;
+    final double imageSize = 60.0 * scale; // Size of brand image inside pin
 
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
@@ -528,7 +529,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     // Apply opacity to image
     final imagePaint = ui.Paint()
       ..colorFilter = ui.ColorFilter.mode(
-        ui.Color.fromARGB((255 * opacity).toInt(), 255, 255, 255),
+        ui.Color.fromARGB(255, 255, 255, 255),
         ui.BlendMode.modulate,
       );
 
@@ -536,7 +537,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
 
     // Draw small circle at pin tip
     final ui.Paint tipPaint = ui.Paint()
-      ..color = ui.Color(0xFF000000).withOpacity(opacity)
+      ..color = ui.Color(0xFF000000)
       ..style = ui.PaintingStyle.fill;
 
     canvas.drawCircle(ui.Offset(circleCenterX, pinHeight - 7), 7, tipPaint);
@@ -560,13 +561,13 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
   Future<MapImage> _createBrandMarkerImage(
     String brandLetter,
     ui.Color backgroundColor, [
-    double opacity = 1.0,
+    double scale = 1.0,
   ]) async {
-    const double pinHeight = 140.0; // Increased from 100.0
-    const double pinWidth = 100.0; // Increased from 70.0
-    const double circleRadius = 42.0; // Increased from 30.0
-    const double circleCenterY = 42.0; // Increased from 30.0
-    const double circleCenterX = pinWidth / 2;
+    final double pinHeight = 140.0 * scale; // Increased from 100.0
+    final double pinWidth = 100.0 * scale; // Increased from 70.0
+    final double circleRadius = 42.0 * scale; // Increased from 30.0
+    final double circleCenterY = 42.0 * scale; // Increased from 30.0
+    final double circleCenterX = pinWidth / 2;
 
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
@@ -594,7 +595,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     // Draw colored inner circle (brand background) with opacity
     final ui.Paint brandPaint = ui.Paint()
       ..color = ui.Color.fromARGB(
-        (backgroundColor.alpha * opacity).toInt(),
+        backgroundColor.alpha,
         backgroundColor.red,
         backgroundColor.green,
         backgroundColor.blue,
@@ -611,15 +612,13 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     final ui.ParagraphBuilder paragraphBuilder = ui.ParagraphBuilder(
       ui.ParagraphStyle(
         textAlign: ui.TextAlign.center,
-        fontSize: 40.0, // Increased from 28.0
+        fontSize: 40.0 * scale, // Increased from 28.0
         fontWeight: ui.FontWeight.bold,
       ),
     );
 
     paragraphBuilder.pushStyle(
-      ui.TextStyle(
-        color: ui.Color.fromARGB((255 * opacity).toInt(), 255, 255, 255),
-      ),
+      ui.TextStyle(color: ui.Color.fromARGB(255, 255, 255, 255)),
     );
     paragraphBuilder.addText(brandLetter.toUpperCase());
 
@@ -673,8 +672,9 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
       final coordinates = place.geoCoordinates;
       if (coordinates == null) continue;
 
-      final isSelected = selectedBrands.contains(brand);
-      final opacity = isSelected ? 1.0 : 0.5;
+      final isBrandSelected = selectedBrands.contains(brand);
+      final isPlaceSelected = place.id == _selectedPlaceId;
+      final scale = isPlaceSelected ? 1.3 : 1.0;
 
       // Check if marker already exists
       if (_placeMarkersMap.containsKey(place.id)) {
@@ -684,14 +684,14 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
         _placeMarkersMap.remove(place.id);
       }
 
-      if (isSelected) {
+      if (isBrandSelected) {
         MapImage markerImage;
 
         // Check if brand has an icon (default brands)
         final iconPath = _getBrandIconPath(brand);
         if (iconPath != null) {
           // Use brand image for default brands
-          markerImage = await _createMarkerWithBrandImage(iconPath, opacity);
+          markerImage = await _createMarkerWithBrandImage(iconPath, scale);
         } else {
           // Use first letter for "Other" or brands without icons
           final brandLetter = brand.isNotEmpty ? brand[0] : '?';
@@ -699,12 +699,15 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
           markerImage = await _createBrandMarkerImage(
             brandLetter,
             brandColor,
-            opacity,
+            scale,
           );
         }
 
         final marker = MapMarker(coordinates, markerImage);
 
+        if (isPlaceSelected) {
+          marker.drawOrder = 1000; // Higher = on top
+        }
         // Set anchor point to bottom center of pin
         marker.anchor = Anchor2D.withHorizontalAndVertical(0.5, 1.0);
 
@@ -800,20 +803,55 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
   }
 
   /// Show business overview in modal bottom sheet
-  void showBusinessOverviewModal(Place place) {
+  void showBusinessOverviewModal(Place place, {bool fromMap = true}) {
+    _selectedPlaceId = place.id;
     emit(
       state.copyWith(selectedTruckStop: place, showBusinessOverviewModal: true),
     );
+    _refreshAllMarkers();
+
+    if (!fromMap) {
+      _focusOnPSelectedlace();
+    }
   }
 
   /// Clear selected truck stop
   void clearSelectedTruckStop() {
+    _selectedPlaceId = null;
     emit(
       state.copyWith(
         selectedTruckStop: 'null',
         showBusinessOverviewModal: false,
       ),
     );
+    _refreshAllMarkers();
+  }
+
+  // focus on selected
+  void _focusOnPSelectedlace() {
+    final GeoCoordinates? coords = state.selectedTruckStop?.geoCoordinates;
+    if (coords == null) return;
+    final mapController = navigatorKey.currentContext
+        ?.read<TruckNavigationCubit>()
+        .state
+        .mapController;
+
+    if (mapController == null) return;
+
+    // Nice close zoom level for POI focus
+    final mapMeasure = MapMeasure(
+      MapMeasureKind.distanceInMeters,
+      3000, // 3km view radius (adjust if needed)
+    );
+
+    mapController.camera.lookAtPointWithMeasure(coords, mapMeasure);
+  }
+
+  void _refreshAllMarkers() {
+    final places = state.categorySearchResults?.data;
+    if (places == null || places.isEmpty) return;
+
+    _addPlaceMarkersToMap(places);
   }
 
   void clearAllTruckStops() {
