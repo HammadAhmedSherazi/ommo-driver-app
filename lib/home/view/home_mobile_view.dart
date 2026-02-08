@@ -61,6 +61,11 @@ class _HomeMobileViewState extends State<HomeMobileView>
   final DraggableScrollableController sheetScrollController =
       DraggableScrollableController();
 
+  final DraggableScrollableController navigationSheetScrollController =
+      DraggableScrollableController();
+
+  final ValueNotifier<double> navigationSheetHeight = ValueNotifier(0.0);
+
   final ValueNotifier<Map<String, String>?> _selectedStation = ValueNotifier(
     null,
   );
@@ -91,6 +96,14 @@ class _HomeMobileViewState extends State<HomeMobileView>
     );
 
     sheetScrollController.addListener(_handleSheetChange);
+    navigationSheetScrollController.addListener(_handleNavigationSheetChange);
+
+    // Initialize navigation sheet height
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _updateNavigationSheetHeight();
+      }
+    });
 
     textController.add(searchTextEditController);
     focusNode.add(FocusNode());
@@ -129,6 +142,27 @@ class _HomeMobileViewState extends State<HomeMobileView>
     });
   }
 
+  @override
+  void dispose() {
+    sheetScrollController.removeListener(_handleSheetChange);
+    navigationSheetScrollController.removeListener(
+      _handleNavigationSheetChange,
+    );
+    navigationSheetHeight.dispose();
+    sheetScrollController.dispose();
+    navigationSheetScrollController.dispose();
+    _tabController.dispose();
+    searchTextEditController.dispose();
+    searchFieldFocusNode.dispose();
+    for (var controller in textController) {
+      controller.dispose();
+    }
+    for (var focusNode in focusNode) {
+      focusNode.dispose();
+    }
+    super.dispose();
+  }
+
   void _handleSheetChange() {
     // sheet size ranges from minChildSize → maxChildSize
     final double size = sheetScrollController.size;
@@ -138,6 +172,18 @@ class _HomeMobileViewState extends State<HomeMobileView>
       // adjust threshold if needed
       FocusManager.instance.primaryFocus?.unfocus();
     }
+  }
+
+  void _handleNavigationSheetChange() {
+    if (mounted) {
+      _updateNavigationSheetHeight();
+    }
+  }
+
+  void _updateNavigationSheetHeight() {
+    final double size = navigationSheetScrollController.size;
+    final screenHeight = MediaQuery.of(context).size.height;
+    navigationSheetHeight.value = size * screenHeight;
   }
 
   makeHalfBottomSheet() {
@@ -2124,148 +2170,178 @@ class _HomeMobileViewState extends State<HomeMobileView>
         ),
 
       if (!state.isNavigationCompleted)
-        Positioned(
-          bottom: 285,
-          left: 20,
-          right: 20,
-          child: BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
-            buildWhen: (previous, current) =>
-                previous.speedLimit != current.speedLimit ||
-                previous.currentSpeed != current.currentSpeed,
-            builder: (context, state) {
-              return Row(
-                children: [
-                  Container(
-                    height: 60,
-                    width: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.white, // background
-                      borderRadius: BorderRadius.circular(
-                        20,
-                      ), // border-radius: 20px
-                      border: Border.all(
-                        color: const Color(0xFFEBEEF2), // #EBEEF2
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color.fromRGBO(
-                            136,
-                            139,
-                            161,
-                            0.18,
-                          ), // rgba(136,139,161,0.18)
-                          offset: const Offset(4, 4), // x:4px, y:4px
-                          blurRadius: 24, // blur
-                          spreadRadius: -4, // -4px spread
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            height: double.infinity,
-                            margin: EdgeInsets.all(5),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.black, width: 2),
-                            ),
-                            child: Text(
-                              state.speedLimit ?? "0",
-                              style: AppTextTheme().subHeadingText.copyWith(
-                                fontSize: 24,
-                              ),
-                            ),
+        ValueListenableBuilder<double>(
+          valueListenable: navigationSheetHeight,
+          builder: (context, sheetHeight, child) {
+            // Calculate bottom position: sheet height + padding (20px)
+            final bottomPosition = (sheetHeight > 0 ? sheetHeight + 20 : 285)
+                .toDouble();
+            return Positioned(
+              bottom: bottomPosition,
+              left: 20,
+              right: 20,
+              child: BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+                buildWhen: (previous, current) =>
+                    previous.speedLimit != current.speedLimit ||
+                    previous.currentSpeed != current.currentSpeed,
+                builder: (context, state) {
+                  return Row(
+                    children: [
+                      Container(
+                        height: 60,
+                        width: 120,
+                        decoration: BoxDecoration(
+                          color: Colors.white, // background
+                          borderRadius: BorderRadius.circular(
+                            20,
+                          ), // border-radius: 20px
+                          border: Border.all(
+                            color: const Color(0xFFEBEEF2), // #EBEEF2
+                            width: 1,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color.fromRGBO(
+                                136,
+                                139,
+                                161,
+                                0.18,
+                              ), // rgba(136,139,161,0.18)
+                              offset: const Offset(4, 4), // x:4px, y:4px
+                              blurRadius: 24, // blur
+                              spreadRadius: -4, // -4px spread
+                            ),
+                          ],
                         ),
-                        Expanded(
-                          child: Container(
-                            height: double.infinity,
-                            padding: EdgeInsets.all(5),
-
-                            alignment: Alignment.center,
-
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  state.currentSpeed ?? "0",
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: double.infinity,
+                                margin: EdgeInsets.all(5),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: Colors.black,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Text(
+                                  state.speedLimit ?? "0",
                                   style: AppTextTheme().subHeadingText.copyWith(
                                     fontSize: 24,
                                   ),
                                 ),
-                                Text("mph", style: AppTextTheme().lightText),
-                              ],
+                              ),
                             ),
-                          ),
+                            Expanded(
+                              child: Container(
+                                height: double.infinity,
+                                padding: EdgeInsets.all(5),
+
+                                alignment: Alignment.center,
+
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      state.currentSpeed ?? "0",
+                                      style: AppTextTheme().subHeadingText
+                                          .copyWith(fontSize: 24),
+                                    ),
+                                    Text(
+                                      "mph",
+                                      style: AppTextTheme().lightText,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            );
+          },
+        ),
+
+      ValueListenableBuilder<double>(
+        valueListenable: navigationSheetHeight,
+        builder: (context, sheetHeight, child) {
+          // Calculate bottom position: sheet height + padding (20px)
+          final bottomPosition =
+              (sheetHeight > 0
+                      ? sheetHeight + 20
+                      : (state.isNavigationCompleted ? 220.0 : 300.0))
+                  .toDouble();
+          return Positioned(
+            bottom: bottomPosition,
+            right: 20,
+            child: Row(
+              children: [
+                InkWell(
+                  onTap: () =>
+                      // context.read<TruckNavigationCubit>().focusOnCurrentLocation(),
+                      context
+                          .read<TruckNavigationCubit>()
+                          .toggleCameraControll(),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    padding: EdgeInsets.all(13),
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0x0A000000), // same as #0000000A
+                          offset: Offset(0, 2), // x=0, y=2
+                          blurRadius: 6, // blur radius
+                          spreadRadius: 0, // spread
                         ),
                       ],
+                      shape: BoxShape.circle,
+                      color: Colors.white,
                     ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
+                    child:
+                        BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+                          buildWhen: (p, c) =>
+                              p.cameraControlledByNavigator !=
+                              c.cameraControlledByNavigator,
+                          builder: (context, state) {
+                            if (state.cameraControlledByNavigator) {
+                              return Image.asset(
+                                'assets/images/ion_compass-sharp.png',
+                              );
 
-      Positioned(
-        bottom: state.isNavigationCompleted ? 220 : 300,
-        right: 20,
-        child: Row(
-          children: [
-            InkWell(
-              onTap: () =>
-                  // context.read<TruckNavigationCubit>().focusOnCurrentLocation(),
-                  context.read<TruckNavigationCubit>().toggleCameraControll(),
-              child: Container(
-                width: 48,
-                height: 48,
-                padding: EdgeInsets.all(13),
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0x0A000000), // same as #0000000A
-                      offset: Offset(0, 2), // x=0, y=2
-                      blurRadius: 6, // blur radius
-                      spreadRadius: 0, // spread
-                    ),
-                  ],
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                ),
-                child: BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
-                  buildWhen: (p, c) =>
-                      p.cameraControlledByNavigator !=
-                      c.cameraControlledByNavigator,
-                  builder: (context, state) {
-                    if (state.cameraControlledByNavigator) {
-                      return Image.asset('assets/images/ion_compass-sharp.png');
-
-                      // return Icon(
-                      //   Icons.pan_tool_rounded,
-                      //   color: Colors.black,
-                      //   size: 20,
-                      // );
-                    } else {
-                      return SvgPicture.asset(
-                        AppIcons.navigationIconGreen,
-                        colorFilter: ColorFilter.mode(
-                          Colors.black,
-                          BlendMode.srcIn,
+                              // return Icon(
+                              //   Icons.pan_tool_rounded,
+                              //   color: Colors.black,
+                              //   size: 20,
+                              // );
+                            } else {
+                              return SvgPicture.asset(
+                                AppIcons.navigationIconGreen,
+                                colorFilter: ColorFilter.mode(
+                                  Colors.black,
+                                  BlendMode.srcIn,
+                                ),
+                              );
+                            }
+                          },
                         ),
-                      );
-                    }
-                  },
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
 
       CustomDragableWidget(
+        scrollController: navigationSheetScrollController,
         initialSize: state.isNavigationCompleted ? 0.24 : 0.34,
         miniSize: state.isNavigationCompleted ? 0.24 : 0.24,
         maxSize: state.isNavigationCompleted ? 0.24 : 0.95,

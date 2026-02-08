@@ -1091,7 +1091,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     final viewport = state.mapController!.viewportSize;
 
     const double leftPadding = 40;
-    const double rightPadding = 40;
+    const double rightPadding = 140;
     const double topUIPadding = 280;
     const double bottomUIPadding = 380;
 
