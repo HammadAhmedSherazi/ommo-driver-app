@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:math' as m;
 import 'dart:typed_data';
@@ -53,6 +54,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   List<MapMarker> _truckRestrictionMarkers = [];
   final loc.Location _location = loc.Location();
   bool isFirstTimeLocationGet = true;
+  MapCameraListener? _mapCameraListener;
+  Timer? _mapInteractionDebounceTimer;
 
   Future<MapImage> _createStopMarkerImage(int index) async {
     const double size = 70.0;
@@ -127,6 +130,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       // Enable vehicle restrictions and related map features
       _enableMapFeatures(controller);
 
+      // Setup camera listener to detect manual map interactions
+      _setupMapInteractionListener(controller);
+
       // adding drop pin feature to the map to set destination
       controller.gestures.longPressListener = LongPressListener((
         GestureState gestureState,
@@ -163,11 +169,13 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         if (result == null) return;
 
         if (state.isNavigating) {
-          // Handle custom markers (truck restriction warnings)
+          // Handle custom markers (truck restriction warnings, stop markers, destination)
           if ((result.mapItems?.markers ?? []).isNotEmpty) {
             final MapMarker? pickedMarker =
                 result.mapItems?.markers.firstOrNull;
+
             if (pickedMarker != null) {
+              // Handle truck restriction warnings
               final String message =
                   pickedMarker.metadata?.getString("warning_message") ?? '';
               if (message.isNotEmpty) {
@@ -179,35 +187,89 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
             }
           }
         } else if (!state.isNavigating && !state.hasDirection) {
-          final Map<String, Place> placeDataMap =
-              navigatorKey.currentContext
-                  ?.read<TruckStopCubit>()
-                  .placeDataMap ??
-              {};
-          // Check if a place marker was tapped
+          // Handle stop markers and destination marker when not navigating
+
+          final PickedPlace? pickedPlace =
+              result.mapContent?.pickedPlaces.firstOrNull;
+          if (pickedPlace != null) {
+            _handlePickedPlaceForDestination(pickedPlace);
+          }
+
+          if ((result.mapItems?.markers ?? []).isNotEmpty) {
+            final MapMarker? pickedMarker =
+                result.mapItems?.markers.firstOrNull;
+
+            if (pickedMarker != null) {
+              // Check for place markers (truck stops)
+              final String? placeId = pickedMarker.metadata?.getString(
+                "place_id",
+              );
+              if (placeId != null) {
+                final Map<String, Place> placeDataMap =
+                    navigatorKey.currentContext
+                        ?.read<TruckStopCubit>()
+                        .placeDataMap ??
+                    {};
+                if (placeDataMap.isNotEmpty &&
+                    placeDataMap.containsKey(placeId)) {
+                  final Place place = placeDataMap[placeId]!;
+                  navigatorKey.currentContext
+                      ?.read<TruckStopCubit>()
+                      .showBusinessOverviewModal(place);
+                  return;
+                }
+              }
+            }
+          }
+        } else if (state.hasDirection && !state.isNavigating) {
+          // Handle stop markers and destination marker when route is shown but not navigating
           if ((result.mapItems?.markers ?? []).isNotEmpty) {
             final MapMarker? pickedMarker =
                 result.mapItems?.markers.firstOrNull;
             if (pickedMarker != null) {
-              final String? placeId = pickedMarker.metadata?.getString(
-                "place_id",
+              final String? markerType = pickedMarker.metadata?.getString(
+                "marker_type",
               );
-              if (placeDataMap.isEmpty) return;
-              if (placeId != null && placeDataMap.containsKey(placeId)) {
-                final Place place = placeDataMap[placeId]!;
-                navigatorKey.currentContext
-                    ?.read<TruckStopCubit>()
-                    .showBusinessOverviewModal(place);
-                return;
+
+              // Check for stop marker
+              if (markerType == "stop") {
+                final String? stopIndexStr = pickedMarker.metadata?.getString(
+                  "stop_index",
+                );
+                if (stopIndexStr != null) {
+                  final int? stopIndex = int.tryParse(stopIndexStr);
+                  if (stopIndex != null &&
+                      state.locationPoints != null &&
+                      stopIndex < state.locationPoints!.length) {
+                    final GeoCoordinates? coords =
+                        state.locationPoints![stopIndex].geoCoordinates;
+                    if (coords != null) {
+                      focusOnStopOrDestination(coords);
+                      return;
+                    }
+                  }
+                }
+              }
+
+              // Check for destination marker
+              if (markerType == "destination") {
+                final GeoCoordinates? coords = state.destinationCoordinates;
+                if (coords != null) {
+                  focusOnStopOrDestination(coords);
+                  return;
+                }
               }
             }
           }
 
-          // Handle regular place picks
-          final PickedPlace? pickedPlace =
-              result.mapContent?.pickedPlaces.firstOrNull;
-          if (pickedPlace == null) return;
-          _handlePickedPlaceForDestination(pickedPlace);
+          // Handle regular place picks (only if no marker was handled)
+          if (!state.isNavigating && !state.hasDirection) {
+            final PickedPlace? pickedPlace =
+                result.mapContent?.pickedPlaces.firstOrNull;
+            if (pickedPlace != null) {
+              _handlePickedPlaceForDestination(pickedPlace);
+            }
+          }
         }
       });
     });
@@ -229,6 +291,33 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     // Set up transport profile for VisualNavigator to enable truck restriction warnings
     _setupTransportProfile();
+  }
+
+  /// Setup camera listener to detect when user manually moves the map
+  void _setupMapInteractionListener(HereMapController controller) {
+    // Remove existing listener if any
+    if (_mapCameraListener != null) {
+      controller.camera.removeListener(_mapCameraListener!);
+    }
+
+    // Create new listener to detect manual map movements
+    _mapCameraListener = MapCameraListener((MapCameraState mapState) {
+      // User is interacting with the map
+      if (!state.isUserInteractingWithMap) {
+        emit(state.copyWith(isUserInteractingWithMap: true));
+      }
+
+      // Debounce: reset flag after user stops moving map for 1 second
+      _mapInteractionDebounceTimer?.cancel();
+      _mapInteractionDebounceTimer = Timer(const Duration(seconds: 1), () {
+        if (state.isUserInteractingWithMap) {
+          emit(state.copyWith(isUserInteractingWithMap: false));
+        }
+      });
+    });
+
+    // Add listener to camera
+    controller.camera.addListener(_mapCameraListener!);
   }
 
   // Set up transport profile for VisualNavigator
@@ -328,6 +417,47 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
   double _degreesToRadians(double degree) => degree * m.pi / 180.0;
 
+  /// Check if map is in idle state (not navigating, searching, or creating trip)
+  bool _isMapInIdleState() {
+    // Not navigating
+    if (state.isNavigating) return false;
+
+    // User is manually interacting with the map (panning/zooming)
+    if (state.isUserInteractingWithMap) return false;
+
+    // No target destination or route
+    if (state.hasTapDestination || state.hasDirection) return false;
+
+    // Not creating trip (only starting point, no route)
+    if ((state.locationPoints ?? []).length > 1) return false;
+
+    // Not searching destination/place
+    if (state.destinationSuggestions?.status == Status.loading) return false;
+
+    // Not searching truck stops or viewing stop details
+    try {
+      final truckStopCubit = navigatorKey.currentContext
+          ?.read<TruckStopCubit>();
+      if (truckStopCubit != null) {
+        final truckStopState = truckStopCubit.state;
+
+        // Check if searching truck stops (has search results)
+        if (truckStopState.categorySearchResults != null) {
+          return false;
+        }
+      }
+    } catch (e) {
+      // If context is not available, assume not idle to be safe
+      log("Error checking truck stop state: $e");
+      return false;
+    }
+
+    // Camera not controlled by navigator (redundant check but included for safety)
+    if (state.cameraControlledByNavigator) return false;
+
+    return true;
+  }
+
   void _updateCurrentLocationMarker(GeoCoordinates coords) {
     if (_currentLocationMarker != null) {
       state.mapController?.mapScene.removeMapMarker(_currentLocationMarker!);
@@ -350,10 +480,15 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         // currentPlace: FutureData.loading(),
       ),
     );
+
+    // Focus on location first time or when map is in idle state
     if (isFirstTimeLocationGet) {
       isFirstTimeLocationGet = false;
       focusOnCurrentLocation();
+    } else if (_isMapInIdleState()) {
+      focusOnCurrentLocation();
     }
+
     getCurrentLocationPlace();
   }
 
@@ -373,6 +508,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     if (coords == null || controller == null) return;
 
+    // Temporarily remove camera listener to avoid detecting programmatic movement as user interaction
+    if (_mapCameraListener != null) {
+      controller.camera.removeListener(_mapCameraListener!);
+    }
+
     final mapMeasure = MapMeasure(
       MapMeasureKind.distanceInMeters,
       distanceInMeters,
@@ -383,6 +523,13 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       GeoOrientationUpdate(0, 0),
       mapMeasure,
     );
+
+    // Re-add listener after a short delay to allow camera animation to complete
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (_mapCameraListener != null) {
+        controller.camera.addListener(_mapCameraListener!);
+      }
+    });
   }
 
   // Location Handlers
@@ -681,6 +828,36 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
 
     state.mapController?.camera.lookAtPointWithMeasure(shiftedCoords, measure);
+  }
+
+  /// Focus on a stop or destination marker with close zoom for detailed view
+  void focusOnStopOrDestination(GeoCoordinates coords) {
+    if (state.mapController == null) return;
+
+    // Temporarily remove camera listener to avoid detecting programmatic movement as user interaction
+    if (_mapCameraListener != null) {
+      state.mapController!.camera.removeListener(_mapCameraListener!);
+    }
+
+    // Close zoom distance for detailed view (500 meters)
+    const double zoomDistance = 500;
+    final mapMeasure = MapMeasure(
+      MapMeasureKind.distanceInMeters,
+      zoomDistance,
+    );
+
+    state.mapController!.camera.lookAtPointWithGeoOrientationAndMeasure(
+      coords,
+      GeoOrientationUpdate(0, 0),
+      mapMeasure,
+    );
+
+    // Re-add listener after a short delay to allow camera animation to complete
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (_mapCameraListener != null) {
+        state.mapController?.camera.addListener(_mapCameraListener!);
+      }
+    });
   }
 
   void calculateRouteWithBusinessOverview(Place? place) {
@@ -1077,7 +1254,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         LocationAccuracy.bestAvailable,
       );
     }
-  animateToRoute();
+    animateToRoute();
     // clearCurrentRouteDetail();
   }
 
@@ -1157,6 +1334,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _visualNavigator!.navigableLocationListener = NavigableLocationListener((
       NavigableLocation currentNavigableLocation,
     ) {
+      // Store current navigation location for accurate distance calculations
+      final currentLocation =
+          currentNavigableLocation.originalLocation.coordinates;
+      emit(state.copyWith(currentNavigationLocation: currentLocation));
+
       final drivingSpeed =
           currentNavigableLocation.originalLocation.speedInMetersPerSecond;
       if (drivingSpeed == null) {
@@ -1399,6 +1581,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     // 👇 THIS FIXES THE JUMPING & OFFSET
     _destinationMarker!.anchor = Anchor2D.withHorizontalAndVertical(0.5, 1.0);
 
+    // Add metadata to identify destination marker when tapped
+    final metadata = Metadata();
+    metadata.setString("marker_type", "destination");
+    _destinationMarker!.metadata = metadata;
+
     state.mapController?.mapScene.addMapMarker(_destinationMarker!);
     if (hasFocus) focusDestinationWithOffset(destinationPoint.geoCoordinates!);
   }
@@ -1473,6 +1660,13 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     if (markerCoordinate == null) return;
     final MapImage markerIcon = await _createStopMarkerImage(i);
     final marker = MapMarker(markerCoordinate, markerIcon);
+
+    // Add metadata to identify stop markers when tapped
+    final metadata = Metadata();
+    metadata.setString("marker_type", "stop");
+    metadata.setString("stop_index", i.toString());
+    marker.metadata = metadata;
+
     state.mapController?.mapScene.addMapMarker(marker);
     _stopMarkers[i] = marker;
     if (hasFocus) focusDestinationWithOffset(markerCoordinate);
@@ -1508,6 +1702,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
 
     _destinationMarker = MapMarker(geoCoordinates, destIcon);
+
+    // Add metadata to identify destination marker when tapped
+    final metadata = Metadata();
+    metadata.setString("marker_type", "destination");
+    _destinationMarker!.metadata = metadata;
+
     state.mapController?.mapScene.addMapMarker(_destinationMarker!);
 
     // Reverse geocode to get place details
@@ -1619,7 +1819,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         tappedPlace: FutureData<Place>.completed(foundPlace),
       ),
     );
-    setDestinationMarker();
+    setDestinationMarker(hasDestinationConfirmed: true);
   }
 
   void _handleRecentBusinessPlaceForDestination(RecentSearchModel recent) {
@@ -1819,7 +2019,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     // final addIndex = state.locationPoints!.length - 1;
     final addIndex = state.locationPoints!.length;
     _list.insert(addIndex, item);
-    emit(state.copyWith(locationPoints: _list));
+    emit(
+      state.copyWith(
+        locationPoints: _list,
+        destinationCoordinates: _list.lastOrNull?.geoCoordinates,
+      ),
+    );
     // addStopMakerAt(addIndex);
     // refreshStopAndDestinationMarker();
     calculateRoute();
@@ -1855,7 +2060,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     // if (index == 0) return;
     // if (index >= (state.locationPoints?.length ?? 0) - 1) return;
     _list.removeAt(index);
-    emit(state.copyWith(locationPoints: _list));
+    emit(
+      state.copyWith(
+        locationPoints: _list,
+        destinationCoordinates: _list.lastOrNull?.geoCoordinates,
+      ),
+    );
     clearStopMarkerAt(index);
     calculateRoute();
   }

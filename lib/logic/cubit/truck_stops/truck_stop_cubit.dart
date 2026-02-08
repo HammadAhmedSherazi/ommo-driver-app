@@ -379,18 +379,24 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
   }
 
   /// Clear brand filter and available brands
-  void clearBrandFilter() {
+  // void clearBrandFilter() {
+  //   _removeCameraListener();
+  //   emit(
+  //     state.copyWith(
+  //       availableBrands: [],
+  //       selectedBrands: [],
+  //       isCameraListenerActive: false,
+  //       searchedCoordinates: {},
+  //       currentPlaceType: null,
+  //     ),
+  //   );
+  //   _clearPlaceMarkers();
+  // }
+
+  void clearState() {
     _removeCameraListener();
-    emit(
-      state.copyWith(
-        availableBrands: [],
-        selectedBrands: [],
-        isCameraListenerActive: false,
-        searchedCoordinates: {},
-        currentPlaceType: null,
-      ),
-    );
     _clearPlaceMarkers();
+    emit(TruckStopsState());
   }
 
   /// Get categorized brand name from place title - returns default brand name or "Other"

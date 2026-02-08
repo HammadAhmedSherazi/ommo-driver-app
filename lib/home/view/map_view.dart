@@ -11,7 +11,8 @@ import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/utils/utils.dart';
 
 class MapView extends StatefulWidget {
-  const MapView({super.key});
+  final double? height;
+  const MapView({super.key, this.height});
 
   @override
   MapViewState createState() => MapViewState();
@@ -83,7 +84,7 @@ class MapViewState extends State<MapView> with WidgetsBindingObserver {
         //       )
         //     :
         SizedBox(
-          height: context.screenHeight * 0.75,
+          height: widget.height ?? context.screenHeight * 0.75,
           width: context.screenWidth,
           child: HereMap(
             onMapCreated: context.read<TruckNavigationCubit>().onMapCreated,

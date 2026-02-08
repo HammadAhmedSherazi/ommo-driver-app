@@ -11,7 +11,6 @@ import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart'
 class TruckNavigationState extends Equatable {
   final HereMapController? mapController;
   final FutureData<List<Suggestion>>? destinationSuggestions;
-  // final FutureData<List<Place>>? nearbyTruckStops;
   final GeoCoordinates? startCoordinates;
   final FutureData<Place>? currentPlace;
   final Suggestion? selectedSuggestion;
@@ -33,6 +32,8 @@ class TruckNavigationState extends Equatable {
   final Place? businessAtAddress;
   final String? currentSpeed;
   final String? speedLimit;
+  final GeoCoordinates? currentNavigationLocation;
+  final bool isUserInteractingWithMap;
 
   const TruckNavigationState({
     this.mapController,
@@ -58,6 +59,8 @@ class TruckNavigationState extends Equatable {
     this.businessAtAddress,
     this.currentSpeed,
     this.speedLimit,
+    this.currentNavigationLocation,
+    this.isUserInteractingWithMap = false,
   });
 
   // GeoCoordinates? get destinationCoordinates =>
@@ -89,6 +92,8 @@ class TruckNavigationState extends Equatable {
     dynamic businessAtAddress,
     dynamic currentSpeed,
     dynamic speedLimit,
+    GeoCoordinates? currentNavigationLocation,
+    bool? isUserInteractingWithMap,
   }) {
     return TruckNavigationState(
       nextTargetIndex: nextTargetIndex ?? this.nextTargetIndex,
@@ -133,6 +138,10 @@ class TruckNavigationState extends Equatable {
           ? null
           : (currentSpeed ?? this.currentSpeed),
       speedLimit: speedLimit == 'null' ? null : (speedLimit ?? this.speedLimit),
+      currentNavigationLocation:
+          currentNavigationLocation ?? this.currentNavigationLocation,
+      isUserInteractingWithMap:
+          isUserInteractingWithMap ?? this.isUserInteractingWithMap,
     );
   }
 
@@ -161,5 +170,7 @@ class TruckNavigationState extends Equatable {
     businessAtAddress,
     currentSpeed,
     speedLimit,
+    currentNavigationLocation,
+    isUserInteractingWithMap,
   ];
 }

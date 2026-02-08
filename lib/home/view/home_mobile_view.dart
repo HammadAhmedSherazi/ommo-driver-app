@@ -107,12 +107,13 @@ class _HomeMobileViewState extends State<HomeMobileView>
     // Listen to place type selection and trigger category search
     _selectedStation.addListener(() {
       final selected = _selectedStation.value;
+
       if (context.mounted) {
         if (selected != null) {
           final placeTypeName = selected['name'] ?? '';
           if (placeTypeName.isNotEmpty) {
             // Clear previous brands and selected brand when place type changes
-            context.read<TruckStopCubit>().clearBrandFilter();
+            context.read<TruckStopCubit>().clearState();
             context.read<TruckStopCubit>().searchByCategory(placeTypeName);
           }
           // When station is selected, ensure sheet is at most half
@@ -122,7 +123,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
           }
         } else {
           // Clear brands when place type is deselected
-          context.read<TruckStopCubit>().clearBrandFilter();
+          context.read<TruckStopCubit>().clearState();
         }
       }
     });
@@ -1867,7 +1868,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
 
   List<Widget> buildNavigationUi(TruckNavigationState state) {
     return [
-      MapView(),
+      MapView(height: context.screenHeight * 0.65),
       // Positioned(bottom: 100, top: 0, left: 0, right: 0, child: MapView()),
       if (!state.isNavigationCompleted)
         BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
@@ -1958,9 +1959,17 @@ class _HomeMobileViewState extends State<HomeMobileView>
                               ),
                               SizedBox(height: 10),
                               Text(
-                                nextManuever
-                                    .remainingDistanceInMeters
-                                    .meterInMiles,
+                                state.currentRoute
+                                        ?.getAdjustedDistanceToManeuver(
+                                          nextManuever.maneuverIndex,
+                                          nextManuever.remainingDistanceInMeters
+                                              .toDouble(),
+                                          state.currentNavigationLocation,
+                                        )
+                                        .meterInMiles ??
+                                    nextManuever
+                                        .remainingDistanceInMeters
+                                        .meterInMiles,
                                 style: AppTextTheme().bodyText.copyWith(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -2275,7 +2284,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
             onPressed: () {
               context.read<TruckNavigationCubit>().stopNavigation();
               searchTextEditController.clear();
-              TruckNavigationUtils.saveDialog(context);
+              // TruckNavigationUtils.saveDialog(context);
             },
           ),
         ),

@@ -9,8 +9,9 @@ extension NumExtension on num {
   String get meterInMiles {
     const metersPerFoot = 0.3048;
     const metersPerMile = 1609.34;
+    const minimumDistanceInMeters = (528 * metersPerFoot);
 
-    if (this < metersPerMile) {
+    if (this < minimumDistanceInMeters) {
       // Show in feet
       double feet = this / metersPerFoot;
       return "${feet.toStringAsFixed(0)} ft";
@@ -34,7 +35,7 @@ extension NumExtension on num {
   }
 
   num get metersToFeet => (this * 3.28084).round();
-  
+
   num get feetToMeters => (this / 3.28084).round();
 
   num get kgToLbs => (this * 2.20462).round();

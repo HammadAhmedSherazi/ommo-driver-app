@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:here_sdk/core.dart';
 import 'package:here_sdk/routing.dart' as route;
 import 'package:ommo/utils/extension/manuever_extension.dart';
 
@@ -130,5 +131,54 @@ extension RouteExtension on route.Route {
     final type = instruction.contains("waypoint") ? 'waypoint' : 'destination';
 
     return "Your $type is on your $side.";
+  }
+
+  /// Get maneuver coordinates by index
+  GeoCoordinates? getManeuverCoordinates(int? index) {
+    if (index == null) return null;
+    int currentIndex = 0;
+    for (route.Section section in sections) {
+      for (route.Maneuver m in section.maneuvers) {
+        if (currentIndex == index) {
+          return m.coordinates;
+        }
+        currentIndex++;
+      }
+    }
+    return null;
+  }
+
+  /// Calculate adjusted distance to maneuver using current location
+  /// This compensates for the ~50ft (15m) delay in HERE SDK's reported distance
+  double getAdjustedDistanceToManeuver(
+    int? maneuverIndex,
+    double reportedDistanceInMeters,
+    GeoCoordinates? currentLocation,
+  ) {
+    if (maneuverIndex == null || currentLocation == null) {
+      // If we don't have current location, apply a fixed offset for small distances
+      // Only adjust when close to the turn (within 500ft / 152m)
+      if (reportedDistanceInMeters < 152) {
+        // Apply ~15m (50ft) offset, but ensure it doesn't go negative
+        return (reportedDistanceInMeters - 15).clamp(0, double.infinity);
+      }
+      return reportedDistanceInMeters;
+    }
+
+    // Get maneuver coordinates
+    final maneuverCoords = getManeuverCoordinates(maneuverIndex);
+    if (maneuverCoords == null) {
+      // Fallback to offset adjustment
+      if (reportedDistanceInMeters < 152) {
+        return (reportedDistanceInMeters - 15).clamp(0, double.infinity);
+      }
+      return reportedDistanceInMeters;
+    }
+
+    // Calculate actual distance from current location to maneuver point
+    final actualDistance = currentLocation.distanceTo(maneuverCoords);
+
+    // Use the actual calculated distance, which should be more accurate
+    return actualDistance;
   }
 }
