@@ -20,16 +20,16 @@ class LocationPoint extends Equatable {
   bool get isRecent => place is RecentSearchModel;
 
   GeoCoordinates? get geoCoordinates => isRecent
-      ? (place as RecentSearchModel).geoCoordinates
-      : (place as Place).geoCoordinates;
+      ? (place as RecentSearchModel?)?.geoCoordinates
+      : (place as Place?)?.geoCoordinates;
   String? get title => isMyLocation
       ? "My Location"
       : (isRecent
-            ? (place as RecentSearchModel).formattedTitle
-            : (place as Place).formattedTitle);
+            ? (place as RecentSearchModel?)?.formattedTitle ?? ''
+            : (place as Place?)?.formattedTitle ?? '');
   String? get subTitle => isRecent
-      ? (place as RecentSearchModel).formattedSubTitle
-      : (place as Place).formattedSubtitle;
+      ? (place as RecentSearchModel?)?.formattedSubTitle ?? ''
+      : (place as Place?)?.formattedSubtitle ?? '';
 
   LocationPoint copyWith({
     bool? isMyLocation,

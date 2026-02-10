@@ -14,8 +14,11 @@ class AppKeys {
   final String accessKeyId = "nD9uaWDaZEmcHFyirUGFZw";
   final bool isSimulation = false;
   final GeoCoordinates startCoordinates = GeoCoordinates(
-    33.6820707,
-    -112.2164676,
+    33.6711909,
+    -112.238996,
+    // las cruses
+    // 33.6820707,
+    // -112.2164676,
     // 32.317206,
     // -106.780645,
   );

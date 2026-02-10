@@ -50,6 +50,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   MapPolyline? _currentRoutePolyline;
   MapMarker? _currentLocationMarker;
   MapMarker? _destinationMarker;
+  MapMarker? _startMarker;
   Map<int, MapMarker> _stopMarkers = {};
   List<MapMarker> _truckRestrictionMarkers = [];
   final loc.Location _location = loc.Location();
@@ -57,7 +58,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   MapCameraListener? _mapCameraListener;
   Timer? _mapInteractionDebounceTimer;
 
-  Future<MapImage> _createStopMarkerImage(int index) async {
+  Future<MapImage> _createStopMarkerImage(int? index) async {
     const double size = 70.0;
     const double borderWidth = 5.0;
 
@@ -89,8 +90,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       ),
     );
 
-    paragraphBuilder.pushStyle(ui.TextStyle(color: ui.Color(0xFF000000)));
-    paragraphBuilder.addText('$index');
+    if (index != null) {
+      paragraphBuilder.pushStyle(ui.TextStyle(color: ui.Color(0xFF000000)));
+      paragraphBuilder.addText('$index');
+    }
 
     final ui.Paragraph paragraph = paragraphBuilder.build();
     paragraph.layout(ui.ParagraphConstraints(width: size));
@@ -115,7 +118,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   // Setters
   void setInitialLocation(GeoCoordinates coords) {
     emit(state.copyWith(isMapLoading: false, startCoordinates: coords));
-    _updateCurrentLocationMarker(coords);
+    _updateCurrentLocationMarker();
+  }
+
+  void setCurrentLocation(GeoCoordinates coords) {
+    emit(state.copyWith(startCoordinates: coords));
+    _updateCurrentLocationMarker();
   }
 
   // Map Functions
@@ -232,6 +240,17 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
               );
 
               // Check for stop marker
+              if (markerType == "start") {
+                if ((state.locationPoints ?? []).isNotEmpty) {
+                  final GeoCoordinates? coords =
+                      state.locationPoints?.firstOrNull?.geoCoordinates;
+                  if (coords != null) {
+                    focusOnStopOrDestination(coords);
+                    return;
+                  }
+                }
+              }
+
               if (markerType == "stop") {
                 final String? stopIndexStr = pickedMarker.metadata?.getString(
                   "stop_index",
@@ -346,7 +365,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       vehicleProfile.axleCount = specs.axleCount;
       vehicleProfile.trailerCount = specs.trailerCount;
       vehicleProfile.truckType = specs.truckType;
-
       transportProfile.vehicleProfile = vehicleProfile;
       _visualNavigator!.trackingTransportProfile = transportProfile;
 
@@ -458,10 +476,19 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     return true;
   }
 
-  void _updateCurrentLocationMarker(GeoCoordinates coords) {
-    if (_currentLocationMarker != null) {
-      state.mapController?.mapScene.removeMapMarker(_currentLocationMarker!);
+  void _updateCurrentLocationMarker() {
+    if (state.isNavigating) {
+      _clearCurrentLocationMarker();
+      _clearStartMarker();
+      return;
     }
+    if (state.hasDirection && state.currentRoute != null) {
+      addStartMaker();
+      return;
+    }
+    final coords = state.startCoordinates;
+    if (coords == null) return;
+    _clearCurrentLocationMarker();
     MapImage userImage = MapImage.withFilePathAndWidthAndHeight(
       AppIcons.myLocIcon,
       40,
@@ -559,7 +586,21 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       final GeoCoordinates? initialCoordinates = await _getCurrentLocation();
 
       if (initialCoordinates != null) {
-        setInitialLocation(initialCoordinates);
+        if (state.startCoordinates != null) {
+          final double distance = calculateDistanceInMeters(
+            state.startCoordinates!.latitude,
+            state.startCoordinates!.longitude,
+            initialCoordinates.latitude,
+            initialCoordinates.longitude,
+          );
+          print("has Distance of $distance > 10 ${distance > 10}");
+          if (distance > 10) {
+            setCurrentLocation(initialCoordinates);
+            return;
+          }
+        } else {
+          setInitialLocation(initialCoordinates);
+        }
       }
 
       _locationEngine?.addLocationListener(
@@ -576,14 +617,17 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
               );
               print("has Distance of $distance > 10 ${distance > 10}");
               if (distance > 10) {
-                _updateCurrentLocationMarker(coords);
+                setCurrentLocation(coords);
                 return;
               }
             } else {
-              _updateCurrentLocationMarker(coords);
+              setCurrentLocation(coords);
             }
           }
           if (state.isNavigating) {
+            setCurrentLocation(coords);
+            // Update currentNavigationLocation with raw GPS location for accurate distance calculations
+            emit(state.copyWith(currentNavigationLocation: coords));
             _visualNavigator?.onLocationUpdated(location);
             _navigator?.onLocationUpdated(location);
             checkNextTarget(coords);
@@ -901,9 +945,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       if (error != null || routes == null) return;
 
       final route = routes.first;
+      emit(state.copyWith(currentRoute: route, hasDirection: true));
       refreshStopAndDestinationMarker();
       _processTruckRestrictionWarnings(route);
-      emit(state.copyWith(currentRoute: route, hasDirection: true));
       _showRouteOnMap(route);
     });
   }
@@ -1154,6 +1198,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     if (state.currentRoute == null) return;
 
     WakeLockUtils.enable();
+    _clearCurrentLocationMarker();
+    _clearStartMarker();
     _visualNavigator?.route = state.currentRoute!;
     _visualNavigator?.startRendering(state.mapController!);
     setupTruckRestrictionWarnings();
@@ -1255,7 +1301,15 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       );
     }
     animateToRoute();
+    _updateCurrentLocationMarker();
     // clearCurrentRouteDetail();
+  }
+
+  void _clearStartMarker() {
+    if (_startMarker != null) {
+      state.mapController?.mapScene.removeMapMarker(_startMarker!);
+      _startMarker = null;
+    }
   }
 
   void clearCurrentRouteDetail({bool removeDestination = true}) {
@@ -1269,6 +1323,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       state.mapController?.mapScene.removeMapPolyline(_currentRoutePolyline!);
       _currentRoutePolyline = null;
     }
+
+    _clearStartMarker();
 
     clearAllStopMarker();
 
@@ -1292,6 +1348,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         hasTapDestination: false,
       ),
     );
+    _updateCurrentLocationMarker();
     resetCameraToDefault();
     // focusOnCurrentLocation();
   }
@@ -1558,23 +1615,23 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     MapImage? destIcon;
 
-    if (hasDestinationConfirmed) {
-      final units = await assetToFile(AppImages.redLocationIcon);
-      if (units == null) return;
+    // if (hasDestinationConfirmed) {
+    final units = await assetToFile(AppImages.redLocationIcon);
+    if (units == null) return;
 
-      destIcon = MapImage.withImageDataImageFormatWidthAndHeight(
-        units,
-        ImageFormat.png,
-        80,
-        110,
-      );
-    } else {
-      destIcon = MapImage.withFilePathAndWidthAndHeight(
-        AppImages.greenMapPin,
-        60,
-        100,
-      );
-    }
+    destIcon = MapImage.withImageDataImageFormatWidthAndHeight(
+      units,
+      ImageFormat.png,
+      80,
+      110,
+    );
+    // } else {
+    //   destIcon = MapImage.withFilePathAndWidthAndHeight(
+    //     AppImages.greenMapPin,
+    //     60,
+    //     100,
+    //   );
+    // }
 
     _destinationMarker = MapMarker(destinationPoint.geoCoordinates!, destIcon);
 
@@ -1619,12 +1676,14 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   Future<void> refreshStopAndDestinationMarker() async {
     clearAllStopMarker();
     for (var i = 0; i < (state.locationPoints ?? []).length; i++) {
-      if (i == 0) continue;
-      if (i == state.locationPoints!.length - 1) {
+      if (i == 0) {
+        _updateCurrentLocationMarker();
+      } else if (i == state.locationPoints!.length - 1) {
         setDestinationMarker(hasDestinationConfirmed: true);
         continue;
+      } else {
+        await addStopMakerAt(i, hasFocus: false);
       }
-      await addStopMakerAt(i, hasFocus: false);
     }
   }
 
@@ -1672,15 +1731,44 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     if (hasFocus) focusDestinationWithOffset(markerCoordinate);
   }
 
+  void _clearCurrentLocationMarker() {
+    if (_currentLocationMarker != null) {
+      state.mapController?.mapScene.removeMapMarker(_currentLocationMarker!);
+      _currentLocationMarker = null;
+    }
+  }
+
+  Future<void> addStartMaker() async {
+    final startPoint = state.locationPoints?.firstOrNull;
+    if (startPoint == null) return;
+    final startCoordinates = startPoint.geoCoordinates;
+    if (startCoordinates == null) return;
+    _clearStartMarker();
+
+    if (startPoint.isMyLocation) {
+      _clearCurrentLocationMarker();
+    }
+    final MapImage markerIcon = await _createStopMarkerImage(null);
+    _startMarker = MapMarker(startCoordinates, markerIcon);
+    final metadata = Metadata();
+    metadata.setString("marker_type", "start");
+    _startMarker!.metadata = metadata;
+    state.mapController?.mapScene.addMapMarker(_startMarker!);
+  }
+
   editStopMarkerAt(i) {
     clearStopMarkerAt(i);
     addStopMakerAt(i);
   }
 
-  void _handleMapTapForDestination(GeoCoordinates? geoCoordinates) {
+  void _handleMapTapForDestination(GeoCoordinates? geoCoordinates) async {
     // Convert screen coordinates to geo coordinates
     if (geoCoordinates == null) return;
 
+    log(
+      "🚨 geoCoordinates: lat ${geoCoordinates.latitude} , lon ${geoCoordinates.longitude}",
+      name: "_handleMapTapForDestination",
+    );
     // Set destination coordinates
     emit(
       state.copyWith(
@@ -1695,11 +1783,21 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       _destinationMarker = null;
     }
 
-    MapImage destIcon = MapImage.withFilePathAndWidthAndHeight(
-      AppImages.greenMapPin,
-      60,
-      100,
+    final units = await assetToFile(AppImages.redLocationIcon);
+    if (units == null) return;
+
+    final MapImage destIcon = MapImage.withImageDataImageFormatWidthAndHeight(
+      units,
+      ImageFormat.png,
+      80,
+      110,
     );
+
+    // MapImage destIcon = MapImage.withFilePathAndWidthAndHeight(
+    //   AppImages.greenMapPin,
+    //   60,
+    //   100,
+    // );
 
     _destinationMarker = MapMarker(geoCoordinates, destIcon);
 

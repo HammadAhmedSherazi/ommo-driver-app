@@ -181,9 +181,14 @@ class _HomeMobileViewState extends State<HomeMobileView>
   }
 
   void _updateNavigationSheetHeight() {
-    final double size = navigationSheetScrollController.size;
-    final screenHeight = MediaQuery.of(context).size.height;
-    navigationSheetHeight.value = size * screenHeight;
+    if (navigationSheetScrollController.isAttached) {
+      final double size = navigationSheetScrollController.size;
+      final screenHeight = MediaQuery.of(context).size.height;
+
+      Future.microtask(() {
+        navigationSheetHeight.value = size * screenHeight;
+      });
+    }
   }
 
   makeHalfBottomSheet() {
