@@ -27,13 +27,29 @@ import 'package:here_sdk/search.dart'
         SearchError;
 import 'package:ommo/app/views/app_view.dart';
 import 'package:ommo/data/response/get_data.dart';
+import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_stops/truck_stops_state.dart';
 
 class TruckStopCubit extends Cubit<TruckStopsState> {
-  TruckStopCubit() : super(TruckStopsState());
+  TruckStopCubit()
+    : super(
+        TruckStopsState(
+          categoriesSearchState: List.generate(
+            TruckNavigationStaticDetails.stationList.length,
+            (i) => PlaceCategoryTruckStopsState(
+              categorySearchResults: FutureData.loading(),
+              availableBrands: [],
+              selectedBrands: [],
+              placeCategory:
+                  TruckNavigationStaticDetails.stationList[i]['name'],
+            ),
+          ),
+        ),
+      );
 
   final _searchEngine = SearchEngine();
+
   Map<String, MapMarker> _placeMarkersMap = {}; // place.id -> marker
   Map<String, String> _markerBrandMap = {}; // place.id -> brand
   Map<String, Place> placeDataMap = {}; // place.id -> Place
@@ -59,6 +75,50 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
       .map((brand) => brand['name']!)
       .toList();
 
+  /// Get category state for a specific place type
+  PlaceCategoryTruckStopsState? _getCategoryState(String placeTypeName) {
+    try {
+      return state.categoriesSearchState.firstWhere(
+        (category) => category.placeCategory == placeTypeName,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Get index of category state for a specific place type
+  int? _getCategoryIndex(String placeTypeName) {
+    try {
+      return state.categoriesSearchState.indexWhere(
+        (category) => category.placeCategory == placeTypeName,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Update category state for a specific place type
+  void _updateCategoryState(
+    String placeTypeName,
+    PlaceCategoryTruckStopsState Function(PlaceCategoryTruckStopsState) update,
+  ) {
+    final categoryIndex = _getCategoryIndex(placeTypeName);
+    if (categoryIndex == null || categoryIndex < 0) return;
+
+    final updatedCategories = List<PlaceCategoryTruckStopsState>.from(
+      state.categoriesSearchState,
+    );
+    updatedCategories[categoryIndex] = update(updatedCategories[categoryIndex]);
+
+    emit(state.copyWith(categoriesSearchState: updatedCategories));
+  }
+
+  /// Get current category state (for the currently selected place type)
+  PlaceCategoryTruckStopsState? get _currentCategoryState {
+    if (state.currentPlaceType == null) return null;
+    return _getCategoryState(state.currentPlaceType!);
+  }
+
   // final List <>
   void searchByCategory(String placeTypeName) {
     final mapController = navigatorKey.currentContext
@@ -67,13 +127,14 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
         .mapController;
 
     if (mapController == null) {
-      emit(
-        state.copyWith(
+      _updateCategoryState(
+        placeTypeName,
+        (category) => category.copyWith(
           categorySearchResults: FutureData.error(
             "Unable to search: map controller not available",
           ),
-          availableBrands: [], // Clear brands on error
-          selectedBrands: [], // Clear selected brands
+          availableBrands: [],
+          selectedBrands: [],
         ),
       );
       return;
@@ -83,19 +144,40 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     final cameraState = mapController.camera.state;
     final centerCoordinates = cameraState.targetCoordinates;
 
-    // Clear previous search results and reset searched coordinates if it's a new category
-    if (state.currentPlaceType != placeTypeName) {
-      emit(
-        state.copyWith(
-          categorySearchResults: FutureData<List<Place>>.loading(),
-          availableBrands: [],
-          selectedBrands: [],
-          searchedCoordinates: {},
-          currentPlaceType: placeTypeName,
-        ),
-      );
+    // Get cached category state
+    final categoryState = _getCategoryState(placeTypeName);
+    final hasCachedResults =
+        categoryState != null &&
+        categoryState.categorySearchResults != null &&
+        categoryState.categorySearchResults!.status == Status.success;
+
+    // If switching to a new place type, clear markers and reset zoom flag
+    final isSwitchingCategory = state.currentPlaceType != placeTypeName;
+    if (isSwitchingCategory) {
       _clearPlaceMarkers();
       _isFirstTimeMarkersLoaded = true;
+    }
+
+    // Update current place type
+    emit(state.copyWith(currentPlaceType: placeTypeName));
+
+    // If we have cached results, show them immediately
+    if (hasCachedResults) {
+      final cachedPlaces = categoryState.categorySearchResults!.data;
+      if (cachedPlaces != null && cachedPlaces.isNotEmpty) {
+        // Load markers for cached results based on current category's selected brands
+        _addPlaceMarkersToMap(cachedPlaces).catchError((error) {
+          log("Error adding cached place markers: $error");
+        });
+      }
+    } else {
+      // No cached results, show loading state
+      _updateCategoryState(
+        placeTypeName,
+        (category) => category.copyWith(
+          categorySearchResults: FutureData<List<Place>>.loading(),
+        ),
+      );
     }
 
     // Setup camera listener if not already active
@@ -103,7 +185,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
       _setupCameraListener(placeTypeName);
     }
 
-    // Perform search with map-focused location
+    // Perform fresh search in background (will update cache and state)
     _performSearch(placeTypeName, centerCoordinates, isAppending: false);
   }
 
@@ -134,7 +216,8 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
         }
 
         // Append new results for this location
-        _performSearch(placeTypeName, targetCoords, isAppending: true);
+        final currentPlaceType = state.currentPlaceType ?? placeTypeName;
+        _performSearch(currentPlaceType, targetCoords, isAppending: true);
       });
     });
 
@@ -180,8 +263,9 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     List<String> categoryCodes = _getCategoryCodesForPlaceType(placeTypeName);
     if (categoryCodes.isEmpty) {
       if (!isAppending) {
-        emit(
-          state.copyWith(
+        _updateCategoryState(
+          placeTypeName,
+          (category) => category.copyWith(
             categorySearchResults: FutureData.error(
               "No category found for: $placeTypeName",
             ),
@@ -200,12 +284,15 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
 
     // Emit loading state only if not appending
     if (!isAppending) {
-      emit(
-        state.copyWith(
+      emit(state.copyWith(searchedCoordinates: updatedSearchedCoords));
+      _updateCategoryState(
+        placeTypeName,
+        (category) => category.copyWith(
           categorySearchResults: FutureData<List<Place>>.loading(),
-          searchedCoordinates: updatedSearchedCoords,
         ),
       );
+    } else {
+      emit(state.copyWith(searchedCoordinates: updatedSearchedCoords));
     }
 
     // Create category list
@@ -262,8 +349,9 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
       if (searchError != null) {
         log("Category search error: $searchError");
         if (!isAppending) {
-          emit(
-            state.copyWith(
+          _updateCategoryState(
+            placeTypeName,
+            (category) => category.copyWith(
               categorySearchResults: FutureData.error(searchError.toString()),
             ),
           );
@@ -271,11 +359,15 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
         return;
       }
 
+      // Get current category state
+      final categoryState = _getCategoryState(placeTypeName);
+      if (categoryState == null) return;
+
       if (places != null && places.isNotEmpty) {
         // Get existing places if appending
         final existingPlaces =
-            isAppending && state.categorySearchResults?.data != null
-            ? List<Place>.from(state.categorySearchResults!.data!)
+            isAppending && categoryState.categorySearchResults?.data != null
+            ? List<Place>.from(categoryState.categorySearchResults!.data!)
             : <Place>[];
 
         // Filter out duplicates by place ID
@@ -311,20 +403,46 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
         }
 
         // Auto-select brands that have results, including "Other" if it has results
-        // Only update selected brands if not appending (to preserve user selection)
-        final selectedBrands = isAppending
-            ? (state.selectedBrands ?? [])
-            : List<String>.from(brandsWithResults);
-        if (!isAppending && hasOtherResults) {
-          selectedBrands.add("Other");
-        }
+        // Preserve user's selected brands from cache if available, otherwise auto-select
+        final List<String> selectedBrands = isAppending
+            ? List<String>.from(categoryState.selectedBrands ?? [])
+            : () {
+                // Check if we have cached selected brands for this place type
+                final cachedBrands = categoryState.selectedBrands;
+                if (cachedBrands != null && cachedBrands.isNotEmpty) {
+                  // Keep only cached brands that are available in new results
+                  final filteredBrands = cachedBrands
+                      .where(
+                        (brand) =>
+                            brandsWithResults.contains(brand) ||
+                            (brand == "Other" && hasOtherResults),
+                      )
+                      .toList();
+                  // If no cached brands match, fall back to auto-selecting all available brands
+                  if (filteredBrands.isEmpty) {
+                    final autoSelected = List<String>.from(brandsWithResults);
+                    if (hasOtherResults) {
+                      autoSelected.add("Other");
+                    }
+                    return autoSelected;
+                  }
+                  return filteredBrands;
+                } else {
+                  // No cached brands, auto-select all brands with results
+                  final autoSelected = List<String>.from(brandsWithResults);
+                  if (hasOtherResults) {
+                    autoSelected.add("Other");
+                  }
+                  return autoSelected;
+                }
+              }();
 
-        emit(
-          state.copyWith(
+        _updateCategoryState(
+          placeTypeName,
+          (category) => category.copyWith(
             categorySearchResults: FutureData.completed(allPlaces),
             availableBrands: availableBrands,
             selectedBrands: selectedBrands,
-            searchedCoordinates: updatedSearchedCoords,
           ),
         );
 
@@ -336,16 +454,14 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
           });
         }
       } else {
-        // Update searched coordinates even if no results
-        emit(state.copyWith(searchedCoordinates: updatedSearchedCoords));
-
         // Only show empty state if not appending
         if (!isAppending) {
-          emit(
-            state.copyWith(
-              categorySearchResults: FutureData.completed([]),
+          _updateCategoryState(
+            placeTypeName,
+            (category) => category.copyWith(
+              categorySearchResults: FutureData.completed(<Place>[]),
               availableBrands: List<String>.from(_defaultBrandNames),
-              selectedBrands: [],
+              selectedBrands: category.selectedBrands ?? [],
             ),
           );
           _clearPlaceMarkers();
@@ -356,7 +472,12 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
 
   /// Toggle brand selection (add/remove from selected brands list)
   void toggleBrand(String brand) {
-    final currentSelected = state.selectedBrands ?? [];
+    if (state.currentPlaceType == null) return;
+
+    final categoryState = _getCategoryState(state.currentPlaceType!);
+    if (categoryState == null) return;
+
+    final currentSelected = categoryState.selectedBrands ?? [];
     final List<String> newSelected;
 
     if (currentSelected.contains(brand)) {
@@ -367,15 +488,14 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
       newSelected = List<String>.from(currentSelected)..add(brand);
     }
 
-    emit(state.copyWith(selectedBrands: newSelected));
+    _updateCategoryState(
+      state.currentPlaceType!,
+      (category) => category.copyWith(selectedBrands: newSelected),
+    );
 
-    // Update markers based on new selection
-    final places = state.categorySearchResults?.data;
-    if (places != null && places.isNotEmpty) {
-      _addPlaceMarkersToMap(places).catchError((error) {
-        log("Error updating place markers: $error");
-      });
-    }
+    // Refresh all markers for current category based on new selection
+    // This ensures markers are shown/hidden correctly when brands are toggled
+    _refreshAllMarkers();
   }
 
   /// Clear brand filter and available brands
@@ -395,8 +515,22 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
 
   void clearState() {
     _removeCameraListener();
-    _clearPlaceMarkers();
-    emit(TruckStopsState());
+    _clearAllPlaceData();
+    emit(
+      TruckStopsState(
+        currentPlaceType: 'null', // Reset to null when clearing
+        categoriesSearchState: List.generate(
+          TruckNavigationStaticDetails.stationList.length,
+          (i) => PlaceCategoryTruckStopsState(
+            categorySearchResults: FutureData.loading(),
+            availableBrands: [],
+            selectedBrands:
+                [], // Reset selectedBrands only when clearing state completely
+            placeCategory: TruckNavigationStaticDetails.stationList[i]['name'],
+          ),
+        ),
+      ),
+    );
   }
 
   /// Get categorized brand name from place title - returns default brand name or "Other"
@@ -660,7 +794,8 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
 
   /// Add place markers to map based on selected brands
   Future<void> _addPlaceMarkersToMap(List<Place> places) async {
-    final selectedBrands = state.selectedBrands ?? [];
+    final categoryState = _currentCategoryState;
+    final selectedBrands = categoryState?.selectedBrands ?? [];
     final mapController = navigatorKey.currentContext
         ?.read<TruckNavigationCubit>()
         .state
@@ -790,7 +925,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     mapController.camera.lookAtPointWithMeasure(center, mapMeasure);
   }
 
-  /// Clear all place markers from map
+  /// Clear all place markers from map (but keep place data for business overview)
   void _clearPlaceMarkers() {
     final mapController = navigatorKey.currentContext
         ?.read<TruckNavigationCubit>()
@@ -803,9 +938,16 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     }
     _placeMarkersMap.clear();
     _markerBrandMap.clear();
+    // Note: We keep placeDataMap and placesLogoMap so business overview modals can still work
+    // They will be updated when new places are added
+    _isFirstTimeMarkersLoaded = true; // Reset flag when clearing
+  }
+
+  /// Clear all place data (used when completely clearing state)
+  void _clearAllPlaceData() {
+    _clearPlaceMarkers();
     placeDataMap.clear();
     placesLogoMap.clear();
-    _isFirstTimeMarkersLoaded = true; // Reset flag when clearing
   }
 
   /// Show business overview in modal bottom sheet
@@ -854,19 +996,55 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
   }
 
   void _refreshAllMarkers() {
-    final places = state.categorySearchResults?.data;
-    if (places == null || places.isEmpty) return;
+    final categoryState = _currentCategoryState;
+    final places = categoryState?.categorySearchResults?.data;
+    final selectedBrands = categoryState?.selectedBrands ?? [];
+    final mapController = navigatorKey.currentContext
+        ?.read<TruckNavigationCubit>()
+        .state
+        .mapController;
 
-    _addPlaceMarkersToMap(places);
+    if (mapController == null) return;
+
+    // Remove markers for places that are no longer selected
+    final markersToRemove = <String>[];
+    for (final entry in _placeMarkersMap.entries) {
+      final placeId = entry.key;
+      final place = placeDataMap[placeId];
+      if (place != null) {
+        final brand = getBrandFromPlace(place);
+        if (brand == null || !selectedBrands.contains(brand)) {
+          // This marker should be removed
+          mapController.mapScene.removeMapMarker(entry.value);
+          markersToRemove.add(placeId);
+        }
+      }
+    }
+
+    // Clean up removed markers
+    for (final placeId in markersToRemove) {
+      _placeMarkersMap.remove(placeId);
+      _markerBrandMap.remove(placeId);
+    }
+
+    // Add/update markers for all places in current category
+    if (places != null && places.isNotEmpty) {
+      _addPlaceMarkersToMap(places);
+    }
   }
 
   void clearAllTruckStops() {
     _removeCameraListener();
-    _clearPlaceMarkers();
+    _clearAllPlaceData();
+    final resetCategories = state.categoriesSearchState.map((category) {
+      return category.copyWith(
+        categorySearchResults: FutureData<List<Place>>.initial(),
+        selectedBrands: [],
+      );
+    }).toList();
     emit(
       state.copyWith(
-        selectedBrands: [],
-        categorySearchResults: FutureData<List<Place>>.initial(),
+        categoriesSearchState: resetCategories,
         selectedTruckStop: 'null',
         showBusinessOverviewModal: false,
         isCameraListenerActive: false,

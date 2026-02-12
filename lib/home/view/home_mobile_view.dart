@@ -126,7 +126,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
           final placeTypeName = selected['name'] ?? '';
           if (placeTypeName.isNotEmpty) {
             // Clear previous brands and selected brand when place type changes
-            context.read<TruckStopCubit>().clearState();
+            // context.read<TruckStopCubit>().clearState();
             context.read<TruckStopCubit>().searchByCategory(placeTypeName);
           }
           // When station is selected, ensure sheet is at most half
@@ -802,16 +802,55 @@ class _HomeMobileViewState extends State<HomeMobileView>
                               15.h,
                               // Static brands filter UI - always shows default brands
                               BlocBuilder<TruckStopCubit, TruckStopsState>(
-                                buildWhen: (previous, current) =>
-                                    previous.availableBrands !=
-                                        current.availableBrands ||
-                                    previous.selectedBrands !=
-                                        current.selectedBrands,
+                                buildWhen: (previous, current) {
+                                  // Get current category states
+                                  final prevCategory =
+                                      previous.currentPlaceType != null
+                                      ? previous.categoriesSearchState
+                                            .firstWhere(
+                                              (c) =>
+                                                  c.placeCategory ==
+                                                  previous.currentPlaceType,
+                                              orElse: () =>
+                                                  PlaceCategoryTruckStopsState(),
+                                            )
+                                      : null;
+                                  final currCategory =
+                                      current.currentPlaceType != null
+                                      ? current.categoriesSearchState.firstWhere(
+                                          (c) =>
+                                              c.placeCategory ==
+                                              current.currentPlaceType,
+                                          orElse: () =>
+                                              PlaceCategoryTruckStopsState(),
+                                        )
+                                      : null;
+
+                                  return previous.currentPlaceType !=
+                                          current.currentPlaceType ||
+                                      prevCategory?.availableBrands !=
+                                          currCategory?.availableBrands ||
+                                      prevCategory?.selectedBrands !=
+                                          currCategory?.selectedBrands;
+                                },
                                 builder: (context, state) {
+                                  // Get current category state
+                                  final categoryState =
+                                      state.currentPlaceType != null
+                                      ? state.categoriesSearchState.firstWhere(
+                                          (c) =>
+                                              c.placeCategory ==
+                                              state.currentPlaceType,
+                                          orElse: () =>
+                                              PlaceCategoryTruckStopsState(),
+                                        )
+                                      : null;
+
                                   // Always show default brands + "Other" if in availableBrands
-                                  final brands = state.availableBrands ?? [];
+                                  final brands =
+                                      categoryState?.availableBrands ?? [];
                                   final selectedBrands =
-                                      state.selectedBrands ?? [];
+                                      categoryState?.selectedBrands ?? [];
 
                                   // If no brands, show default brands anyway (static)
                                   final displayBrands = brands.isEmpty
@@ -1032,18 +1071,72 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                               TruckStopCubit,
                                               TruckStopsState
                                             >(
-                                              buildWhen: (previous, current) =>
-                                                  previous.categorySearchResults !=
-                                                      current
-                                                          .categorySearchResults ||
-                                                  previous.selectedBrands !=
-                                                      current.selectedBrands,
+                                              buildWhen: (previous, current) {
+                                                // Get current category states
+                                                final prevCategory =
+                                                    previous.currentPlaceType !=
+                                                        null
+                                                    ? previous
+                                                          .categoriesSearchState
+                                                          .firstWhere(
+                                                            (c) =>
+                                                                c.placeCategory ==
+                                                                previous
+                                                                    .currentPlaceType,
+                                                            orElse: () =>
+                                                                PlaceCategoryTruckStopsState(),
+                                                          )
+                                                    : null;
+                                                final currCategory =
+                                                    current.currentPlaceType !=
+                                                        null
+                                                    ? current
+                                                          .categoriesSearchState
+                                                          .firstWhere(
+                                                            (c) =>
+                                                                c.placeCategory ==
+                                                                current
+                                                                    .currentPlaceType,
+                                                            orElse: () =>
+                                                                PlaceCategoryTruckStopsState(),
+                                                          )
+                                                    : null;
+
+                                                return previous
+                                                            .currentPlaceType !=
+                                                        current
+                                                            .currentPlaceType ||
+                                                    prevCategory
+                                                            ?.categorySearchResults !=
+                                                        currCategory
+                                                            ?.categorySearchResults ||
+                                                    prevCategory
+                                                            ?.selectedBrands !=
+                                                        currCategory
+                                                            ?.selectedBrands;
+                                              },
                                               builder: (context, state) {
+                                                // Get current category state
+                                                final categoryState =
+                                                    state.currentPlaceType !=
+                                                        null
+                                                    ? state
+                                                          .categoriesSearchState
+                                                          .firstWhere(
+                                                            (c) =>
+                                                                c.placeCategory ==
+                                                                state
+                                                                    .currentPlaceType,
+                                                            orElse: () =>
+                                                                PlaceCategoryTruckStopsState(),
+                                                          )
+                                                    : null;
+
                                                 return FutureDataBuilder<
                                                   List<Place>
                                                 >(
-                                                  future: state
-                                                      .categorySearchResults,
+                                                  future: categoryState
+                                                      ?.categorySearchResults,
                                                   onSuccess: (places) {
                                                     if (places == null ||
                                                         places.isEmpty) {
@@ -1068,7 +1161,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
 
                                                     // Filter places by selected brands
                                                     final selectedBrands =
-                                                        state.selectedBrands ??
+                                                        categoryState
+                                                            ?.selectedBrands ??
                                                         [];
                                                     final truckStopCubit =
                                                         context

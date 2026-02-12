@@ -458,9 +458,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
           ?.read<TruckStopCubit>();
       if (truckStopCubit != null) {
         final truckStopState = truckStopCubit.state;
-
         // Check if searching truck stops (has search results)
-        if (truckStopState.categorySearchResults != null) {
+        if (truckStopState.currentPlaceType != null) {
           return false;
         }
       }
