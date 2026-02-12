@@ -257,6 +257,55 @@ class _HomeMobileViewState extends State<HomeMobileView>
     );
   }
 
+  Widget buildMapSchemeFloatingMenu() {
+    return ValueListenableBuilder(
+      valueListenable: showChangeMapSchemeDialog,
+      builder: (context, value, child) {
+        return GestureDetector(
+          onTap: () {
+            // showChangeMapSchemeDialog.value =
+            //     !showChangeMapSchemeDialog.value;
+            showMapSchemeDialog(context);
+          },
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+
+            child: Container(
+              width: 48,
+              height: 48,
+              padding: EdgeInsets.all(13),
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x0A000000), // same as #0000000A
+                    offset: Offset(0, 2), // x=0, y=2
+                    blurRadius: 6, // blur radius
+                    spreadRadius: 0, // spread
+                  ),
+                ],
+                shape: BoxShape.circle,
+                color: showChangeMapSchemeDialog.value
+                    ? AppColorTheme().primary.withValues(alpha: 0.2)
+                    : Colors.white,
+              ),
+              child: SvgPicture.asset(
+                AppIcons.layerBoxIcon,
+                colorFilter: showChangeMapSchemeDialog.value
+                    ? ColorFilter.mode(AppColorTheme().primary, BlendMode.srcIn)
+                    : null,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   /// Show business overview in modal bottom sheet
   List<Widget> buildInitialUi(
     BuildContext context,
@@ -299,55 +348,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
               ),
               child: Image.asset('assets/images/bell.png'),
             ),
-            ValueListenableBuilder(
-              valueListenable: showChangeMapSchemeDialog,
-              builder: (context, value, child) {
-                return GestureDetector(
-                  onTap: () {
-                    // showChangeMapSchemeDialog.value =
-                    //     !showChangeMapSchemeDialog.value;
-                    showMapSchemeDialog(context);
-                  },
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      padding: EdgeInsets.all(13),
-                      decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0x0A000000), // same as #0000000A
-                            offset: Offset(0, 2), // x=0, y=2
-                            blurRadius: 6, // blur radius
-                            spreadRadius: 0, // spread
-                          ),
-                        ],
-                        shape: BoxShape.circle,
-                        color: showChangeMapSchemeDialog.value
-                            ? AppColorTheme().primary.withValues(alpha: 0.2)
-                            : Colors.white,
-                      ),
-                      child: SvgPicture.asset(
-                        AppIcons.layerBoxIcon,
-                        colorFilter: showChangeMapSchemeDialog.value
-                            ? ColorFilter.mode(
-                                AppColorTheme().primary,
-                                BlendMode.srcIn,
-                              )
-                            : null,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+            buildMapSchemeFloatingMenu(),
             Container(
               width: 48,
               // height: 200,
@@ -2288,56 +2289,65 @@ class _HomeMobileViewState extends State<HomeMobileView>
             right: 20,
             child: Row(
               children: [
-                InkWell(
-                  onTap: () =>
-                      // context.read<TruckNavigationCubit>().focusOnCurrentLocation(),
-                      context
-                          .read<TruckNavigationCubit>()
-                          .toggleCameraControll(),
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    padding: EdgeInsets.all(13),
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color(0x0A000000), // same as #0000000A
-                          offset: Offset(0, 2), // x=0, y=2
-                          blurRadius: 6, // blur radius
-                          spreadRadius: 0, // spread
+                Column(
+                  spacing: 20,
+                  children: [
+                    buildMapSchemeFloatingMenu(),
+                    InkWell(
+                      onTap: () =>
+                          // context.read<TruckNavigationCubit>().focusOnCurrentLocation(),
+                          context
+                              .read<TruckNavigationCubit>()
+                              .toggleCameraControll(),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        padding: EdgeInsets.all(13),
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0x0A000000), // same as #0000000A
+                              offset: Offset(0, 2), // x=0, y=2
+                              blurRadius: 6, // blur radius
+                              spreadRadius: 0, // spread
+                            ),
+                          ],
+                          shape: BoxShape.circle,
+                          color: Colors.white,
                         ),
-                      ],
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                    ),
-                    child:
-                        BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
-                          buildWhen: (p, c) =>
-                              p.cameraControlledByNavigator !=
-                              c.cameraControlledByNavigator,
-                          builder: (context, state) {
-                            if (state.cameraControlledByNavigator) {
-                              return Image.asset(
-                                'assets/images/ion_compass-sharp.png',
-                              );
+                        child:
+                            BlocBuilder<
+                              TruckNavigationCubit,
+                              TruckNavigationState
+                            >(
+                              buildWhen: (p, c) =>
+                                  p.cameraControlledByNavigator !=
+                                  c.cameraControlledByNavigator,
+                              builder: (context, state) {
+                                if (state.cameraControlledByNavigator) {
+                                  return Image.asset(
+                                    'assets/images/ion_compass-sharp.png',
+                                  );
 
-                              // return Icon(
-                              //   Icons.pan_tool_rounded,
-                              //   color: Colors.black,
-                              //   size: 20,
-                              // );
-                            } else {
-                              return SvgPicture.asset(
-                                AppIcons.navigationIconGreen,
-                                colorFilter: ColorFilter.mode(
-                                  Colors.black,
-                                  BlendMode.srcIn,
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                  ),
+                                  // return Icon(
+                                  //   Icons.pan_tool_rounded,
+                                  //   color: Colors.black,
+                                  //   size: 20,
+                                  // );
+                                } else {
+                                  return SvgPicture.asset(
+                                    AppIcons.navigationIconGreen,
+                                    colorFilter: ColorFilter.mode(
+                                      Colors.black,
+                                      BlendMode.srcIn,
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -2573,7 +2583,13 @@ class _HomeMobileViewState extends State<HomeMobileView>
     ];
   }
 
-  Widget _styleButton(String label, MapScheme scheme, String icon, int index) {
+  Widget _styleButton(
+    BuildContext context,
+    String label,
+    MapScheme scheme,
+    String icon,
+    int index,
+  ) {
     return ValueListenableBuilder(
       valueListenable: selectIndexMapView,
       builder: (_, v, c) {
@@ -2583,6 +2599,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
             onTap: () {
               context.read<TruckNavigationCubit>().changeMapScheme(scheme);
               selectIndexMapView.value = index;
+              context.popPage();
             },
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -2787,6 +2804,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                         final item =
                             TruckNavigationStaticDetails.mapSchemes[index];
                         return _styleButton(
+                          context,
                           item.label,
                           item.scheme,
                           item.icon,
