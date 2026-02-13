@@ -28,7 +28,6 @@ import 'package:ommo/map_sdk/HEREPositioningSimulator.dart';
 import 'package:ommo/models/location_point_model.dart';
 import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 import 'package:ommo/utils/constants/constants.dart';
-import 'package:ommo/utils/extension/manuever_extension.dart';
 import 'package:ommo/utils/extension/place_extension.dart';
 import 'package:ommo/utils/extension/recent_search_model_extension.dart';
 import 'package:ommo/utils/generics/generics.dart';
@@ -57,6 +56,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   bool isFirstTimeLocationGet = true;
   MapCameraListener? _mapCameraListener;
   Timer? _mapInteractionDebounceTimer;
+  Timer? _routeRecalculationDebounceTimer;
+  static const double _offRouteThresholdMeters =
+      50.0; // Distance threshold for off-route detection
 
   Future<MapImage> _createStopMarkerImage(int? index) async {
     const double size = 70.0;
@@ -630,6 +632,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
             _visualNavigator?.onLocationUpdated(location);
             _navigator?.onLocationUpdated(location);
             checkNextTarget(coords);
+            // Check if user is off-route and recalculate if needed
+            _checkOffRouteAndRecalculate(coords);
           }
         }),
       );
@@ -659,6 +663,220 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         emit(state.copyWith(nextTargetIndex: _nextTargetIndex));
       }
     }
+  }
+
+  /// Check if user is off-route and recalculate route if needed
+  void _checkOffRouteAndRecalculate(GeoCoordinates currentLocation) {
+    if (state.currentRoute == null || !state.isNavigating) return;
+
+    // Cancel any pending recalculation
+    _routeRecalculationDebounceTimer?.cancel();
+
+    // Debounce the check to avoid too frequent recalculations
+    _routeRecalculationDebounceTimer = Timer(const Duration(seconds: 3), () {
+      _performOffRouteCheck(currentLocation);
+    });
+  }
+
+  /// Perform the actual off-route check
+  void _performOffRouteCheck(GeoCoordinates currentLocation) {
+    if (state.currentRoute == null || !state.isNavigating) return;
+
+    // Get the route geometry
+    final routeGeometry = state.currentRoute!.geometry;
+
+    // Find the nearest point on the route
+    double minDistance = double.infinity;
+    final routeVertices = routeGeometry.vertices;
+
+    if (routeVertices.length < 2) return;
+
+    for (int i = 0; i < routeVertices.length - 1; i++) {
+      final point1 = routeVertices[i];
+      final point2 = routeVertices[i + 1];
+
+      // Calculate distance to the line segment
+      final distance = _distanceToLineSegment(currentLocation, point1, point2);
+
+      if (distance < minDistance) {
+        minDistance = distance;
+      }
+    }
+
+    // If user is off-route beyond threshold, recalculate
+    if (minDistance > _offRouteThresholdMeters) {
+      log(
+        "User is off-route. Distance: ${minDistance.toStringAsFixed(2)}m. Recalculating route...",
+      );
+      _recalculateRouteFromCurrentLocation(currentLocation);
+    }
+  }
+
+  /// Calculate distance from a point to a line segment
+  double _distanceToLineSegment(
+    GeoCoordinates point,
+    GeoCoordinates lineStart,
+    GeoCoordinates lineEnd,
+  ) {
+    // Calculate distance using the formula for point-to-line-segment distance
+    final A = point.latitude - lineStart.latitude;
+    final B = point.longitude - lineStart.longitude;
+    final C = lineEnd.latitude - lineStart.latitude;
+    final D = lineEnd.longitude - lineStart.longitude;
+
+    final dot = A * C + B * D;
+    final lenSq = C * C + D * D;
+
+    if (lenSq == 0) {
+      // Line segment is a point
+      return calculateDistanceInMeters(
+        point.latitude,
+        point.longitude,
+        lineStart.latitude,
+        lineStart.longitude,
+      );
+    }
+
+    final param = dot / lenSq;
+    GeoCoordinates closestPoint;
+
+    if (param < 0) {
+      closestPoint = lineStart;
+    } else if (param > 1) {
+      closestPoint = lineEnd;
+    } else {
+      closestPoint = GeoCoordinates(
+        lineStart.latitude + param * C,
+        lineStart.longitude + param * D,
+      );
+    }
+
+    return calculateDistanceInMeters(
+      point.latitude,
+      point.longitude,
+      closestPoint.latitude,
+      closestPoint.longitude,
+    );
+  }
+
+  /// Recalculate route from current location to destination
+  void _recalculateRouteFromCurrentLocation(GeoCoordinates currentLocation) {
+    if (state.locationPoints == null || state.locationPoints!.isEmpty) return;
+
+    // Get destination (last waypoint)
+    final destination = state.locationPoints!.lastOrNull;
+    if (destination == null || destination.geoCoordinates == null) return;
+
+    // Build waypoints list for recalculation
+    final waypoints = <Waypoint>[];
+
+    // Add current location as first waypoint
+    waypoints.add(Waypoint(currentLocation));
+
+    // Add remaining waypoints (stops and destination) that haven't been reached
+    if (state.locationPoints!.length > 1) {
+      // Start from nextTargetIndex to include remaining stops
+      final startIndex = state.nextTargetIndex > 0
+          ? state.nextTargetIndex - 1
+          : 0;
+
+      for (int i = startIndex; i < state.locationPoints!.length; i++) {
+        final waypoint = state.locationPoints![i];
+        if (waypoint.geoCoordinates != null) {
+          waypoints.add(Waypoint(waypoint.geoCoordinates!));
+        }
+      }
+    }
+
+    // Recalculate route
+    _setupTransportProfile();
+    final truckOptions = _createTruckOptions();
+
+    _routingEngine.calculateTruckRoute(waypoints, truckOptions, (
+      RoutingError? error,
+      List<Route>? routes,
+    ) {
+      if (error != null) {
+        log("Route recalculation error: $error");
+        return;
+      }
+
+      if (routes == null || routes.isEmpty) {
+        log("No routes found during recalculation");
+        return;
+      }
+
+      final newRoute = routes.first;
+      log(
+        "Route recalculated successfully. New route length: ${newRoute.lengthInMeters}m",
+      );
+
+      // Update the route
+      emit(state.copyWith(currentRoute: newRoute, hasDirection: true));
+
+      // Update visual navigator with new route
+      if (_visualNavigator != null && state.isNavigating) {
+        _visualNavigator!.route = newRoute;
+      }
+
+      // Refresh map display
+      refreshStopAndDestinationMarker();
+      _processTruckRestrictionWarnings(newRoute);
+      _showRouteOnMap(newRoute);
+
+      // Update location points with reverse geocoded place for current location
+      _updateLocationPointsWithCurrentLocation(currentLocation);
+    });
+  }
+
+  /// Update location points with reverse geocoded place for current location
+  void _updateLocationPointsWithCurrentLocation(
+    GeoCoordinates currentLocation,
+  ) {
+    if (state.locationPoints == null || state.locationPoints!.isEmpty) return;
+
+    final searchOptions = SearchOptions();
+    searchOptions.languageCode = LanguageCode.enUs;
+    searchOptions.maxItems = 1;
+
+    _searchEngine.searchByCoordinates(currentLocation, searchOptions, (
+      SearchError? error,
+      List<Place>? places,
+    ) {
+      if (error != null || places == null || places.isEmpty) {
+        // If reverse geocoding fails, keep existing location points
+        return;
+      }
+
+      final currentLocationPlace = places.first;
+      final remainingWaypoints = <LocationPoint>[];
+
+      // Add current location as new starting point
+      remainingWaypoints.add(
+        LocationPoint(
+          place: currentLocationPlace,
+          pointType: LocationPointType.starting,
+          isMyLocation: true,
+        ),
+      );
+
+      // Add remaining waypoints (stops and destination)
+      if (state.locationPoints!.length > 1) {
+        final startIndex = state.nextTargetIndex > 0
+            ? state.nextTargetIndex - 1
+            : 0;
+
+        for (int i = startIndex; i < state.locationPoints!.length; i++) {
+          final waypoint = state.locationPoints![i];
+          if (waypoint.geoCoordinates != null) {
+            remainingWaypoints.add(waypoint);
+          }
+        }
+      }
+
+      // Update location points
+      emit(state.copyWith(locationPoints: remainingWaypoints));
+    });
   }
 
   Future<void> getCurrentLocationPlace() async {
@@ -1223,6 +1441,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       ) {
         _navigator?.onLocationUpdated(location);
         checkNextTarget(location.coordinates);
+        // Check if user is off-route and recalculate if needed
+        _checkOffRouteAndRecalculate(location.coordinates);
       });
 
       _simulator?.startLocating(

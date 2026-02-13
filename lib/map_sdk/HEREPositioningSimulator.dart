@@ -29,13 +29,21 @@ class HEREPositioningSimulator {
   double _speedFactor = 1;
 
   // Starts route playback. For simplicity, we allow two location listeners.
-  void startLocating(LocationListener locationListener1, LocationListener locationListener2, Route route) {
+  void startLocating(
+    LocationListener locationListener1,
+    LocationListener locationListener2,
+    Route route,
+  ) {
     // Stop any previous simulation.
     if (_locationSimulator != null) {
       _locationSimulator!.stop();
     }
 
-    _locationSimulator = _createLocationSimulator(locationListener1, locationListener2, route);
+    _locationSimulator = _createLocationSimulator(
+      locationListener1,
+      locationListener2,
+      route,
+    );
     _locationSimulator!.start();
   }
 
@@ -52,16 +60,24 @@ class HEREPositioningSimulator {
 
   // Provides fake GPS signals based on the route geometry.
   LocationSimulator _createLocationSimulator(
-      LocationListener locationListener1, LocationListener locationListener2, Route route) {
+    LocationListener locationListener1,
+    LocationListener locationListener2,
+    Route route,
+  ) {
     final locationSimulatorOptions = LocationSimulatorOptions();
     locationSimulatorOptions.speedFactor = _speedFactor;
     locationSimulatorOptions.notificationInterval = Duration(milliseconds: 500);
 
     late LocationSimulator locationSimulator;
     try {
-      locationSimulator = LocationSimulator.withRoute(route, locationSimulatorOptions);
+      locationSimulator = LocationSimulator.withRoute(
+        route,
+        locationSimulatorOptions,
+      );
     } catch (e) {
-      throw Exception("Initialization of LocationSimulator failed: ${e.toString()}");
+      throw Exception(
+        "Initialization of LocationSimulator failed: ${e.toString()}",
+      );
     }
 
     // Set a listener that notifies both provided location listeners.
