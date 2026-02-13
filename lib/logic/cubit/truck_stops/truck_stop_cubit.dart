@@ -611,12 +611,12 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     String assetPath, [
     double scale = 1.0,
   ]) async {
-    final double pinHeight = 140.0 * scale;
+    final double pinHeight = 115.0 * scale;
     final double pinWidth = 100.0 * scale;
     final double circleRadius = 42.0 * scale;
     final double circleCenterY = 42.0 * scale;
     final double circleCenterX = pinWidth / 2;
-    final double imageSize = 60.0 * scale; // Size of brand image inside pin
+    final double imageSize = 72.0 * scale; // Size of brand image inside pin
 
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
@@ -645,11 +645,13 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
       whitePaint,
     );
 
-    // Draw white triangle (pin point)
+    // Draw white triangle (pin point) - overlapping into circle
+    final double triangleStartY = circleCenterY + circleRadius - 8.0 * scale;
+    final double triangleWidth = 20.0 * scale;
     final ui.Path trianglePath = ui.Path()
-      ..moveTo(circleCenterX - 15, circleCenterY + circleRadius)
-      ..lineTo(circleCenterX + 15, circleCenterY + circleRadius)
-      ..lineTo(circleCenterX, pinHeight - 5)
+      ..moveTo(circleCenterX - triangleWidth, triangleStartY)
+      ..lineTo(circleCenterX + triangleWidth, triangleStartY)
+      ..lineTo(circleCenterX, pinHeight - 12)
       ..close();
     canvas.drawPath(trianglePath, whitePaint);
 
@@ -703,10 +705,10 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     ui.Color backgroundColor, [
     double scale = 1.0,
   ]) async {
-    final double pinHeight = 140.0 * scale; // Increased from 100.0
-    final double pinWidth = 100.0 * scale; // Increased from 70.0
-    final double circleRadius = 42.0 * scale; // Increased from 30.0
-    final double circleCenterY = 42.0 * scale; // Increased from 30.0
+    final double pinHeight = 115.0 * scale;
+    final double pinWidth = 100.0 * scale;
+    final double circleRadius = 42.0 * scale;
+    final double circleCenterY = 42.0 * scale;
     final double circleCenterX = pinWidth / 2;
 
     final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -724,11 +726,13 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
       whitePaint,
     );
 
-    // Draw white triangle (pin point)
+    // Draw white triangle (pin point) - overlapping into circle
+    final double triangleStartY = circleCenterY + circleRadius - 8.0 * scale;
+    final double triangleWidth = 20.0 * scale;
     final ui.Path trianglePath = ui.Path()
-      ..moveTo(circleCenterX - 15, circleCenterY + circleRadius)
-      ..lineTo(circleCenterX + 15, circleCenterY + circleRadius)
-      ..lineTo(circleCenterX, pinHeight - 5)
+      ..moveTo(circleCenterX - triangleWidth, triangleStartY)
+      ..lineTo(circleCenterX + triangleWidth, triangleStartY)
+      ..lineTo(circleCenterX, pinHeight - 12)
       ..close();
     canvas.drawPath(trianglePath, whitePaint);
 
