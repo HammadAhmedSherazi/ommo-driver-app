@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'dart:developer';
 import 'dart:math' as m;
-import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart' as material;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' as widgets;
@@ -2281,7 +2280,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       _destinationMarker = null;
     }
 
-    clearCurrentRouteDetail();
+    // clearCurrentRouteDetail();
+
     emit(
       state.copyWith(
         hasTapDestination: false,
@@ -2291,6 +2291,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         selectedSuggestion: 'null',
         tappedPlace: FutureData<Place>.initial(),
         businessAtAddress: 'null',
+           
       ),
     );
   }
