@@ -34,6 +34,10 @@ class TruckNavigationState extends Equatable {
   final String? speedLimit;
   final GeoCoordinates? currentNavigationLocation;
   final bool isUserInteractingWithMap;
+  /// Remaining distance to destination in meters (from RouteProgress during navigation).
+  final int? remainingDistanceInMeters;
+  /// Remaining duration to destination (from RouteProgress during navigation).
+  final Duration? remainingDuration;
 
   const TruckNavigationState({
     this.mapController,
@@ -61,6 +65,8 @@ class TruckNavigationState extends Equatable {
     this.speedLimit,
     this.currentNavigationLocation,
     this.isUserInteractingWithMap = false,
+    this.remainingDistanceInMeters,
+    this.remainingDuration,
   });
 
   // GeoCoordinates? get destinationCoordinates =>
@@ -94,6 +100,8 @@ class TruckNavigationState extends Equatable {
     dynamic speedLimit,
     GeoCoordinates? currentNavigationLocation,
     bool? isUserInteractingWithMap,
+    dynamic remainingDistanceInMeters,
+    dynamic remainingDuration,
   }) {
     return TruckNavigationState(
       nextTargetIndex: nextTargetIndex ?? this.nextTargetIndex,
@@ -142,6 +150,12 @@ class TruckNavigationState extends Equatable {
           currentNavigationLocation ?? this.currentNavigationLocation,
       isUserInteractingWithMap:
           isUserInteractingWithMap ?? this.isUserInteractingWithMap,
+      remainingDistanceInMeters: remainingDistanceInMeters == 'null'
+          ? null
+          : (remainingDistanceInMeters ?? this.remainingDistanceInMeters),
+      remainingDuration: remainingDuration == 'null'
+          ? null
+          : (remainingDuration ?? this.remainingDuration),
     );
   }
 
@@ -172,5 +186,7 @@ class TruckNavigationState extends Equatable {
     speedLimit,
     currentNavigationLocation,
     isUserInteractingWithMap,
+    remainingDistanceInMeters,
+    remainingDuration,
   ];
 }

@@ -1,4 +1,5 @@
 import 'dart:developer';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -13,11 +14,11 @@ import 'package:ommo/home/view/home_app_bar.dart';
 import 'package:ommo/home/view/home_utils.dart';
 import 'package:ommo/home/view/map_view.dart';
 import 'package:ommo/home/view/trip_destination_widget.dart';
+import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
+import 'package:ommo/home/view/truck_navigation/truck_navigation_utils.dart';
 import 'package:ommo/home/view/truck_specification/truck_specification_utils.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
-import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
-import 'package:ommo/home/view/truck_navigation/truck_navigation_utils.dart';
 import 'package:ommo/logic/cubit/truck_stops/truck_stop_cubit.dart';
 import 'package:ommo/logic/cubit/truck_stops/truck_stops_state.dart';
 import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
@@ -28,6 +29,7 @@ import 'package:ommo/utils/extension/route_extension.dart';
 import 'package:ommo/utils/snacks/snackbar_utils.dart';
 import 'package:ommo/utils/utils.dart';
 import 'package:shimmer_animation/shimmer_animation.dart';
+
 import '../home.dart';
 
 class HomeMobileView extends StatefulWidget {
@@ -2451,12 +2453,12 @@ class _HomeMobileViewState extends State<HomeMobileView>
 
       CustomDragableWidget(
         scrollController: navigationSheetScrollController,
-        initialSize: state.isNavigationCompleted ? 0.24 : 0.34,
-        miniSize: state.isNavigationCompleted ? 0.24 : 0.24,
-        maxSize: state.isNavigationCompleted ? 0.24 : 0.95,
+        initialSize:  0.34,
+        miniSize:  0.34,
+        maxSize: state.isNavigationCompleted ? 0.34 : 0.95,
         snapSizes: state.isNavigationCompleted
-            ? [0.24]
-            : [0.24, 0.34, 0.55, 0.95],
+            ? [0.34]
+            : [ 0.34, 0.55, 0.95],
 
         bottomWidget: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
@@ -2558,71 +2560,14 @@ class _HomeMobileViewState extends State<HomeMobileView>
           DashedLine(),
           if (!state.isNavigationCompleted) ...[
             20.h,
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-
-                  children: [
-                    Text(
-                      state.currentRoute?.formattedETA(context) ?? '',
-                      style: AppTextTheme().subHeadingText.copyWith(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      'Arrival',
-                      style: AppTextTheme().subHeadingText.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xff888BA1),
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      state.currentRoute?.formattedDuration ?? '',
-                      style: AppTextTheme().subHeadingText.copyWith(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      'hours',
-                      style: AppTextTheme().subHeadingText.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xff888BA1),
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      state.currentRoute?.distanceInMilesINNumber ?? '',
-                      style: AppTextTheme().subHeadingText.copyWith(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      'miles',
-                      style: AppTextTheme().subHeadingText.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xff888BA1),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+              buildWhen: (p, c) =>
+                  p.remainingDistanceInMeters != c.remainingDistanceInMeters ||
+                  p.remainingDuration != c.remainingDuration ||
+                  p.currentRoute != c.currentRoute ||
+                  p.isNavigating != c.isNavigating,
+              builder: (context, state) =>
+                  _RemainingRouteStats(state: state),
             ),
             20.h,
             DashedLine(),
@@ -3162,4 +3107,104 @@ class _DashedLinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+/// Displays ETA, remaining duration, and remaining distance, updating from
+/// [RouteProgress] during navigation when available.
+class _RemainingRouteStats extends StatelessWidget {
+  const _RemainingRouteStats({required this.state});
+
+  final TruckNavigationState state;
+
+  static String _formatRemainingDuration(Duration d) {
+    final hours = d.inHours;
+    final minutes = d.inMinutes.remainder(60);
+    if (hours > 0) return '${hours}h ${minutes}m';
+    return '${minutes}m';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final useRemaining = state.isNavigating &&
+        state.remainingDuration != null &&
+        state.remainingDistanceInMeters != null;
+
+    final etaStr = useRemaining
+        ? TimeOfDay.fromDateTime(
+            DateTime.now().add(state.remainingDuration!),
+          ).format(context)
+        : (state.currentRoute?.formattedETA(context) ?? '');
+    final durationStr = useRemaining
+        ? _formatRemainingDuration(state.remainingDuration!)
+        : (state.currentRoute?.formattedDuration ?? '');
+    final milesStr = useRemaining
+        ? (state.remainingDistanceInMeters! / 1609.34).toStringAsFixed(1)
+        : (state.currentRoute?.distanceInMilesINNumber ?? '');
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              etaStr,
+              style: AppTextTheme().subHeadingText.copyWith(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              'Arrival',
+              style: AppTextTheme().subHeadingText.copyWith(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xff888BA1),
+              ),
+            ),
+          ],
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              durationStr,
+              style: AppTextTheme().subHeadingText.copyWith(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              'hours',
+              style: AppTextTheme().subHeadingText.copyWith(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xff888BA1),
+              ),
+            ),
+          ],
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              milesStr,
+              style: AppTextTheme().subHeadingText.copyWith(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              'miles',
+              style: AppTextTheme().subHeadingText.copyWith(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Color(0xff888BA1),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }

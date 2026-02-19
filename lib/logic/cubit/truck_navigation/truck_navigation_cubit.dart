@@ -672,7 +672,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _routeRecalculationDebounceTimer?.cancel();
 
     // Debounce the check to avoid too frequent recalculations
-    _routeRecalculationDebounceTimer = Timer(const Duration(seconds: 3), () {
+    _routeRecalculationDebounceTimer = Timer(const Duration(seconds: 1), () {
       _performOffRouteCheck(currentLocation);
     });
   }
@@ -823,8 +823,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       _processTruckRestrictionWarnings(newRoute);
       _showRouteOnMap(newRoute);
 
-      // Update location points with reverse geocoded place for current location
-      _updateLocationPointsWithCurrentLocation(currentLocation);
+      // // Update location points with reverse geocoded place for current location
+      // _updateLocationPointsWithCurrentLocation(currentLocation);
     });
   }
 
@@ -1510,6 +1510,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         speedLimit: 'null',
         isNavigating: false,
         isNavigationCompleted: false,
+        remainingDistanceInMeters: 'null',
+        remainingDuration: 'null',
       ),
     );
 
@@ -1598,7 +1600,17 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _visualNavigator!.routeProgressListener = RouteProgressListener((
       RouteProgress progress,
     ) {
-      emit(state.copyWith(maneuverProgresses: progress.maneuverProgress));
+      final sections = progress.sectionProgress;
+      final remainingDistanceInMeters = sections.isNotEmpty
+          ? sections.last.remainingDistanceInMeters
+          : null;
+      final remainingDuration =
+          sections.isNotEmpty ? sections.last.remainingDuration : null;
+      emit(state.copyWith(
+        maneuverProgresses: progress.maneuverProgress,
+        remainingDistanceInMeters: remainingDistanceInMeters,
+        remainingDuration: remainingDuration,
+      ));
     });
   }
 
@@ -1648,7 +1660,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _visualNavigator?.destinationReachedListener = DestinationReachedListener(
       () {
         log("Destination reached");
-        emit(state.copyWith(isNavigationCompleted: true));
+        emit(state.copyWith(
+          isNavigationCompleted: true,
+          remainingDistanceInMeters: 'null',
+          remainingDuration: 'null',
+        ));
       },
     );
   }
