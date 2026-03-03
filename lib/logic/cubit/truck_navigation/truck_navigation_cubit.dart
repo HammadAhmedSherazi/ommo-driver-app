@@ -59,8 +59,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   static const double _offRouteThresholdMeters =
       50.0; // Distance threshold for off-route detection
 
-  Future<MapImage> _createStopMarkerImage(int? index) async {
-    const double size = 70.0;
+  Future<MapImage> _createStopMarkerImage(int? index, [double size = 70.0]) async {
     const double borderWidth = 5.0;
 
     final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -484,15 +483,17 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     }
     if (state.hasDirection && state.currentRoute != null) {
       addStartMaker();
-      return;
+
+      // commenting this to show my location always on the map
+      // return;
     }
     final coords = state.startCoordinates;
     if (coords == null) return;
     _clearCurrentLocationMarker();
     MapImage userImage = MapImage.withFilePathAndWidthAndHeight(
       AppIcons.myLocIcon,
-      40,
-      40,
+      60,
+      60,
     ); // add your own icon
     _currentLocationMarker = MapMarker(coords, userImage);
     state.mapController?.mapScene.addMapMarker(_currentLocationMarker!);
@@ -1982,7 +1983,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     if (startPoint.isMyLocation) {
       _clearCurrentLocationMarker();
     }
-    final MapImage markerIcon = await _createStopMarkerImage(null);
+    final MapImage markerIcon = await _createStopMarkerImage(null, 60.0);
     _startMarker = MapMarker(startCoordinates, markerIcon);
     final metadata = Metadata();
     metadata.setString("marker_type", "start");
