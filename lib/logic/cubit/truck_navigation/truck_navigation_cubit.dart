@@ -59,7 +59,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   static const double _offRouteThresholdMeters =
       50.0; // Distance threshold for off-route detection
 
-  Future<MapImage> _createStopMarkerImage(int? index, [double size = 70.0]) async {
+  Future<MapImage> _createStopMarkerImage(
+    int? index, [
+    double size = 70.0,
+  ]) async {
     const double borderWidth = 5.0;
 
     final ui.PictureRecorder recorder = ui.PictureRecorder();
@@ -115,11 +118,13 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
   }
 
+  // this is unnesseccary because of this isMapLoading
   // Setters
   void setInitialLocation(GeoCoordinates coords) {
     emit(state.copyWith(isMapLoading: false, startCoordinates: coords));
     _updateCurrentLocationMarker();
   }
+  // this is unnesseccary because of this isMapLoading
 
   void setCurrentLocation(GeoCoordinates coords) {
     emit(state.copyWith(startCoordinates: coords));
@@ -586,6 +591,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       _locationEngine?.confirmHEREPrivacyNoticeInclusion();
       final GeoCoordinates? initialCoordinates = await _getCurrentLocation();
 
+      // remove these to avoid location jump
       if (initialCoordinates != null) {
         if (state.startCoordinates != null) {
           final double distance = calculateDistanceInMeters(
@@ -604,10 +610,19 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         }
       }
 
+      // remove these to avoid location jump
+
       _locationEngine?.addLocationListener(
         LocationListener((Location location) {
+          // Only use location if accuracy is good
+          //           if (location.horizontalAccuracy == null ||
+          //               location.horizontalAccuracy! >= _minAccuracyMeters) {
+          // return;
+          //               }
+
           final GeoCoordinates coords = location.coordinates;
           log("Location recieved $coords");
+
           if (!state.isNavigating) {
             if (state.startCoordinates != null) {
               final double distance = calculateDistanceInMeters(
@@ -1495,6 +1510,113 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     }
   }
 
+  void animateToRouteWhenNavigating([Route? route]) {
+    final Route? _route = route ?? state.currentRoute;
+    if (_route == null) return;
+
+    final viewport = state.mapController!.viewportSize;
+
+    const double leftPadding = 40;
+    const double rightPadding = 140;
+    const double topUIPadding = 280;
+    const double bottomUIPadding = 380;
+
+    const double extraTop = 20;
+    const double extraBottom = 20;
+
+    const double zoomOutFactor = 1.25; // Zoom out factor
+
+    // --- Determine remaining route points safely ---
+    List<GeoCoordinates> remainingPoints = [];
+
+    // Use nextTargetIndex as the starting section
+    final nextTargetIndex = state.nextTargetIndex ?? 0;
+
+    for (var i = nextTargetIndex; i < _route.sections.length; i++) {
+      final sectionVertices = _route.sections[i].geometry.vertices;
+
+      // If this is the first section, only include points **after the current location**
+      if (i == nextTargetIndex && state.currentNavigationLocation != null) {
+        remainingPoints.addAll(
+          sectionVertices.where(
+            (p) =>
+                p.latitude != state.currentNavigationLocation!.latitude ||
+                p.longitude != state.currentNavigationLocation!.longitude,
+          ),
+        );
+      } else {
+        remainingPoints.addAll(sectionVertices);
+      }
+    }
+
+    if (remainingPoints.isEmpty) {
+      remainingPoints.add(_route.sections.last.geometry.vertices.last);
+    }
+
+    // --- Compute bounding box of remaining route ---
+    double minLat = remainingPoints
+        .map((p) => p.latitude)
+        .reduce((a, b) => a < b ? a : b);
+    double maxLat = remainingPoints
+        .map((p) => p.latitude)
+        .reduce((a, b) => a > b ? a : b);
+    double minLon = remainingPoints
+        .map((p) => p.longitude)
+        .reduce((a, b) => a < b ? a : b);
+    double maxLon = remainingPoints
+        .map((p) => p.longitude)
+        .reduce((a, b) => a > b ? a : b);
+
+    GeoBox box = GeoBox(
+      GeoCoordinates(minLat, minLon),
+      GeoCoordinates(maxLat, maxLon),
+    );
+
+    // --- Expand the bounding box with zoom factor ---
+    double latSpan =
+        box.northEastCorner.latitude - box.southWestCorner.latitude;
+    double lonSpan =
+        box.northEastCorner.longitude - box.southWestCorner.longitude;
+
+    double latPadding = latSpan * (zoomOutFactor - 1) / 2;
+    double lonPadding = lonSpan * (zoomOutFactor - 1) / 2;
+
+    GeoBox expandedBox = GeoBox(
+      GeoCoordinates(
+        box.southWestCorner.latitude - latPadding,
+        box.southWestCorner.longitude - lonPadding,
+      ),
+      GeoCoordinates(
+        box.northEastCorner.latitude + latPadding,
+        box.northEastCorner.longitude + lonPadding,
+      ),
+    );
+
+    // --- UI-aware viewport ---
+    Point2D origin = Point2D(leftPadding, topUIPadding + extraTop);
+    Size2D sizeInPixels = Size2D(
+      viewport.width - leftPadding - rightPadding,
+      viewport.height - topUIPadding - bottomUIPadding - extraTop - extraBottom,
+    );
+    Rectangle2D mapViewport = Rectangle2D(origin, sizeInPixels);
+
+    MapCameraUpdate cameraUpdate =
+        MapCameraUpdateFactory.lookAtAreaWithGeoOrientationAndViewRectangle(
+          expandedBox,
+          GeoOrientationUpdate(0.0, 0.0),
+          mapViewport,
+        );
+
+    MapCameraAnimation animation =
+        MapCameraAnimationFactory.createAnimationFromUpdateWithEasing(
+          cameraUpdate,
+          Duration(milliseconds: 2000),
+          Easing(EasingFunction.outInSine),
+        );
+
+    state.mapController?.camera.startAnimation(animation);
+  }
+
   void stopNavigation() {
     WakeLockUtils.disable();
     _visualNavigator?.stopRendering();
@@ -1605,13 +1727,16 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       final remainingDistanceInMeters = sections.isNotEmpty
           ? sections.last.remainingDistanceInMeters
           : null;
-      final remainingDuration =
-          sections.isNotEmpty ? sections.last.remainingDuration : null;
-      emit(state.copyWith(
-        maneuverProgresses: progress.maneuverProgress,
-        remainingDistanceInMeters: remainingDistanceInMeters,
-        remainingDuration: remainingDuration,
-      ));
+      final remainingDuration = sections.isNotEmpty
+          ? sections.last.remainingDuration
+          : null;
+      emit(
+        state.copyWith(
+          maneuverProgresses: progress.maneuverProgress,
+          remainingDistanceInMeters: remainingDistanceInMeters,
+          remainingDuration: remainingDuration,
+        ),
+      );
     });
   }
 
@@ -1661,11 +1786,13 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _visualNavigator?.destinationReachedListener = DestinationReachedListener(
       () {
         log("Destination reached");
-        emit(state.copyWith(
-          isNavigationCompleted: true,
-          remainingDistanceInMeters: 'null',
-          remainingDuration: 'null',
-        ));
+        emit(
+          state.copyWith(
+            isNavigationCompleted: true,
+            remainingDistanceInMeters: 'null',
+            remainingDuration: 'null',
+          ),
+        );
       },
     );
   }
@@ -2308,7 +2435,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         selectedSuggestion: 'null',
         tappedPlace: FutureData<Place>.initial(),
         businessAtAddress: 'null',
-           
       ),
     );
   }
