@@ -362,6 +362,14 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
       if (categoryState == null) return;
 
       if (places != null && places.isNotEmpty) {
+        // When showing "Truck stops", exclude weigh station/scale-only places
+        // (they have their own "Scales" category)
+        List<Place> filteredPlaces = places;
+        if (placeTypeName.toLowerCase().contains('truck stop')) {
+          filteredPlaces =
+              places.where((p) => !_isWeighStationOnly(p)).toList();
+        }
+
         // Get existing places if appending
         final existingPlaces =
             isAppending && categoryState.categorySearchResults?.data != null
@@ -370,7 +378,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
 
         // Filter out duplicates by place ID
         final existingPlaceIds = existingPlaces.map((p) => p.id).toSet();
-        final newPlaces = places
+        final newPlaces = filteredPlaces
             .where((p) => !existingPlaceIds.contains(p.id))
             .toList();
 
@@ -1063,6 +1071,44 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
         ?.read<TruckNavigationCubit>()
         .calculateRouteWithBusinessOverview(place);
     clearSelectedTruckStop();
+  }
+
+  /// Weigh station / scale category code (excluded from Truck stops)
+  static const String _weighStationCategoryCode = '700-7900-0134';
+  /// Truck stop plaza category code
+  static const String _truckStopPlazaCategoryCode = '700-7900-0132';
+
+  /// Returns true if this place should be excluded from "Truck stops" list
+  /// (show only under Scales). Uses category when available, plus name-based detection.
+  bool _isWeighStationOnly(Place place) {
+    // Name-based: exclude "Cat Scale" and similar scale-only businesses
+    final title = place.title.toLowerCase();
+    if (title.contains('cat scale')) return true;
+    if (title.contains('weigh station') && !_isKnownTruckStopBrand(place)) {
+      return true;
+    }
+
+    // Category-based: exclude if place has weigh station category but not truck stop plaza
+    try {
+      final categories = place.details.categories;
+      if (categories.isEmpty) return false;
+      bool hasWeighStation = false;
+      bool hasTruckStopPlaza = false;
+      for (final c in categories) {
+        final id = c.id;
+        if (id == _weighStationCategoryCode) hasWeighStation = true;
+        if (id == _truckStopPlazaCategoryCode) hasTruckStopPlaza = true;
+      }
+      return hasWeighStation && !hasTruckStopPlaza;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// True if place is a known truck stop brand (Love's, Pilot, TA, Kwik Trip, etc.)
+  bool _isKnownTruckStopBrand(Place place) {
+    final brand = getBrandFromPlace(place);
+    return brand != null && _defaultBrandNames.contains(brand);
   }
 
   /// Map place type names to HERE SDK category codes
