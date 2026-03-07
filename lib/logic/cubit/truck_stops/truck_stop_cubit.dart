@@ -1046,10 +1046,12 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
   void clearAllTruckStops() {
     _removeCameraListener();
     _clearAllPlaceData();
+    // Preserve brand filter and place type so they are restored when user returns.
+    // Only clear search results and map state; keep selectedBrands and availableBrands per category.
     final resetCategories = state.categoriesSearchState.map((category) {
       return category.copyWith(
         categorySearchResults: FutureData<List<Place>>.initial(),
-        selectedBrands: [],
+        // Keep selectedBrands and availableBrands unchanged
       );
     }).toList();
     emit(
@@ -1059,7 +1061,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
         showBusinessOverviewModal: false,
         isCameraListenerActive: false,
         searchedCoordinates: {},
-        currentPlaceType: null,
+        // Keep currentPlaceType so the same tab is restored when user returns
       ),
     );
   }

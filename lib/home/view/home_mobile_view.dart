@@ -137,8 +137,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
             makeHalfBottomSheet();
           }
         } else {
-          // Clear brands when place type is deselected
-          context.read<TruckStopCubit>().clearState();
+          // Going back to main menu: clear UI state but preserve brand filter and place type
+          context.read<TruckStopCubit>().clearAllTruckStops();
         }
       }
     });
