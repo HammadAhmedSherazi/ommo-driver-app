@@ -54,18 +54,15 @@ class MapViewState extends State<MapView> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    Future.delayed(Duration(seconds: 4), () {
-      if (mounted) {
-        context.read<TruckNavigationCubit>().startListeningToLocation();
-      }
-    });
-    // _appLifecycleListener = AppLifecycleListener(
-    //   onDetach: () {
-    //     log("_map on Detach Called");
-    //     _disposeHERESDK();
-    //   },
-    // );
+    // Location is started from TruckNavigationCubit.onMapCreated so the HERE
+    // LocationEngine starts as soon as the map is ready (no delay = faster first fix).
   }
+  // _appLifecycleListener = AppLifecycleListener(
+  //   onDetach: () {
+  //     log("_map on Detach Called");
+  //     _disposeHERESDK();
+  //   },
+  // );
 
   @override
   Widget build(BuildContext context) {

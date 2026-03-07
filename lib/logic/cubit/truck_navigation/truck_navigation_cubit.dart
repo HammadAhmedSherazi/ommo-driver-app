@@ -316,6 +316,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     // Set up transport profile for VisualNavigator to enable truck restriction warnings
     _setupTransportProfile();
+    // Start location as soon as map is ready so HERE engine has time to get first fix
+    // (no delay — previously 4s delay in map_view caused slow first location)
+    startListeningToLocation();
   }
 
   /// Setup camera listener to detect when user manually moves the map
@@ -591,31 +594,13 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         "startListeningToLocation",
       );
     } else {
+      if (_locationEngine != null) return; // Already started, avoid double init
       _locationEngine = LocationEngine();
       _locationEngine?.confirmHEREPrivacyNoticeInclusion();
-      // final GeoCoordinates? initialCoordinates =
+      // Ensure permission is granted before starting HERE engine (so first fix can be delivered).
+      // Do NOT use this result for setCurrentLocation — different source than LocationEngine
+      // would cause map to "jump" when engine's first update arrives.
       await _getCurrentLocation();
-
-      // remove these to avoid location jump
-      // if (initialCoordinates != null) {
-      //   if (state.startCoordinates != null) {
-      //     final double distance = calculateDistanceInMeters(
-      //       state.startCoordinates!.latitude,
-      //       state.startCoordinates!.longitude,
-      //       initialCoordinates.latitude,
-      //       initialCoordinates.longitude,
-      //     );
-      //     print("has Distance of $distance > 10 ${distance > 10}");
-      //     if (distance > 10) {
-      //       setCurrentLocation(initialCoordinates, "location engine update with distance");
-      //       return;
-      //     }
-      //   } else {
-      //     setCurrentLocation(initialCoordinates, "location engine initial coordinates");
-      //   }
-      // }
-
-      // remove these to avoid location jump
 
       _locationEngine?.addLocationListener(
         LocationListener((Location location) {

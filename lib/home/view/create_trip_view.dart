@@ -103,7 +103,7 @@ class _CreateTripViewState extends State<CreateTripView> {
                 focusNode: [startFocus, destinationFocus],
                 removeFieldTap: () {},
                 readOnly: [false, false],
-                autoFocusIndex: 1,
+                // autoFocusIndex: 1,
               ),
               SizedBox(height: 20),
               Expanded(
