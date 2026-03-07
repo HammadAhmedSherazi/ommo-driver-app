@@ -5,12 +5,14 @@ class VerticalStepWithTextField extends StatefulWidget {
   final List<FocusNode> focusNode;
   final VoidCallback removeFieldTap;
   final VoidCallback? onDestinationFieldTap;
+  final void Function(int index)? onFieldTap;
   final List<bool> readOnly;
   final int autoFocusIndex;
 
   const VerticalStepWithTextField({
     super.key,
     this.onDestinationFieldTap,
+    this.onFieldTap,
     required this.readOnly,
     required this.textControllers,
     required this.removeFieldTap,
@@ -117,13 +119,17 @@ class _VerticalStepWithTextFieldState extends State<VerticalStepWithTextField> {
           child: Column(
             spacing: 10,
             children: List.generate(widget.textControllers.length, (index) {
-              return CustomTextfieldWidget(
-                focusNode: widget.focusNode[index],
-                controller: widget.textControllers[index],
-                onTap: widget.onDestinationFieldTap,
-                autoFocus: widget.autoFocusIndex == index,
-                readOnly: widget.readOnly[index],
-                hintText: "Enter a location",
+              return InkWell(
+                onTap: widget.onFieldTap != null
+                    ? () => widget.onFieldTap!(index)
+                    : null,
+                child: CustomTextfieldWidget(
+                  focusNode: widget.focusNode[index],
+                  controller: widget.textControllers[index],
+                  autoFocus: widget.autoFocusIndex == index,
+                  readOnly: widget.readOnly[index],
+                  hintText: "Enter a location",                  
+                ),
               );
             }),
           ),

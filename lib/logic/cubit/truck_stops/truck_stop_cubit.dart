@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'dart:developer' show log;
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:here_sdk/core.dart';
 import 'package:here_sdk/mapview.dart'

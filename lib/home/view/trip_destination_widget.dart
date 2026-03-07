@@ -135,14 +135,29 @@ class _TripDestinationWidgetState extends State<TripDestinationWidget> {
                             5.w,
                             Expanded(
                               child: GestureDetector(
-                                onTap: () => HomeUtils.editLocationSheet(
-                                  context,
-                                  onContinue: (updatedPlace) {
-                                    context
-                                        .read<TruckNavigationCubit>()
-                                        .editStop(i, updatedPlace);
-                                  },
-                                ),
+                                onTap: () {
+                                  final points =
+                                      context.read<TruckNavigationCubit>().state.locationPoints ?? [];
+                                  final noStopHasMyLocation = points.every(
+                                      (p) => !p.isMyLocation);
+                                  HomeUtils.editLocationSheet(
+                                    context,
+                                    showMyLocationOption: noStopHasMyLocation,
+                                    onMyLocationSelected: () {
+                                      final cubit = context.read<TruckNavigationCubit>();
+                                      final place = cubit.state.currentPlace?.data;
+                                      if (place != null) {
+                                        cubit.editStop(i, place, isMyLocation: true);
+                                      }
+                                      context.popPage();
+                                    },
+                                    onContinue: (updatedPlace) {
+                                      context
+                                          .read<TruckNavigationCubit>()
+                                          .editStop(i, updatedPlace);
+                                    },
+                                  );
+                                },
                                 onLongPress: () {
                                   // if (isFirst || isLast || points.length <= 2)
                                   if (points.length <= 2) return;
@@ -192,12 +207,27 @@ class _TripDestinationWidgetState extends State<TripDestinationWidget> {
             ),
 
             InkWell(
-              onTap: () => HomeUtils.editLocationSheet(
-                context,
-                onContinue: (place) {
-                  context.read<TruckNavigationCubit>().addStop(place);
-                },
-              ),
+              onTap: () {
+                final points =
+                    context.read<TruckNavigationCubit>().state.locationPoints ?? [];
+                final noStopHasMyLocation =
+                    points.every((p) => !p.isMyLocation);
+                HomeUtils.editLocationSheet(
+                  context,
+                  showMyLocationOption: noStopHasMyLocation,
+                  onMyLocationSelected: () {
+                    final cubit = context.read<TruckNavigationCubit>();
+                    final place = cubit.state.currentPlace?.data;
+                    if (place != null) {
+                      cubit.addStop(place, isMyLocation: true);
+                    }
+                    context.popPage();
+                  },
+                  onContinue: (place) {
+                    context.read<TruckNavigationCubit>().addStop(place);
+                  },
+                );
+              },
               child: Row(
                 children: [
                   Image.asset(AppImages.addCircle, height: 20, width: 20),

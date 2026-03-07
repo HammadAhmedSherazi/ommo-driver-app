@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
-import 'package:ommo/home/view/create_trip_view.dart';
 import 'package:ommo/home/view/home_mobile_view.dart';
 import 'package:ommo/home/view/pick_location_from_map.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
@@ -401,6 +400,8 @@ class HomeUtils {
   static void editLocationSheet(
     BuildContext context, {
     Function(dynamic place)? onContinue,
+    bool showMyLocationOption = false,
+    VoidCallback? onMyLocationSelected,
   }) {
     final TextEditingController locationController = TextEditingController();
 
@@ -427,8 +428,6 @@ class HomeUtils {
       });
     });
 
-    bool isLoading = false;
-
     Helpers.openBottomSheet(
       context: context,
       child: SizedBox(
@@ -450,6 +449,33 @@ class HomeUtils {
                 ),
               ),
               20.h,
+              if (showMyLocationOption && onMyLocationSelected != null)
+                Padding(
+                  padding: EdgeInsets.only(bottom: 20),
+                  child: GestureDetector(
+                    onTap: () => onMyLocationSelected(),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: AppColorTheme().primary.withValues(
+                            alpha: 0.2,
+                          ),
+                          child: SvgPicture.asset(AppIcons.navigationIconGreen),
+                        ),
+                        12.w,
+                        Text(
+                          'My location',
+                          style: AppTextTheme().bodyText.copyWith(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (showMyLocationOption && onMyLocationSelected != null) 20.h,
               GestureDetector(
                 onTap: () => context.pushPage(
                   PickLocationFromMap(

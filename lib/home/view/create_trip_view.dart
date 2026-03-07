@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:here_sdk/search.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
-import 'package:ommo/home/view/home_mobile_view.dart';
 import 'package:ommo/home/view/home_utils.dart';
-import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
 import 'package:ommo/logic/cubit/create_trip/create_trip_cubit.dart';
-import 'package:ommo/logic/cubit/create_trip/create_trip_state.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
-import 'package:ommo/utils/constants/constants.dart';
+import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 import 'package:ommo/utils/extension/place_extension.dart';
 import 'package:ommo/utils/extension/recent_search_model_extension.dart';
 import 'package:ommo/utils/generics/generics.dart';
@@ -92,207 +89,78 @@ class _CreateTripViewState extends State<CreateTripView> {
             Navigator.maybePop(context);
           }
         },
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: AppTheme.horizontalPadding),
-          child: Column(
-            children: [
-              buildHeader(context),
-              SizedBox(height: 20),
-              VerticalStepWithTextField(
-                textControllers: [startController, destinationController],
-                focusNode: [startFocus, destinationFocus],
-                removeFieldTap: () {},
-                readOnly: [false, false],
-                // autoFocusIndex: 1,
+        child: Builder(
+          builder: (context) {
+            final createTripCubit = context.read<CreateTripCubit>();
+            final recentSearchCubit = context.read<RecentSearchCubit>();
+            return Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppTheme.horizontalPadding),
+              child: Column(
+                children: [
+                  buildHeader(context),
+                  SizedBox(height: 20),
+                  VerticalStepWithTextField(
+                    textControllers: [startController, destinationController],
+                    focusNode: [startFocus, destinationFocus],
+                    removeFieldTap: () {},
+                    readOnly: [true, true],
+                    onFieldTap: (index) {
+                      if (index == 0) {
+                        HomeUtils.editLocationSheet(
+                          context,
+                          showMyLocationOption: true,
+                          onMyLocationSelected: () {
+                            startController.text = 'Your Location';
+                            createTripCubit.selectCurrentAsStartingPlace();
+                            Navigator.pop(context);
+                          },
+                          onContinue: (place) {
+                            if (place == null) return;
+                            if (place is Place) {
+                              recentSearchCubit.addSearchFromPlace(place);
+                            }
+                            createTripCubit.selectStartingPlace(place);
+                            startController.text = place is RecentSearchModel
+                                ? place.formattedTitle
+                                : (place as Place).formattedTitle;
+                            // Navigator.pop(context);
+                          },
+                        );
+                      } else {
+                        HomeUtils.editLocationSheet(
+                          context,
+                          showMyLocationOption: false,
+                          onContinue: (place) {
+                            if (place == null) return;
+                            if (place is Place) {
+                              recentSearchCubit.addSearchFromPlace(place);
+                            }
+                            createTripCubit.selectDestinationPlace(place);
+                            destinationController.text =
+                                place is RecentSearchModel
+                                    ? place.formattedTitle
+                                    : (place as Place).formattedTitle;
+                            // Navigator.pop(context);
+                          },
+                        );
+                      }
+                    },
+                  ),
+                  SizedBox(height: 20),
+                  Expanded(
+                    child: SingleChildScrollView(child: buildContent(context)),
+                  ),
+                ],
               ),
-              SizedBox(height: 20),
-              Expanded(
-                child: SingleChildScrollView(child: buildContent(context)),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget buildSuggestions(BuildContext context) {
-    return BlocBuilder<CreateTripCubit, CreateTripState>(
-      buildWhen: (previous, current) =>
-          previous.destinationSuggestions != current.destinationSuggestions ||
-          previous.startSuggestions != current.startSuggestions ||
-          previous.hasStartFocus != current.hasStartFocus,
-      builder: (context, state) {
-        final suggestions = state.hasStartFocus
-            ? state.startSuggestions
-            : state.destinationSuggestions;
-
-        if (suggestions.isEmpty) return const SizedBox();
-
-        return ListView.separated(
-          shrinkWrap: true,
-          itemCount: suggestions.length,
-          itemBuilder: (context, index) {
-            final item = suggestions[index];
-            if (item.place == null) return const SizedBox();
-
-            return ListTile(
-              onTap: () {
-                context.read<CreateTripCubit>().selectSuggestion(item.place!);
-                if (state.hasStartFocus) {
-                  if ((item.place?.formattedTitle ?? '').isNotEmpty) {
-                    startController.text = item.place?.formattedTitle ?? '';
-
-                    destinationFocus.requestFocus();
-                  }
-                } else {
-                  if ((item.place?.formattedTitle ?? '').isNotEmpty) {
-                    destinationController.text =
-                        item.place?.formattedTitle ?? '';
-                    destinationFocus.unfocus();
-                  }
-                }
-              },
-              contentPadding: EdgeInsets.zero,
-              leading: Column(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: const Color(0xffF4F6F8),
-                    radius: 16,
-                    child: Image.asset(
-                      AppImages.suggestionPin,
-                      height: 20,
-                      width: 20,
-                    ),
-                  ),
-                  Text(
-                    item.place?.distanceInMiles ?? '',
-                    maxLines: 2,
-                    style: AppTextTheme().lightText.copyWith(
-                      fontSize: 12,
-                      color: AppColorTheme().secondary,
-                    ),
-                  ),
-                ],
-              ),
-              title: item.place?.buildSuggestionTitleWidget(),
-              subtitle: item.place?.buildSuggestionSubtitleWidget(),
-            );
-          },
-          separatorBuilder: (_, __) => const Divider(),
-        );
-      },
-    );
-  }
-
   Widget buildContent(BuildContext context) {
-    return BlocBuilder<CreateTripCubit, CreateTripState>(
-      buildWhen: (p, c) =>
-          p.showYourLocationTab != c.showYourLocationTab ||
-          p.showRecentTab != c.showRecentTab,
-      builder: (context, state) {
-        final cubit = context.read<CreateTripCubit>();
-
-        return Column(
-          children: [
-            if (state.showYourLocationTab) ...[
-              InkWell(
-                onTap: () {
-                  startController.text = "Your Location";
-                  cubit.selectCurrentAsStartingPlace();
-                },
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: AppColorTheme().primary.withValues(
-                        alpha: 0.2,
-                      ),
-                      child: SvgPicture.asset(AppIcons.navigationIconGreen),
-                    ),
-                    12.w,
-                    Text(
-                      'Your location',
-                      style: AppTextTheme().bodyText.copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              20.h,
-            ],
-            !state.showRecentTab
-                ? buildSuggestions(context)
-                : buildTabBars(context),
-            20.h,
-          ],
-        );
-      },
-    );
-  }
-
-  Widget buildTabBars(BuildContext context) {
-    return DefaultTabController(
-      length: TruckNavigationStaticDetails.locationOpt.length,
-      child: Column(
-        children: [
-          CustomTabBarWidget(options: TruckNavigationStaticDetails.locationOpt),
-          15.h,
-          SizedBox(
-            height: context.screenHeight * 0.5,
-            child: TabBarView(
-              children: [
-                BlocBuilder<CreateTripCubit, CreateTripState>(
-                  buildWhen: (p, c) => p.hasStartFocus != c.hasStartFocus,
-                  builder: (context, state) {
-                    return HomeUtils.showRecentSearches(
-                      context,
-                      onSelect: (searchHistory) {
-                        if (state.hasStartFocus) {
-                          if (searchHistory.formattedTitle.isNotEmpty) {
-                            startController.text = searchHistory.formattedTitle;
-                            destinationFocus.requestFocus();
-                          }
-                        } else {
-                          if (searchHistory.formattedTitle.isNotEmpty) {
-                            destinationController.text =
-                                searchHistory.formattedTitle;
-                            destinationFocus.unfocus();
-                          }
-                        }
-                        context
-                            .read<CreateTripCubit>()
-                            .selectRecentAsLocationPoint(searchHistory);
-                      },
-                    );
-                  },
-                ),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: TruckNavigationStaticDetails.placess.length,
-                  itemBuilder: (context, index) => PlaceDisplayWidget(
-                    place: TruckNavigationStaticDetails.placess[index],
-                    isSaved: true,
-                  ),
-                ),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: TruckNavigationStaticDetails.terminals.length,
-                  itemBuilder: (context, index) => PlaceDisplayWidget(
-                    place: TruckNavigationStaticDetails.terminals[index],
-                    isSaved: true,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    return SizedBox.shrink();
   }
 
   Widget buildHeader(BuildContext context) {

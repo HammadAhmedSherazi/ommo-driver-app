@@ -126,9 +126,11 @@ class _CustomTextfieldWidgetState extends State<CustomTextfieldWidget> {
               ),
           hintText: widget.hintText,
           filled: true,
-          fillColor: widget.readOnly
-              ? Colors.transparent
-              : AppColorTheme().whiteShade,
+          fillColor: 
+          // widget.readOnly
+          //     ? Colors.transparent
+          //     :
+               AppColorTheme().whiteShade,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,

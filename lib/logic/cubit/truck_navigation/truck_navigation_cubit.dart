@@ -493,8 +493,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     if (state.hasDirection && state.currentRoute != null) {
       addStartMaker();
 
-      // commenting this to show my location always on the map
-      // return;
+
+      if (state.locationPoints?.any((p) => p.isMyLocation) == true) {
+        return;
+      }
     }
     final coords = state.startCoordinates;
     if (coords == null) return;
@@ -2403,7 +2405,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     // await refreshStopAndDestinationMarker();
   }
 
-  void addStop(dynamic place) {
+  void addStop(dynamic place, {bool isMyLocation = false}) {
     if (place == null) return;
     final isRecent = place is RecentSearchModel;
     if ((state.locationPoints ?? []).isEmpty) return;
@@ -2429,7 +2431,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     if (any) return;
 
     final List<LocationPoint> _list = List.from(state.locationPoints ?? []);
-    final item = LocationPoint(place: place, pointType: LocationPointType.stop);
+    final item = LocationPoint(
+      place: place,
+      pointType: LocationPointType.stop,
+      isMyLocation: isMyLocation,
+    );
     // final addIndex = state.locationPoints!.length - 1;
     final addIndex = state.locationPoints!.length;
     _list.insert(addIndex, item);
@@ -2444,14 +2450,14 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     calculateRoute();
   }
 
-  void editStop(int i, dynamic place) {
+  void editStop(int i, dynamic place, {bool isMyLocation = false}) {
     if (place == null) return;
     if ((state.locationPoints ?? []).isEmpty) return;
     // if (i == 0) return;
     // if (i >= (state.locationPoints?.length ?? 0) - 1) return;
     final isDestination = i == (state.locationPoints?.length ?? 0) - 1;
     final List<LocationPoint> _list = List.from(state.locationPoints ?? []);
-    _list[i] = _list[i].copyWith(place: place, isMyLocation: false);
+    _list[i] = _list[i].copyWith(place: place, isMyLocation: isMyLocation);
     emit(
       state.copyWith(
         locationPoints: _list,
