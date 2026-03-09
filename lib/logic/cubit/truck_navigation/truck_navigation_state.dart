@@ -38,6 +38,10 @@ class TruckNavigationState extends Equatable {
   final int? remainingDistanceInMeters;
   /// Remaining duration to destination (from RouteProgress during navigation).
   final Duration? remainingDuration;
+  /// True when the user has deviated from the route (off-route detection).
+  final bool isOffRoute;
+  /// True while a new route is being calculated after going off-route.
+  final bool isRecalculatingRoute;
 
   const TruckNavigationState({
     this.mapController,
@@ -67,6 +71,8 @@ class TruckNavigationState extends Equatable {
     this.isUserInteractingWithMap = false,
     this.remainingDistanceInMeters,
     this.remainingDuration,
+    this.isOffRoute = false,
+    this.isRecalculatingRoute = false,
   });
 
   // GeoCoordinates? get destinationCoordinates =>
@@ -102,6 +108,8 @@ class TruckNavigationState extends Equatable {
     bool? isUserInteractingWithMap,
     dynamic remainingDistanceInMeters,
     dynamic remainingDuration,
+    bool? isOffRoute,
+    bool? isRecalculatingRoute,
   }) {
     return TruckNavigationState(
       nextTargetIndex: nextTargetIndex ?? this.nextTargetIndex,
@@ -156,6 +164,8 @@ class TruckNavigationState extends Equatable {
       remainingDuration: remainingDuration == 'null'
           ? null
           : (remainingDuration ?? this.remainingDuration),
+      isOffRoute: isOffRoute ?? this.isOffRoute,
+      isRecalculatingRoute: isRecalculatingRoute ?? this.isRecalculatingRoute,
     );
   }
 
@@ -188,5 +198,7 @@ class TruckNavigationState extends Equatable {
     isUserInteractingWithMap,
     remainingDistanceInMeters,
     remainingDuration,
+    isOffRoute,
+    isRecalculatingRoute,
   ];
 }

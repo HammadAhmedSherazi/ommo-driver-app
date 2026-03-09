@@ -2017,6 +2017,67 @@ class _HomeMobileViewState extends State<HomeMobileView>
   List<Widget> buildNavigationUi(TruckNavigationState state) {
     return [
       MapView(height: context.screenHeight * 0.65),
+      if (state.isNavigating && (state.isOffRoute || state.isRecalculatingRoute))
+        BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
+          buildWhen: (p, c) =>
+              p.isOffRoute != c.isOffRoute ||
+              p.isRecalculatingRoute != c.isRecalculatingRoute,
+          builder: (context, navState) {
+            return Positioned(
+              top: 12,
+              left: 20,
+              right: 20,
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: navState.isRecalculatingRoute
+                        ? Colors.blue.shade700
+                        : Colors.orange.shade700,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      if (navState.isRecalculatingRoute)
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      else
+                        Icon(Icons.warning_amber_rounded,
+                            color: Colors.white, size: 22),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          navState.isRecalculatingRoute
+                              ? 'Recalculating route…'
+                              : 'You\'re off route. Recalculating…',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       // Positioned(bottom: 100, top: 0, left: 0, right: 0, child: MapView()),
       if (!state.isNavigationCompleted)
         BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
