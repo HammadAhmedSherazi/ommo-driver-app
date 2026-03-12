@@ -512,8 +512,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       final elapsed = DateTime.now().difference(_lastRecalculationTime!);
       if (elapsed.inSeconds < _recalculationCooldownSeconds) return;
     }
-    final double distanceToRoute =
-        _getDistanceFromPointToRoute(coords, state.currentRoute!);
+    final double distanceToRoute = _getDistanceFromPointToRoute(
+      coords,
+      state.currentRoute!,
+    );
     if (distanceToRoute > _offRouteThresholdMeters) {
       _offRouteConsecutiveCount++;
       if (!state.isOffRoute) {
@@ -638,7 +640,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     if (state.hasDirection && state.currentRoute != null) {
       addStartMaker();
 
-
       if (state.locationPoints?.any((p) => p.isMyLocation) == true) {
         return;
       }
@@ -717,21 +718,34 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   // Location Handlers
-  Future<GeoCoordinates?> _getCurrentLocation() async {
+  /// Ensures location service is enabled and permission is granted. Does not fetch coordinates.
+  Future<bool> _getCurrentLocation() async {
     bool serviceEnabled = await _location.serviceEnabled();
     if (!serviceEnabled) {
       serviceEnabled = await _location.requestService();
-      if (!serviceEnabled) return null;
+      if (!serviceEnabled) return false;
     }
 
     loc.PermissionStatus permissionGranted = await _location.hasPermission();
     if (permissionGranted == loc.PermissionStatus.denied) {
       permissionGranted = await _location.requestPermission();
-      if (permissionGranted != loc.PermissionStatus.granted) return null;
+      if (permissionGranted != loc.PermissionStatus.granted) return false;
     }
 
-    loc.LocationData locationData = await _location.getLocation();
-    return GeoCoordinates(locationData.latitude!, locationData.longitude!);
+    return true;
+  }
+
+  getLastKnownLocation() async {
+
+    final location =  _locationEngine?.lastKnownLocation;
+    if (location == null) return;
+
+    final age = DateTime.now().difference(location.time!);
+
+    // Only use if location is recent
+    if (age.inSeconds < 30) {
+      setCurrentLocation(location.coordinates, "lastKnownLocation");
+    }
   }
 
   void startListeningToLocation() async {
@@ -741,18 +755,22 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         "startListeningToLocation",
       );
     } else {
-      if (_locationEngine != null) return; // Already started, avoid double init
+      if (_locationEngine != null) return;
+
       _locationEngine = LocationEngine();
       _locationEngine?.confirmHEREPrivacyNoticeInclusion();
-      // Ensure permission is granted before starting HERE engine (so first fix can be delivered).
-      // Do NOT use this result for setCurrentLocation — different source than LocationEngine
-      // would cause map to "jump" when engine's first update arrives.
+
+      // Warm up device location (important for some Android devices)
       await _getCurrentLocation();
+
+      getLastKnownLocation();
+
+      bool firstLocationReceived = false;
 
       _locationEngine?.addLocationListener(
         LocationListener((Location location) {
-          
-          // Only use location if accuracy is good
+          firstLocationReceived = true;
+
           if (location.horizontalAccuracyInMeters == null ||
               location.horizontalAccuracyInMeters! >= 50) {
             return;
@@ -769,7 +787,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
                 coords.latitude,
                 coords.longitude,
               );
+
               print("has Distance of $distance > 10 ${distance > 10}");
+
               if (distance > 10) {
                 setCurrentLocation(
                   coords,
@@ -781,23 +801,105 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
               setCurrentLocation(coords, "location engine initial coordinates");
             }
           }
+
           if (state.isNavigating) {
             setCurrentLocation(coords, "location engine update in navigation");
-            // Update currentNavigationLocation with raw GPS location for accurate distance calculations
+
             emit(state.copyWith(currentNavigationLocation: coords));
+
             _visualNavigator?.onLocationUpdated(location);
             _navigator?.onLocationUpdated(location);
+
             checkNextTarget(coords);
             _checkOffRouteAndRecalculateIfNeeded(coords);
-           }
+          }
         }),
       );
 
+      // Start HERE location engine
       _locationEngine?.startWithLocationAccuracy(
         LocationAccuracy.bestAvailable,
       );
+
+      // Fallback restart (fixes cold start issue on Vivo / Oppo)
+      Future.delayed(const Duration(seconds: 10), () {
+        if (!firstLocationReceived && _locationEngine != null) {
+          log("Restarting location engine due to no GPS fix");
+
+          _locationEngine?.stop();
+
+          _locationEngine?.startWithLocationAccuracy(
+            LocationAccuracy.bestAvailable,
+          );
+        }
+      });
     }
   }
+
+  // void startListeningToLocation() async {
+  //   if (AppKeys().isSimulation) {
+  //     setCurrentLocation(
+  //       AppKeys().startCoordinates,
+  //       "startListeningToLocation",
+  //     );
+  //   } else {
+  //     if (_locationEngine != null) return; // Already started, avoid double init
+  //     _locationEngine = LocationEngine();
+  //     _locationEngine?.confirmHEREPrivacyNoticeInclusion();
+  //     // Ensure permission is granted before starting HERE engine (so first fix can be delivered).
+  //     // Do NOT use this result for setCurrentLocation — different source than LocationEngine
+  //     // would cause map to "jump" when engine's first update arrives.
+  //     await _getCurrentLocation();
+
+  //     _locationEngine?.addLocationListener(
+  //       LocationListener((Location location) {
+
+  //         // Only use location if accuracy is good
+  //         if (location.horizontalAccuracyInMeters == null ||
+  //             location.horizontalAccuracyInMeters! >= 50) {
+  //           return;
+  //         }
+
+  //         final GeoCoordinates coords = location.coordinates;
+  //         log("Location recieved $coords");
+
+  //         if (!state.isNavigating) {
+  //           if (state.startCoordinates != null) {
+  //             final double distance = calculateDistanceInMeters(
+  //               state.startCoordinates!.latitude,
+  //               state.startCoordinates!.longitude,
+  //               coords.latitude,
+  //               coords.longitude,
+  //             );
+  //             print("has Distance of $distance > 10 ${distance > 10}");
+  //             if (distance > 10) {
+  //               setCurrentLocation(
+  //                 coords,
+  //                 "location engine update with distance",
+  //               );
+  //               return;
+  //             }
+  //           } else {
+  //             setCurrentLocation(coords, "location engine initial coordinates");
+  //           }
+  //         }
+  //         if (state.isNavigating) {
+  //           setCurrentLocation(coords, "location engine update in navigation");
+  //           // Update currentNavigationLocation with raw GPS location for accurate distance calculations
+  //           emit(state.copyWith(currentNavigationLocation: coords));
+  //           _visualNavigator?.onLocationUpdated(location);
+  //           _navigator?.onLocationUpdated(location);
+  //           checkNextTarget(coords);
+  //           _checkOffRouteAndRecalculateIfNeeded(coords);
+  //          }
+  //       }),
+  //     );
+
+  //     _locationEngine?.startWithLocationAccuracy(
+  //       LocationAccuracy.bestAvailable,
+  //     );
+  //   }
+  // }
 
   void checkNextTarget(GeoCoordinates coords) {
     if ((state.locationPoints ?? []).length > 2) {
@@ -819,7 +921,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       }
     }
   }
-
 
   Future<void> getCurrentLocationPlace() async {
     if (state.startCoordinates == null) {
@@ -1250,7 +1351,6 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     });
   }
 
-
   void animateToRoute([Route? route]) {
     final Route? _route = route ?? state.currentRoute;
     if (_route == null) return;
@@ -1330,9 +1430,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     setupSpeedListeners();
     setupHasArrivedListeners();
 
+    _locationEngine?.stop();
     if (AppKeys().isSimulation) {
-      _locationEngine?.stop();
-
       emit(
         state.copyWith(
           isNavigating: true,
@@ -1425,6 +1524,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     _offRouteConsecutiveCount = 0;
 
     if (_locationEngine != null && !(AppKeys().isSimulation)) {
+      _locationEngine?.stop();
       _locationEngine?.startWithLocationAccuracy(
         LocationAccuracy.bestAvailable,
       );
