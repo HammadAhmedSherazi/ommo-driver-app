@@ -15,10 +15,12 @@ class CustomTextfieldWidget extends StatefulWidget {
   final VoidCallback? onEditingComplete;
   final bool readOnly;
   final bool autoFocus;
+  final bool obscureText;
   const CustomTextfieldWidget({
     super.key,
     this.readOnly = false,
     this.autoFocus = false,
+    this.obscureText = false,
     this.onEditingComplete,
 
     this.controller,
@@ -40,6 +42,8 @@ class CustomTextfieldWidget extends StatefulWidget {
 
 class _CustomTextfieldWidgetState extends State<CustomTextfieldWidget> {
   final ValueNotifier<bool> hasValue = ValueNotifier(false);
+  bool _obscurePassword = true;
+
   @override
   void initState() {
     super.initState();
@@ -78,6 +82,7 @@ class _CustomTextfieldWidgetState extends State<CustomTextfieldWidget> {
         controller: widget.controller,
         validator: widget.validator,
         keyboardType: widget.keyboardType,
+        obscureText: widget.obscureText && _obscurePassword,
         inputFormatters:
             widget.inputFormatters ??
             [
@@ -89,41 +94,57 @@ class _CustomTextfieldWidgetState extends State<CustomTextfieldWidget> {
           prefixIcon: widget.prefixIcon != null
               ? Row(children: [10.w, widget.prefixIcon!])
               : null,
-          prefixIconConstraints: BoxConstraints(maxWidth: 40, maxHeight: 24),
-          suffixIconConstraints: BoxConstraints(maxWidth: 40, maxHeight: 24),
-          suffixIcon:
-              // widget.suffixIcon ??
-              Row(
-                children: [
-                  ValueListenableBuilder(
-                    valueListenable: hasValue,
-                    builder: (_, showClear, c) {
-                      Helpers.print(showClear);
-                      if (showClear) {
-                        return IconButton(
-                          onPressed: () {
-                            widget.controller?.clear();
-                          },
-                          icon: Icon(
-                            Icons.cancel,
-                            color: AppColorTheme().primary,
-                          ),
-                          style: ButtonStyle(
-                            padding: WidgetStatePropertyAll(EdgeInsets.zero),
-                            visualDensity: VisualDensity(
-                              horizontal: -4.0,
-                              vertical: -4.0,
-                            ),
-                          ),
-                        );
-                      } else {
-                        return widget.suffixIcon ?? SizedBox.shrink();
-                      }
-                    },
+          prefixIconConstraints: BoxConstraints( maxWidth: 40, maxHeight: 24),
+          suffixIconConstraints: BoxConstraints (minWidth: 40, maxWidth: 40, maxHeight: 24),
+          suffixIcon: widget.obscureText
+              ? IconButton(
+                  onPressed: () {
+                    setState(() => _obscurePassword = !_obscurePassword);
+                  },
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: AppColorTheme().primary,
                   ),
-                  // 10.w
-                ],
-              ),
+                  style: ButtonStyle(
+                    padding: WidgetStatePropertyAll(EdgeInsets.zero),
+                    visualDensity: const VisualDensity(
+                      horizontal: -4.0,
+                      vertical: -4.0,
+                    ),
+                  ),
+                )
+              : Row(
+                  children: [
+                    ValueListenableBuilder(
+                      valueListenable: hasValue,
+                      builder: (_, showClear, c) {
+                        Helpers.print(showClear);
+                        if (showClear) {
+                          return IconButton(
+                            onPressed: () {
+                              widget.controller?.clear();
+                            },
+                            icon: Icon(
+                              Icons.cancel,
+                              color: AppColorTheme().primary,
+                            ),
+                            style: ButtonStyle(
+                              padding: WidgetStatePropertyAll(EdgeInsets.zero),
+                              visualDensity: const VisualDensity(
+                                horizontal: -4.0,
+                                vertical: -4.0,
+                              ),
+                            ),
+                          );
+                        } else {
+                          return widget.suffixIcon ?? SizedBox.shrink();
+                        }
+                      },
+                    ),
+                  ],
+                ),
           hintText: widget.hintText,
           filled: true,
           fillColor: 

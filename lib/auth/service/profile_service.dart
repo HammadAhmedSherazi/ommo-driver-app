@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-
 import 'package:ommo/auth/models/user_model.dart';
 import 'package:ommo/auth/service/auth_service.dart';
 import 'package:ommo/utils/constants/constants.dart';
@@ -55,7 +54,7 @@ class ProfileService {
       }
 
       final url = Uri.parse(AppApis.userProfileUpdate);
-      final response = await http.put(
+      final response = await http.patch(
         url,
         headers: {
           'Content-Type': 'application/json',

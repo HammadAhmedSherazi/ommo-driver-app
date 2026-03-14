@@ -128,6 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           CustomTextfieldWidget(
                             controller: _passwordController,
                             hintText: 'Password',
+                            obscureText: true,
                             validator: (v) {
                               if (v == null || v.isEmpty) {
                                 return 'Enter password';

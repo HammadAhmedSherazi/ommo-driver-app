@@ -22,7 +22,7 @@ class AppApis {
 
   /// User profile
   static const String userProfile = '${baseApiUrl}Driver/info';
-  static const String userProfileUpdate = '${baseApiUrl}UserDriver/update';
+  static const String userProfileUpdate = '${baseApiUrl}Driver/update';
 
   initBaseUrlAndAuthEndpoints() {
     ApiConfig.baseUrl = baseApiUrl;
