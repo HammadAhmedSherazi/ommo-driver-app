@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:ommo/auth/auth.dart';
 import 'package:ommo/home/view/home_mobile_view.dart';
 import 'package:ommo/home/view/truck_specification/edit_truck_specifications_view.dart';
-import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specification_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state.dart';
@@ -77,6 +77,54 @@ class TruckSpecificationUtils {
                   ),
                 ),
               ],
+            ),
+            20.h,
+            DashedLine(),
+            20.h,
+
+            // Account
+            Text(
+              "Account",
+              style: AppTextTheme().lightText.copyWith(
+                color: AppColorTheme().secondary,
+              ),
+            ),
+            20.h,
+            ListTile(
+              onTap: () {
+                context.popPage();
+                context.pushPage(const MyProfileScreen());
+              },
+              leading: Icon(Icons.person_outline, color: AppColorTheme().primary),
+              title: Text(
+                "My Profile",
+                style: AppTextTheme().lightText.copyWith(fontSize: 16),
+              ),
+              trailing: const Icon(
+                Icons.arrow_forward_ios_outlined,
+                color: Colors.black,
+                size: 22,
+              ),
+              contentPadding: EdgeInsets.zero,
+            ),
+            12.h,
+            ListTile(
+              onTap: () async {
+                final nav = Navigator.of(context);
+                final auth = context.read<AuthCubit>();
+                context.popPage();
+                await auth.logout();
+                nav.pushNamedAndRemoveUntil('/login', (route) => false);
+              },
+              leading: Icon(Icons.logout, color: AppColorTheme().red),
+              title: Text(
+                "Logout",
+                style: AppTextTheme().lightText.copyWith(
+                  fontSize: 16,
+                  color: AppColorTheme().red,
+                ),
+              ),
+              contentPadding: EdgeInsets.zero,
             ),
             20.h,
             DashedLine(),

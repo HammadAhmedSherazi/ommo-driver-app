@@ -1,6 +1,7 @@
 // import 'package:authentication_repository/authentication_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ommo/auth/auth.dart';
 import 'package:ommo/home/home.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specification_cubit.dart';
@@ -30,6 +31,8 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
+        BlocProvider(create: (_) => AuthCubit(AuthService())),
+        BlocProvider(create: (_) => ProfileCubit(ProfileService())),
         BlocProvider(create: (_) => TruckingStateCubit(TruckingState.initial)),
         BlocProvider(create: (_) => TruckSpecificationsCubit()),
         BlocProvider(create: (_) => TruckNavigationCubit()),
@@ -74,18 +77,36 @@ class _AppView extends StatelessWidget {
         ).copyWith(textScaler: const TextScaler.linear(1.0), boldText: false),
         child: child!,
       ),
-      home: Container(
-        color: Colors.white,
-        child: SafeArea(
-          //  top: false,
-          // bottom: false,
-          // maintainBottomViewPadding: true,
-          minimum: EdgeInsets.only(
-            bottom: MediaQuery.of(context).padding.bottom,
-          ),
-          child: HomeView(),
-        ),
-      ),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => Container(
+              color: Colors.white,
+              child: SafeArea(
+                minimum: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).padding.bottom,
+                ),
+                child: const SplashScreen(),
+              ),
+            ),
+        '/login': (context) => Container(
+              color: Colors.white,
+              child: SafeArea(
+                minimum: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).padding.bottom,
+                ),
+                child: const LoginScreen(),
+              ),
+            ),
+        '/home': (context) => Container(
+              color: Colors.white,
+              child: SafeArea(
+                minimum: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).padding.bottom,
+                ),
+                child: HomeView(),
+              ),
+            ),
+      },
     );
   }
 }

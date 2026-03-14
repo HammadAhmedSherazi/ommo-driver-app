@@ -154,9 +154,10 @@ class _HomeMobileViewState extends State<HomeMobileView>
     sheetScrollController.dispose();
     navigationSheetScrollController.dispose();
     _tabController.dispose();
-    searchTextEditController.dispose();
+    // searchTextEditController.dispose();
     searchFieldFocusNode.dispose();
     for (var controller in textController) {
+     
       controller.dispose();
     }
     for (var focusNode in focusNode) {

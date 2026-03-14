@@ -13,12 +13,16 @@ class AppApis {
   // static const String baseUrl = "http://192.168.200.210:8000";
 
   /// Staging
-  static const String baseUrl = "https://api-app.mmcgbl.dev";
+  static const String baseUrl = "https://ommo.ai/driver-api";
 
   static const String baseApiUrl = "$baseUrl/api/";
-  static const String login = 'login';
-  static const String register = 'register';
-  static const String logout = 'logout';
+  static const String login = '$baseApiUrl/Auth/login';
+  static const String register = '$baseApiUrl/Auth/signup';
+  static const String logout = '$baseApiUrl/Auth/logout';
+
+  /// User profile
+  static const String userProfile = '${baseApiUrl}Driver/info';
+  static const String userProfileUpdate = '${baseApiUrl}UserDriver/update';
 
   initBaseUrlAndAuthEndpoints() {
     ApiConfig.baseUrl = baseApiUrl;
