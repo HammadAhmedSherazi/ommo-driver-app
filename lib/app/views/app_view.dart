@@ -77,36 +77,37 @@ class _AppView extends StatelessWidget {
         ).copyWith(textScaler: const TextScaler.linear(1.0), boldText: false),
         child: child!,
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => Container(
-              color: Colors.white,
-              child: SafeArea(
-                minimum: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).padding.bottom,
-                ),
-                child: const SplashScreen(),
-              ),
-            ),
-        '/login': (context) => Container(
-              color: Colors.white,
-              child: SafeArea(
-                minimum: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).padding.bottom,
-                ),
-                child: const LoginScreen(),
-              ),
-            ),
-        '/home': (context) => Container(
-              color: Colors.white,
-              child: SafeArea(
-                minimum: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).padding.bottom,
-                ),
-                child: HomeView(),
-              ),
-            ),
-      },
+      home:HomeView(),
+      // initialRoute: '/home',
+      // routes: {
+      //   '/': (context) => Container(
+      //     color: Colors.white,
+      //     child: SafeArea(
+      //       minimum: EdgeInsets.only(
+      //         bottom: MediaQuery.of(context).padding.bottom,
+      //       ),
+      //       child: const SplashScreen(),
+      //     ),
+      //   ),
+      //   '/login': (context) => Container(
+      //     color: Colors.white,
+      //     child: SafeArea(
+      //       minimum: EdgeInsets.only(
+      //         bottom: MediaQuery.of(context).padding.bottom,
+      //       ),
+      //       child: const LoginScreen(),
+      //     ),
+      //   ),
+      //   '/home': (context) => Container(
+      //     color: Colors.white,
+      //     child: SafeArea(
+      //       minimum: EdgeInsets.only(
+      //         bottom: MediaQuery.of(context).padding.bottom,
+      //       ),
+      //       child: HomeView(),
+      //     ),
+      //   ),
+      // },
     );
   }
 }

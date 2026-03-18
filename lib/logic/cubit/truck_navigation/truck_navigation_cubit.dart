@@ -56,7 +56,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   MapCameraListener? _mapCameraListener;
   Timer? _mapInteractionDebounceTimer;
   static const double _offRouteThresholdMeters =
-      50.0; // Distance threshold for off-route detection
+      3.084; // Distance threshold for off-route detection
+  // 50.0; // Distance threshold for off-route detection
   static const int _offRouteConfirmationCount =
       3; // Consecutive off-route samples before triggering recalculation
   static const int _recalculationCooldownSeconds =
@@ -736,8 +737,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   getLastKnownLocation() async {
-
-    final location =  _locationEngine?.lastKnownLocation;
+    final location = _locationEngine?.lastKnownLocation;
     if (location == null) return;
 
     final age = DateTime.now().difference(location.time!);
@@ -769,15 +769,28 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
       _locationEngine?.addLocationListener(
         LocationListener((Location location) {
-          firstLocationReceived = true;
+          final GeoCoordinates coords = location.coordinates;
+          final accuracy = location.horizontalAccuracyInMeters ?? 999;
 
-          if (location.horizontalAccuracyInMeters == null ||
-              location.horizontalAccuracyInMeters! >= 50) {
+          log("Location received: $coords | accuracy: $accuracy");
+
+          /// ✅ 1. ALWAYS accept first fix (CRITICAL FIX)
+          if (state.startCoordinates == null) {
+            setCurrentLocation(coords, "HERE first fix (no accuracy filter)");
+            firstLocationReceived = true;
             return;
           }
 
-          final GeoCoordinates coords = location.coordinates;
-          log("Location recieved $coords");
+          /// ✅ 2. After first fix → apply accuracy filter
+          if (accuracy >= 30) return;
+
+          // if (location.horizontalAccuracyInMeters == null ||
+          //     location.horizontalAccuracyInMeters! >= 50) {
+          //   return;
+          // }
+
+          // final GeoCoordinates coords = location.coordinates;
+          // log("Location recieved $coords");
 
           if (!state.isNavigating) {
             if (state.startCoordinates != null) {
