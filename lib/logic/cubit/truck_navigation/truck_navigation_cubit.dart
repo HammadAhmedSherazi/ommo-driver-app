@@ -62,6 +62,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       3; // Consecutive off-route samples before triggering recalculation
   static const int _recalculationCooldownSeconds =
       25; // Minimum seconds between recalculations
+  static const int _maxRouteOrNavigationRetries = 3;
   int _offRouteConsecutiveCount = 0;
   DateTime? _lastRecalculationTime;
 
@@ -831,7 +832,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
       // Start HERE location engine
       _locationEngine?.startWithLocationAccuracy(
-        LocationAccuracy.bestAvailable,
+        LocationAccuracy.navigation,
       );
 
       // Fallback restart (fixes cold start issue on Vivo / Oppo)
@@ -842,7 +843,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
           _locationEngine?.stop();
 
           _locationEngine?.startWithLocationAccuracy(
-            LocationAccuracy.bestAvailable,
+            LocationAccuracy.navigation,
           );
         }
       });
@@ -909,7 +910,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   //     );
 
   //     _locationEngine?.startWithLocationAccuracy(
-  //       LocationAccuracy.bestAvailable,
+  //       LocationAccuracy.navigation,
   //     );
   //   }
   // }
@@ -1194,35 +1195,59 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     createTrip(points);
   }
 
-  void calculateRoute() {
+  void calculateRoute({int attempt = 0}) {
     if ((state.locationPoints ?? []).isEmpty) return;
     GeoCoordinates? start = state.locationPoints?.firstOrNull?.geoCoordinates;
     GeoCoordinates? end = state.locationPoints?.lastOrNull?.geoCoordinates;
 
     if (start == null || end == null) return;
 
-    // Update transport profile before calculating route to ensure restrictions are accurate
-    _setupTransportProfile();
+    final TruckNavigationState previousState = state;
 
-    final waypoints = List.generate(
-      state.locationPoints!.length,
-      (i) => Waypoint(state.locationPoints![i].geoCoordinates!),
-    );
+    void restoreAndMaybeRetry() {
+      if (attempt < _maxRouteOrNavigationRetries) {
+        emit(previousState);
+        Future.microtask(() => calculateRoute(attempt: attempt + 1));
+      } else {
+        emit(previousState);
+      }
+    }
 
-    final truckOptions = _createTruckOptions();
+    try {
+      // Update transport profile before calculating route to ensure restrictions are accurate
+      _setupTransportProfile();
 
-    _routingEngine.calculateTruckRoute(waypoints, truckOptions, (
-      RoutingError? error,
-      List<Route>? routes,
-    ) {
-      if (error != null || routes == null) return;
+      final waypoints = List.generate(
+        state.locationPoints!.length,
+        (i) => Waypoint(state.locationPoints![i].geoCoordinates!),
+      );
 
-      final route = routes.first;
-      emit(state.copyWith(currentRoute: route, hasDirection: true));
-      refreshStopAndDestinationMarker();
-      _processTruckRestrictionWarnings(route);
-      _showRouteOnMap(route);
-    });
+      final truckOptions = _createTruckOptions();
+
+      _routingEngine.calculateTruckRoute(waypoints, truckOptions, (
+        RoutingError? error,
+        List<Route>? routes,
+      ) {
+        try {
+          if (error != null || routes == null || routes.isEmpty) {
+            restoreAndMaybeRetry();
+            return;
+          }
+
+          final route = routes.first;
+          emit(state.copyWith(currentRoute: route, hasDirection: true));
+          refreshStopAndDestinationMarker();
+          _processTruckRestrictionWarnings(route);
+          _showRouteOnMap(route);
+        } catch (e, st) {
+          log('calculateRoute callback error: $e\n$st');
+          restoreAndMaybeRetry();
+        }
+      });
+    } catch (e, st) {
+      log('calculateRoute error: $e\n$st');
+      restoreAndMaybeRetry();
+    }
   }
 
   TruckOptions _createTruckOptions() {
@@ -1430,54 +1455,79 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     state.mapController?.camera.startAnimation(animation);
   }
 
-  void startNavigation() {
+  void startNavigation({int attempt = 0}) {
     if (state.currentRoute == null) return;
 
-    WakeLockUtils.enable();
-    _clearCurrentLocationMarker();
-    _clearStartMarker();
-    _visualNavigator?.route = state.currentRoute!;
-    _visualNavigator?.startRendering(state.mapController!);
-    setupTruckRestrictionWarnings();
-    setupManeuverUpdates();
-    setupSpeedListeners();
-    setupHasArrivedListeners();
+    final TruckNavigationState previousState = state;
 
-    _locationEngine?.stop();
-    if (AppKeys().isSimulation) {
-      emit(
-        state.copyWith(
-          isNavigating: true,
-          nextTargetIndex: 1,
-          cameraControlledByNavigator: true,
-        ),
-      );
-      _simulator = HEREPositioningSimulator();
+    void restoreAndMaybeRetry() {
+      WakeLockUtils.disable();
+      _visualNavigator?.stopRendering();
+      if (AppKeys().isSimulation) {
+        _simulator?.stopLocating();
+        _simulator = null;
+      }
+      if (attempt < _maxRouteOrNavigationRetries) {
+        emit(previousState);
+        _updateCurrentLocationMarker();
+        Future.microtask(() => startNavigation(attempt: attempt + 1));
+      } else {
+        emit(previousState);
+        _updateCurrentLocationMarker();
+      }
+    }
 
-      final LocationListener navigatorForwarder = LocationListener((
-        Location location,
-      ) {
-        _navigator?.onLocationUpdated(location);
-        checkNextTarget(location.coordinates);
-        _checkOffRouteAndRecalculateIfNeeded(location.coordinates);
-      });
+    try {
+      WakeLockUtils.enable();
+      _clearCurrentLocationMarker();
+      _clearStartMarker();
+      _visualNavigator?.route = state.currentRoute!;
+      _visualNavigator?.startRendering(state.mapController!);
+      setupTruckRestrictionWarnings();
+      setupManeuverUpdates();
+      setupSpeedListeners();
+      setupHasArrivedListeners();
 
-      _simulator?.startLocating(
-        _visualNavigator!,
-        navigatorForwarder,
-        state.currentRoute!,
-      );
-    } else {
-      _locationEngine?.startWithLocationAccuracy(LocationAccuracy.navigation);
-      emit(
-        state.copyWith(
-          nextTargetIndex: 1,
-          isNavigating: true,
-          isNavigationCompleted: false,
-          maneuverProgresses: [],
-          cameraControlledByNavigator: true,
-        ),
-      );
+      // _locationEngine?.stop();
+      if (AppKeys().isSimulation) {
+        _simulator = HEREPositioningSimulator();
+
+        final LocationListener navigatorForwarder = LocationListener((
+          Location location,
+        ) {
+          _navigator?.onLocationUpdated(location);
+          checkNextTarget(location.coordinates);
+          _checkOffRouteAndRecalculateIfNeeded(location.coordinates);
+        });
+
+        _simulator?.startLocating(
+          _visualNavigator!,
+          navigatorForwarder,
+          state.currentRoute!,
+        );
+
+        emit(
+          state.copyWith(
+            isNavigating: true,
+            nextTargetIndex: 1,
+            cameraControlledByNavigator: true,
+          ),
+        );
+      } else {
+        // _locationEngine?.startWithLocationAccuracy(LocationAccuracy.navigation);
+        emit(
+          state.copyWith(
+            nextTargetIndex: 1,
+            isNavigating: true,
+            isNavigationCompleted: false,
+            maneuverProgresses: [],
+            cameraControlledByNavigator: true,
+          ),
+        );
+      }
+    } catch (e, st) {
+      log('startNavigation error: $e\n$st');
+      restoreAndMaybeRetry();
     }
   }
 
@@ -1536,12 +1586,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
     _offRouteConsecutiveCount = 0;
 
-    if (_locationEngine != null && !(AppKeys().isSimulation)) {
-      _locationEngine?.stop();
-      _locationEngine?.startWithLocationAccuracy(
-        LocationAccuracy.bestAvailable,
-      );
-    }
+    // if (_locationEngine != null && !(AppKeys().isSimulation)) {
+    //   _locationEngine?.stop();
+    //   _locationEngine?.startWithLocationAccuracy(
+    //     LocationAccuracy.navigation,
+    //   );
+    // }
     animateToRoute();
     _updateCurrentLocationMarker();
   }
