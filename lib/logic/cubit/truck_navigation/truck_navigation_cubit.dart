@@ -57,6 +57,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   Timer? _mapInteractionDebounceTimer;
   static const double _offRouteThresholdMeters =
       3.084; // Distance threshold for off-route detection
+  static const double _myLocationOffThresholdMeters =
+      3.084; // Distance threshold for off-route detection
   // 50.0; // Distance threshold for off-route detection
   static const int _offRouteConfirmationCount =
       3; // Consecutive off-route samples before triggering recalculation
@@ -802,9 +804,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
                 coords.longitude,
               );
 
-              print("has Distance of $distance > 10 ${distance > 10}");
+              print("has Distance of $distance > $_myLocationOffThresholdMeters ${distance > _myLocationOffThresholdMeters}");
 
-              if (distance > 10) {
+              if (distance > _myLocationOffThresholdMeters) {
                 setCurrentLocation(
                   coords,
                   "location engine update with distance",
