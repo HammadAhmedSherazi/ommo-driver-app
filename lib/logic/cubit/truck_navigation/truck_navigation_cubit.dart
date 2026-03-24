@@ -41,6 +41,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   final SearchEngine _searchEngine = SearchEngine();
   final widgets.DraggableScrollableController navigationSheetScrollController =
       widgets.DraggableScrollableController();
+
   VisualNavigator? _visualNavigator;
   Navigator? _navigator;
   LocationEngine? _locationEngine;
@@ -68,6 +69,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   int _offRouteConsecutiveCount = 0;
   DateTime? _lastRecalculationTime;
 
+  bool firstLocationReceived = false;
   Future<MapImage> _createStopMarkerImage(
     int? index, [
     double size = 70.0,
@@ -721,105 +723,119 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     });
   }
 
-  // Location Handlers
-  /// Ensures location service is enabled and permission is granted. Does not fetch coordinates.
-  Future<bool> _getCurrentLocation() async {
+  Future<void> ensureLocationPermission() async {
     bool serviceEnabled = await _location.serviceEnabled();
+
     if (!serviceEnabled) {
       serviceEnabled = await _location.requestService();
-      if (!serviceEnabled) return false;
+      if (!serviceEnabled) return;
     }
 
-    loc.PermissionStatus permissionGranted = await _location.hasPermission();
-    if (permissionGranted == loc.PermissionStatus.denied) {
-      permissionGranted = await _location.requestPermission();
-      if (permissionGranted != loc.PermissionStatus.granted) return false;
-    }
+    var permission = await _location.hasPermission();
 
-    return true;
-  }
-
-  getLastKnownLocation() async {
-    final location = _locationEngine?.lastKnownLocation;
-    if (location == null) return;
-
-    final age = DateTime.now().difference(location.time!);
-
-    // Only use if location is recent
-    if (age.inSeconds < 30) {
-      setCurrentLocation(location.coordinates, "lastKnownLocation");
+    if (permission == loc.PermissionStatus.denied) {
+      permission = await _location.requestPermission();
+      if (permission != loc.PermissionStatus.granted) return;
     }
   }
+
+  Future<void> _setInitialLocationFast() async {
+    /// 1️⃣ Try HERE last known location
+    final hereLocation = _locationEngine?.lastKnownLocation;
+
+    if (hereLocation != null) {
+      final age = DateTime.now().difference(hereLocation.time!);
+
+      if (age.inMinutes < 5) {
+        setCurrentLocation(hereLocation.coordinates, "HERE lastKnownLocation");
+        return;
+      }
+    }
+
+    /// 2️⃣ Fallback → Platform location (VERY FAST)
+    try {
+      final locData = await _location.getLocation();
+
+      if (locData.latitude != null && locData.longitude != null) {
+        setCurrentLocation(
+          GeoCoordinates(locData.latitude!, locData.longitude!),
+          "platform fallback",
+        );
+      }
+    } catch (e) {
+      print("Platform location failed: $e");
+    }
+  }
+
+  // getLastKnownLocation() async {
+  //   final location = _locationEngine?.lastKnownLocation;
+  //   if (location == null) return;
+
+  //   final age = DateTime.now().difference(location.time!);
+
+  //   // Only use if location is recent
+  //   if (age.inSeconds < 30) {
+  //     setCurrentLocation(location.coordinates, "lastKnownLocation");
+  //   }
+  // }
 
   void startListeningToLocation() async {
-    if (AppKeys().isSimulation) {
-      setCurrentLocation(
-        AppKeys().startCoordinates,
-        "startListeningToLocation",
-      );
-    } else {
+    try {
+      if (AppKeys().isSimulation) {
+        setCurrentLocation(AppKeys().startCoordinates, "simulation");
+        return;
+      }
+
       if (_locationEngine != null) return;
 
       _locationEngine = LocationEngine();
       _locationEngine?.confirmHEREPrivacyNoticeInclusion();
 
-      // Warm up device location (important for some Android devices)
-      await _getCurrentLocation();
+      /// ✅ 1. Ensure permission (NON-BLOCKING)
+      ensureLocationPermission();
 
-      getLastKnownLocation();
+      /// ✅ 2. Get instant fallback location (VERY IMPORTANT)
+      _setInitialLocationFast();
 
-      bool firstLocationReceived = false;
-
+      /// ✅ 3. Add listener immediately
       _locationEngine?.addLocationListener(
         LocationListener((Location location) {
-          final GeoCoordinates coords = location.coordinates;
+          final coords = location.coordinates;
           final accuracy = location.horizontalAccuracyInMeters ?? 999;
 
-          log("Location received: $coords | accuracy: $accuracy");
+          print("Location received: $coords | accuracy: $accuracy");
 
-          /// ✅ 1. ALWAYS accept first fix (CRITICAL FIX)
+          /// ✅ ALWAYS accept first fix
           if (state.startCoordinates == null) {
-            setCurrentLocation(coords, "HERE first fix (no accuracy filter)");
+            setCurrentLocation(coords, "HERE first fix");
             firstLocationReceived = true;
             return;
           }
 
-          /// ✅ 2. After first fix → apply accuracy filter
+          /// ✅ Apply accuracy filter AFTER first fix
           if (accuracy >= 30) return;
 
-          // if (location.horizontalAccuracyInMeters == null ||
-          //     location.horizontalAccuracyInMeters! >= 50) {
-          //   return;
-          // }
-
-          // final GeoCoordinates coords = location.coordinates;
-          // log("Location recieved $coords");
-
           if (!state.isNavigating) {
-            if (state.startCoordinates != null) {
-              final double distance = calculateDistanceInMeters(
-                state.startCoordinates!.latitude,
-                state.startCoordinates!.longitude,
+            final current = state.startCoordinates;
+
+            if (current != null) {
+              final distance = calculateDistanceInMeters(
+                current.latitude,
+                current.longitude,
                 coords.latitude,
                 coords.longitude,
               );
 
-              print("has Distance of $distance > $_myLocationOffThresholdMeters ${distance > _myLocationOffThresholdMeters}");
-
               if (distance > _myLocationOffThresholdMeters) {
-                setCurrentLocation(
-                  coords,
-                  "location engine update with distance",
-                );
-                return;
+                setCurrentLocation(coords, "distance update");
               }
             } else {
-              setCurrentLocation(coords, "location engine initial coordinates");
+              setCurrentLocation(coords, "initial update");
             }
           }
 
           if (state.isNavigating) {
-            setCurrentLocation(coords, "location engine update in navigation");
+            setCurrentLocation(coords, "navigation update");
 
             emit(state.copyWith(currentNavigationLocation: coords));
 
@@ -832,25 +848,141 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         }),
       );
 
-      // Start HERE location engine
-      _locationEngine?.startWithLocationAccuracy(
-        LocationAccuracy.navigation,
-      );
+      /// ✅ 4. Start HERE engine immediately (NO DELAY)
+      _locationEngine?.startWithLocationAccuracy(LocationAccuracy.navigation);
 
-      // Fallback restart (fixes cold start issue on Vivo / Oppo)
-      Future.delayed(const Duration(seconds: 10), () {
-        if (!firstLocationReceived && _locationEngine != null) {
-          log("Restarting location engine due to no GPS fix");
-
-          _locationEngine?.stop();
-
-          _locationEngine?.startWithLocationAccuracy(
-            LocationAccuracy.navigation,
-          );
+      /// ✅ 5. Optional: soft fallback check (no aggressive restart)
+      Future.delayed(const Duration(seconds: 12), () {
+        if (!firstLocationReceived) {
+          print("Still waiting for GPS fix...");
+          // ❌ DO NOT restart immediately (prevents TTFF reset)
         }
       });
+    } catch (e) {
+      print("Error starting location: $e");
     }
   }
+  // void startListeningToLocation() async {
+  //   try {
+  //     if (AppKeys().isSimulation) {
+  //       setCurrentLocation(
+  //         AppKeys().startCoordinates,
+  //         "startListeningToLocation",
+  //       );
+  //     } else {
+  //       if (_locationEngine != null) return;
+
+  //       _locationEngine = LocationEngine();
+  //       _locationEngine?.confirmHEREPrivacyNoticeInclusion();
+
+  //       // Warm up device location (important for some Android devices)
+  //       await _getCurrentLocation();
+
+  //       getLastKnownLocation();
+
+  //       _locationEngine?.addLocationListener(
+  //         LocationListener((Location location) {
+  //           final GeoCoordinates coords = location.coordinates;
+  //           final accuracy = location.horizontalAccuracyInMeters ?? 999;
+
+  //           print("Location received: $coords | accuracy: $accuracy");
+
+  //           /// ✅ 1. ALWAYS accept first fix (CRITICAL FIX)
+  //           if (state.startCoordinates == null) {
+  //             setCurrentLocation(coords, "HERE first fix (no accuracy filter)");
+  //             firstLocationReceived = true;
+  //             return;
+  //           }
+
+  //           /// ✅ 2. After first fix → apply accuracy filter
+  //           if (accuracy >= 30) return;
+
+  //           // if (location.horizontalAccuracyInMeters == null ||
+  //           //     location.horizontalAccuracyInMeters! >= 50) {
+  //           //   return;
+  //           // }
+
+  //           // final GeoCoordinates coords = location.coordinates;
+  //           // log("Location recieved $coords");
+
+  //           if (!state.isNavigating) {
+  //             if (state.startCoordinates != null) {
+  //               final double distance = calculateDistanceInMeters(
+  //                 state.startCoordinates!.latitude,
+  //                 state.startCoordinates!.longitude,
+  //                 coords.latitude,
+  //                 coords.longitude,
+  //               );
+
+  //               print(
+  //                 "has Distance of $distance > $_myLocationOffThresholdMeters ${distance > _myLocationOffThresholdMeters}",
+  //               );
+
+  //               if (distance > _myLocationOffThresholdMeters) {
+  //                 setCurrentLocation(
+  //                   coords,
+  //                   "location engine update with distance",
+  //                 );
+  //                 return;
+  //               }
+  //             } else {
+  //               setCurrentLocation(
+  //                 coords,
+  //                 "location engine initial coordinates",
+  //               );
+  //             }
+  //           }
+
+  //           if (state.isNavigating) {
+  //             setCurrentLocation(
+  //               coords,
+  //               "location engine update in navigation",
+  //             );
+
+  //             emit(state.copyWith(currentNavigationLocation: coords));
+
+  //             _visualNavigator?.onLocationUpdated(location);
+  //             _navigator?.onLocationUpdated(location);
+
+  //             checkNextTarget(coords);
+  //             _checkOffRouteAndRecalculateIfNeeded(coords);
+  //           }
+  //         }),
+  //       );
+
+  //       // Start HERE location engine
+  //       _locationEngine?.startWithLocationAccuracy(LocationAccuracy.navigation);
+
+  //       // Fallback restart (fixes cold start issue on Vivo / Oppo)
+  //       Future.delayed(const Duration(seconds: 8), () {
+  //         if (!firstLocationReceived && _locationEngine != null) {
+  //           // print("Restarting location engine due to no GPS fix");
+
+  //           _locationEngine?.stop();
+  //           _locationEngine = null;
+  //           startListeningToLocation();
+  //           // _locationEngine?.startWithLocationAccuracy(
+  //           //   LocationAccuracy.navigation,
+  //           // );
+  //         }
+  //       });
+  //     }
+  //   } on Exception catch (e) {
+  //     // TODO
+  //     print("Got an error from start location listening $e");
+
+  //     if (!firstLocationReceived && _locationEngine != null) {
+  //       // print("Restarting location engine due to no GPS fix");
+
+  //       _locationEngine?.stop();
+  //       _locationEngine = null;
+  //       startListeningToLocation();
+  //       // _locationEngine?.startWithLocationAccuracy(
+  //       //   LocationAccuracy.navigation,
+  //       // );
+  //     }
+  //   }
+  // }
 
   // void startListeningToLocation() async {
   //   if (AppKeys().isSimulation) {
