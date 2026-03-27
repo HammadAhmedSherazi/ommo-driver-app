@@ -29,6 +29,21 @@ import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_stops/truck_stops_state.dart';
 
+/// Tabs that use HERE category search; used to drop POIs whose title clearly
+/// belongs on another tab (e.g. "…Wash" miscategorized as truck stop plaza).
+enum _PlaceTabKind {
+  truckStop,
+  weightStation,
+  parking,
+  restArea,
+  fuel,
+  truckWash,
+  restaurant,
+  hotel,
+  gym,
+  store,
+}
+
 class TruckStopCubit extends Cubit<TruckStopsState> {
   TruckStopCubit()
     : super(
@@ -367,8 +382,10 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
         List<Place> filteredPlaces = places;
         if (placeTypeName.toLowerCase().contains('truck stop')) {
           filteredPlaces =
-              places.where((p) => !_isWeighStationOnly(p)).toList();
+              filteredPlaces.where((p) => !_isWeighStationOnly(p)).toList();
         }
+        filteredPlaces =
+            _filterPlacesByCrossCategoryTitle(placeTypeName, filteredPlaces);
 
         // Get existing places if appending
         final existingPlaces =
@@ -1111,6 +1128,113 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
   bool _isKnownTruckStopBrand(Place place) {
     final brand = getBrandFromPlace(place);
     return brand != null && _defaultBrandNames.contains(brand);
+  }
+
+  _PlaceTabKind? _placeTabKindForSearch(String placeTypeName) {
+    final n = placeTypeName.toLowerCase();
+    if (n.contains('truck stop')) return _PlaceTabKind.truckStop;
+    if (n.contains('weight station') || n.contains('scale')) {
+      return _PlaceTabKind.weightStation;
+    }
+    if (n.contains('parking')) return _PlaceTabKind.parking;
+    if (n.contains('rest area')) return _PlaceTabKind.restArea;
+    if (n.contains('fuel')) return _PlaceTabKind.fuel;
+    if (n.contains('wash')) return _PlaceTabKind.truckWash;
+    if (n.contains('restaurant')) return _PlaceTabKind.restaurant;
+    if (n.contains('hotel')) return _PlaceTabKind.hotel;
+    if (n.contains('gym')) return _PlaceTabKind.gym;
+    if (n.contains('store')) return _PlaceTabKind.store;
+    return null;
+  }
+
+  static final List<RegExp> _titleWeightStationPatterns = [
+    RegExp(r'\bcat\s+scale\b', caseSensitive: false),
+    RegExp(r'\bweigh\s+station\b', caseSensitive: false),
+    RegExp(r'\bweight\s+station\b', caseSensitive: false),
+    RegExp(r'\bscale\s+house\b', caseSensitive: false),
+    RegExp(r'\bscales\b', caseSensitive: false),
+  ];
+
+  static final List<RegExp> _titleTruckWashPatterns = [
+    RegExp(r'\bwash\b', caseSensitive: false),
+    RegExp(r'\bwashing\b', caseSensitive: false),
+  ];
+
+  static final List<RegExp> _titleParkingPatterns = [
+    RegExp(r'\bparking\b', caseSensitive: false),
+    RegExp(r'\bpaddock\b', caseSensitive: false),
+  ];
+
+  static final List<RegExp> _titleRestAreaPatterns = [
+    RegExp(r'\brest\s+area\b', caseSensitive: false),
+    RegExp(r'\brest\s+stop\b', caseSensitive: false),
+  ];
+
+  static final List<RegExp> _titleRestaurantPatterns = [
+    RegExp(r'\brestaurant\b', caseSensitive: false),
+    RegExp(r'\bcafe\b', caseSensitive: false),
+    RegExp(r'\bcafé\b', caseSensitive: false),
+    RegExp(r'\bdiner\b', caseSensitive: false),
+  ];
+
+  static final List<RegExp> _titleHotelPatterns = [
+    RegExp(r'\bhotel\b', caseSensitive: false),
+    RegExp(r'\bmotel\b', caseSensitive: false),
+    RegExp(r'\binns?\b', caseSensitive: false),
+  ];
+
+  static final List<RegExp> _titleGymPatterns = [
+    RegExp(r'\bgym\b', caseSensitive: false),
+    RegExp(r'\bfitness\b', caseSensitive: false),
+  ];
+
+  static final List<RegExp> _titleStorePatterns = [
+    RegExp(r'\bgrocery\b', caseSensitive: false),
+    RegExp(r'\bwalmart\b', caseSensitive: false),
+    RegExp(r'\b7-eleven\b', caseSensitive: false),
+  ];
+
+  Set<_PlaceTabKind> _tabKindsMatchingTitle(String title) {
+    final t = title;
+    final kinds = <_PlaceTabKind>{};
+    void addIfMatches(List<RegExp> patterns, _PlaceTabKind kind) {
+      for (final p in patterns) {
+        if (p.hasMatch(t)) {
+          kinds.add(kind);
+          return;
+        }
+      }
+    }
+
+    addIfMatches(_titleWeightStationPatterns, _PlaceTabKind.weightStation);
+    addIfMatches(_titleTruckWashPatterns, _PlaceTabKind.truckWash);
+    addIfMatches(_titleParkingPatterns, _PlaceTabKind.parking);
+    addIfMatches(_titleRestAreaPatterns, _PlaceTabKind.restArea);
+    addIfMatches(_titleRestaurantPatterns, _PlaceTabKind.restaurant);
+    addIfMatches(_titleHotelPatterns, _PlaceTabKind.hotel);
+    addIfMatches(_titleGymPatterns, _PlaceTabKind.gym);
+    addIfMatches(_titleStorePatterns, _PlaceTabKind.store);
+    return kinds;
+  }
+
+  /// Drops results whose title clearly signals a different browse tab than the
+  /// one the user selected (name-based only; complements category codes).
+  bool _titleImpliesOtherTabThan(_PlaceTabKind current, String title) {
+    final kinds = _tabKindsMatchingTitle(title);
+    if (kinds.isEmpty) return false;
+    if (kinds.length == 1 && kinds.single == current) return false;
+    return kinds.any((k) => k != current);
+  }
+
+  List<Place> _filterPlacesByCrossCategoryTitle(
+    String placeTypeName,
+    List<Place> places,
+  ) {
+    final current = _placeTabKindForSearch(placeTypeName);
+    if (current == null) return places;
+    return places
+        .where((p) => !_titleImpliesOtherTabThan(current, p.title))
+        .toList();
   }
 
   /// Map place type names to HERE SDK category codes
