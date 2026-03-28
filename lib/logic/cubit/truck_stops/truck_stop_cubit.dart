@@ -49,13 +49,13 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     : super(
         TruckStopsState(
           categoriesSearchState: List.generate(
-            TruckNavigationStaticDetails.stationList.length,
+            TruckNavigationStaticDetails.placeTypes.length,
             (i) => PlaceCategoryTruckStopsState(
               categorySearchResults: FutureData.loading(),
               availableBrands: [],
               selectedBrands: [],
               placeCategory:
-                  TruckNavigationStaticDetails.stationList[i]['name'],
+                  TruckNavigationStaticDetails.placeTypes[i]['name'],
             ),
           ),
         ),
@@ -381,9 +381,12 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
         // (they have their own "Scales" category)
         List<Place> filteredPlaces = places;
         if (placeTypeName.toLowerCase().contains('truck stop')) {
-          filteredPlaces =
-              filteredPlaces.where((p) => !_isWeighStationOnly(p)).toList();
+          filteredPlaces = filteredPlaces
+              .where((p) => !_isWeighStationOnly(p))
+              .toList();
         }
+        filteredPlaces =
+            _filterPlacesByPrimaryCategoryCode(placeTypeName, filteredPlaces);
         filteredPlaces =
             _filterPlacesByCrossCategoryTitle(placeTypeName, filteredPlaces);
 
@@ -1094,6 +1097,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
 
   /// Weigh station / scale category code (excluded from Truck stops)
   static const String _weighStationCategoryCode = '700-7900-0134';
+
   /// Truck stop plaza category code
   static const String _truckStopPlazaCategoryCode = '700-7900-0132';
 
@@ -1237,6 +1241,46 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
         .toList();
   }
 
+  /// Keeps only places whose **first** HERE category id matches this tab's search
+  /// codes (e.g. Shell with primary gas station is hidden under Truck stops).
+  List<Place> _filterPlacesByPrimaryCategoryCode(
+    String placeTypeName,
+    List<Place> places,
+  ) {
+    final expectedCodes = _getCategoryCodesForPlaceType(placeTypeName);
+    if (expectedCodes.isEmpty) return places;
+    return places
+        .where((p) => _placePrimaryCategoryMatchesSearchCodes(p, expectedCodes))
+        .toList();
+  }
+
+  /// True when [place]'s primary category equals one of [expectedCodes] or is a
+  /// more specific descendant (e.g. accommodation `500` matches `500-5000-…`).
+  bool _placePrimaryCategoryMatchesSearchCodes(
+    Place place,
+    List<String> expectedCodes,
+  ) {
+    try {
+      final categories = place.details.categories;
+      if (categories.isEmpty) return false;
+      final primaryId = categories.first.id;
+      return _categoryIdMatchesSearchCodes(primaryId, expectedCodes);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static bool _categoryIdMatchesSearchCodes(
+    String primaryId,
+    List<String> expectedCodes,
+  ) {
+    for (final code in expectedCodes) {
+      if (primaryId == code) return true;
+      if (primaryId.startsWith('$code-')) return true;
+    }
+    return false;
+  }
+
   /// Map place type names to HERE SDK category codes
   List<String> _getCategoryCodesForPlaceType(String placeTypeName) {
     final name = placeTypeName.toLowerCase();
@@ -1254,27 +1298,30 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     // Rest areas
     if (name.contains('rest area')) {
       return [
-        '700-7900-0133', // Rest area
+        '400-4300', // Rest area
+        // '700-7900-0133', // Rest area
         '700-7900-0131', // Also include truck parking
       ];
     }
 
     // Weight stations / Scales
     if (name.contains('weight station') || name.contains('scales')) {
-      return ['700-7900-0134']; // Weigh station
+      return ['700-7900-0134', '400-4200-0048']; // Weigh station
     }
 
     // Fuel
     if (name.contains('fuel')) {
       return [
-        '700-7600-0000', // Gas station / Fuel
-        '700-7900-0132', // Also truck stops which have fuel
+        // '700-7600-0323', // A charging station that provides recharging services for trucks and buses.
+        // '700-7600-0000', // A business that sells fuel for vehicles. This is a base-level category that should be used for all places that do not fit other categories defined for Fueling Station (700-7600-xxxx).
+        '700-7600-0116', // A business that sells fuel, oil, and other motoring supplies.
+        // '700-7900-0132', // Also truck stops which have fuel
       ];
     }
 
     // Truck Washes
     if (name.contains('wash')) {
-      return ['700-7900-0135']; // Truck wash
+      return ['700-7900-0135', "700-7900-0323"]; // Truck wash
     }
 
     // Restaurant
