@@ -1,8 +1,5 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:here_sdk/core.dart';
 import 'package:here_sdk/core.engine.dart';
 import 'package:here_sdk/core.errors.dart';
 import 'package:here_sdk/mapview.dart';
@@ -18,7 +15,7 @@ class MapView extends StatefulWidget {
   MapViewState createState() => MapViewState();
 }
 
-class MapViewState extends State<MapView> with WidgetsBindingObserver {
+class MapViewState extends State<MapView> {
   // late final AppLifecycleListener _appLifecycleListener;
 
   // @override
@@ -53,7 +50,7 @@ class MapViewState extends State<MapView> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
+    // WidgetsBinding.instance.addObserver(this);
     // Location is started from TruckNavigationCubit.onMapCreated so the HERE
     // LocationEngine starts as soon as the map is ready (no delay = faster first fix).
   }
@@ -66,23 +63,21 @@ class MapViewState extends State<MapView> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    // return SizedBox();
+    // Platform views (HereMap) often flash black when their size changes. With
+    // resizeToAvoidBottomInset, the keyboard shrinks MediaQuery.size — treat
+    // layout height as full window using viewInsets so the map size stays stable.
+    final mq = MediaQuery.of(context);
+    final fullHeight = mq.size.height + mq.viewInsets.bottom;
+    final fullWidth = mq.size.width;
+    final h = widget.height ?? fullHeight * 0.75;
+
     return BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
       buildWhen: (previous, current) =>
-          // previous.isMapLoading != current.isMapLoading ||
           previous.mapController != current.mapController,
       builder: (context, state) {
-        return
-        // state.isMapLoading
-        //     ? Center(
-        //         child: CircularProgressIndicator(
-        //           color: AppColorTheme().primary,
-        //         ),
-        //       )
-        //     :
-        SizedBox(
-          height: widget.height ?? context.screenHeight * 0.75,
-          width: context.screenWidth,
+        return SizedBox(
+          height: h,
+          width: fullWidth,
           child: HereMap(
             onMapCreated: context.read<TruckNavigationCubit>().onMapCreated,
           ),
@@ -93,15 +88,11 @@ class MapViewState extends State<MapView> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    _disposeHERESDK();
-    WidgetsBinding.instance.removeObserver(this);
+    // Do not call SDKNativeEngine.dispose / SdkContext.release here. The engine
+    // is created once in main(); disposing it when this widget is removed
+    // destroys the map for the whole app and causes black tiles if another
+    // HereMap mounts (e.g. navigation UI swap, routes). Teardown belongs at app
+    // exit only.
     super.dispose();
-  }
-
-  void _disposeHERESDK() async {
-    log("_map _disposeHERESDK called");
-    await SDKNativeEngine.sharedInstance?.dispose();
-    SdkContext.release();
-    // _appLifecycleListener.dispose();
   }
 }

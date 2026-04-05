@@ -323,76 +323,18 @@ class _HomeMobileViewState extends State<HomeMobileView>
       Positioned(
         right: 10,
         top: context.screenHeight * 0.02,
-        child: HomeAppBar(),
+        child: SafeArea(child: HomeAppBar()),
       ),
       // side floating menu
       Positioned(
         right: 10,
         top: context.screenHeight * 0.12,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          spacing: 10,
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              padding: EdgeInsets.all(13),
-              decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x0A000000), // same as #0000000A
-                    offset: Offset(0, 2), // x=0, y=2
-                    blurRadius: 6, // blur radius
-                    spreadRadius: 0, // spread
-                  ),
-                ],
-                shape: BoxShape.circle,
-                color: Colors.white,
-              ),
-              child: Image.asset('assets/images/bell.png'),
-            ),
-            buildMapSchemeFloatingMenu(),
-            Container(
-              width: 48,
-              // height: 200,
-              // padding: EdgeInsets.all(13),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(50),
-                  bottom: Radius.circular(50),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Color(0x0A000000), // same as #0000000A
-                    offset: Offset(0, 2), // x=0, y=2
-                    blurRadius: 6, // blur radius
-                    spreadRadius: 0, // spread
-                  ),
-                ],
-
-                color: Colors.white,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    onPressed: () =>
-                        context.read<TruckNavigationCubit>().mapZoomIn(context),
-                    icon: SvgPicture.asset(AppIcons.zoomInIcon),
-                  ),
-                  IconButton(
-                    onPressed: () => context
-                        .read<TruckNavigationCubit>()
-                        .mapZoomOut(context),
-                    icon: SvgPicture.asset(AppIcons.zoomOutIcon),
-                  ),
-                ],
-              ),
-            ),
-            InkWell(
-              onTap: () =>
-                  context.read<TruckNavigationCubit>().focusOnCurrentLocation(),
-              child: Container(
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 10,
+            children: [
+              Container(
                 width: 48,
                 height: 48,
                 padding: EdgeInsets.all(13),
@@ -408,21 +350,18 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   shape: BoxShape.circle,
                   color: Colors.white,
                 ),
-                child: SvgPicture.asset(
-                  AppIcons.navigationIconGreen,
-                  colorFilter: ColorFilter.mode(Colors.black, BlendMode.srcIn),
-                ),
+                child: Image.asset('assets/images/bell.png'),
               ),
-            ),
-            InkWell(
-              onTap: () =>
-                  context.read<TruckNavigationCubit>().animateToRoute(),
-
-              child: Container(
+              buildMapSchemeFloatingMenu(),
+              Container(
                 width: 48,
-                height: 48,
-                padding: EdgeInsets.all(13),
+                // height: 200,
+                // padding: EdgeInsets.all(13),
                 decoration: BoxDecoration(
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(50),
+                    bottom: Radius.circular(50),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Color(0x0A000000), // same as #0000000A
@@ -431,13 +370,76 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       spreadRadius: 0, // spread
                     ),
                   ],
-                  shape: BoxShape.circle,
+          
                   color: Colors.white,
                 ),
-                child: Image.asset('assets/images/ion_compass-sharp.png'),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: () =>
+                          context.read<TruckNavigationCubit>().mapZoomIn(context),
+                      icon: SvgPicture.asset(AppIcons.zoomInIcon),
+                    ),
+                    IconButton(
+                      onPressed: () => context
+                          .read<TruckNavigationCubit>()
+                          .mapZoomOut(context),
+                      icon: SvgPicture.asset(AppIcons.zoomOutIcon),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              InkWell(
+                onTap: () =>
+                    context.read<TruckNavigationCubit>().focusOnCurrentLocation(),
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  padding: EdgeInsets.all(13),
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x0A000000), // same as #0000000A
+                        offset: Offset(0, 2), // x=0, y=2
+                        blurRadius: 6, // blur radius
+                        spreadRadius: 0, // spread
+                      ),
+                    ],
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                  ),
+                  child: SvgPicture.asset(
+                    AppIcons.navigationIconGreen,
+                    colorFilter: ColorFilter.mode(Colors.black, BlendMode.srcIn),
+                  ),
+                ),
+              ),
+              InkWell(
+                onTap: () =>
+                    context.read<TruckNavigationCubit>().animateToRoute(),
+          
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  padding: EdgeInsets.all(13),
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x0A000000), // same as #0000000A
+                        offset: Offset(0, 2), // x=0, y=2
+                        blurRadius: 6, // blur radius
+                        spreadRadius: 0, // spread
+                      ),
+                    ],
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                  ),
+                  child: Image.asset('assets/images/ion_compass-sharp.png'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
 
@@ -1407,7 +1409,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     ),
                   ],
                 ),
-                15.h,
+                // 15.h,
                 // BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
                 //   buildWhen: (p, c) =>
                 //       p.selectedSuggestion != c.selectedSuggestion,
@@ -1427,8 +1429,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 //           );
                 //   },
                 // ),
-                15.h,
                 if (!searchFieldFocusNode.hasFocus) ...[
+                  15.h,
                   currentLocationTile(context),
                   15.h,
                   DashedLine(color: Color(0xffEBEEF2)),
@@ -1504,7 +1506,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 ],
                 if (searchFieldFocusNode.hasFocus &&
                     searchTextEditController.text.isEmpty) ...[
-                  15.h,
+                  10.h,
 
                   CustomTabBarWidget(
                     options: TruckNavigationStaticDetails.locationOpt,
@@ -1566,6 +1568,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       return (state.destinationSuggestions?.data ?? [])
                               .isNotEmpty
                           ? ListView.separated(
+                            padding: EdgeInsets.symmetric(vertical: 10),
                               itemBuilder: (context, index) {
                                 final Suggestion? item =
                                     state.destinationSuggestions?.data?[index];
@@ -2016,8 +2019,10 @@ class _HomeMobileViewState extends State<HomeMobileView>
   }
 
   List<Widget> buildNavigationUi(TruckNavigationState state) {
+    final mq = MediaQuery.of(context);
+    final stableScreenHeight = mq.size.height + mq.viewInsets.bottom;
     return [
-      MapView(height: context.screenHeight * 0.65),
+      MapView(height: stableScreenHeight * 0.66),
       if (state.isNavigating && (state.isOffRoute || state.isRecalculatingRoute))
         BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
           buildWhen: (p, c) =>
@@ -2028,51 +2033,53 @@ class _HomeMobileViewState extends State<HomeMobileView>
               top: 12,
               left: 20,
               right: 20,
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: navState.isRecalculatingRoute
-                        ? Colors.blue.shade700
-                        : Colors.orange.shade700,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      if (navState.isRecalculatingRoute)
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      else
-                        Icon(Icons.warning_amber_rounded,
-                            color: Colors.white, size: 22),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          navState.isRecalculatingRoute
-                              ? 'Recalculating route…'
-                              : 'You\'re off route. Recalculating…',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
+              child: SafeArea(
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: navState.isRecalculatingRoute
+                          ? Colors.blue.shade700
+                          : Colors.orange.shade700,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 8,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        if (navState.isRecalculatingRoute)
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        else
+                          Icon(Icons.warning_amber_rounded,
+                              color: Colors.white, size: 22),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            navState.isRecalculatingRoute
+                                ? 'Recalculating route…'
+                                : 'You\'re off route. Recalculating…',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -2117,121 +2124,123 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 top: 20,
                 left: 20,
                 right: 20,
-                child: Container(
-                  // height: 250,
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white, // background
-                    borderRadius: (showAfterNext)
-                        ? BorderRadius.only(
-                            topLeft: Radius.circular(20),
-                            // bottomLeft: Radius.circular(20),
-                            topRight: Radius.circular(20),
-                            bottomRight: Radius.circular(20),
-                          )
-                        : BorderRadius.circular(20), // border-radius: 20px
-                    border: Border.all(
-                      color: const Color(0xFFEBEEF2), // #EBEEF2
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color.fromRGBO(
-                          136,
-                          139,
-                          161,
-                          0.18,
-                        ), // rgba(136,139,161,0.18)
-                        offset: const Offset(4, 4), // x:4px, y:4px
-                        blurRadius: 24, // blur
-                        spreadRadius: -4, // -4px spread
+                child: SafeArea(
+                  child: Container(
+                    // height: 250,
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white, // background
+                      borderRadius: (showAfterNext)
+                          ? BorderRadius.only(
+                              topLeft: Radius.circular(20),
+                              // bottomLeft: Radius.circular(20),
+                              topRight: Radius.circular(20),
+                              bottomRight: Radius.circular(20),
+                            )
+                          : BorderRadius.circular(20), // border-radius: 20px
+                      border: Border.all(
+                        color: const Color(0xFFEBEEF2), // #EBEEF2
+                        width: 1,
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    spacing: 10,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 10,
-                        children: [
-                          Column(
-                            children: [
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor: AppColorTheme().primary,
-                                child: Icon(
-                                  state.currentRoute?.maneuverInstructionIcon(
-                                    nextManuever.maneuverIndex,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 10),
-                              Text(
-                                state.currentRoute
-                                        ?.getAdjustedDistanceToManeuver(
-                                          nextManuever.maneuverIndex,
-                                          nextManuever.remainingDistanceInMeters
-                                              .toDouble(),
-                                          state.currentNavigationLocation,
-                                        )
-                                        .meterInMiles ??
-                                    nextManuever
-                                        .remainingDistanceInMeters
-                                        .meterInMiles,
-                                style: AppTextTheme().bodyText.copyWith(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColorTheme().primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromRGBO(
+                            136,
+                            139,
+                            161,
+                            0.18,
+                          ), // rgba(136,139,161,0.18)
+                          offset: const Offset(4, 4), // x:4px, y:4px
+                          blurRadius: 24, // blur
+                          spreadRadius: -4, // -4px spread
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      spacing: 10,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: 10,
+                          children: [
+                            Column(
                               children: [
-                                Text(
-                                  state.currentRoute?.maneuverInstruction(
-                                        nextManuever.maneuverIndex,
-                                      ) ??
-                                      '',
-                                  // state.currentRoute
-                                  //         ?.formattedManeuverInstructionWithRemainingDistance(
-                                  //           nextManuever.maneuverIndex,
-                                  //           nextManuever.remainingDistanceInMeters
-                                  //               .toDouble(),
-                                  //         ) ??
-                                  //     '',
-                                  style: AppTextTheme().bodyText.copyWith(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                                CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: AppColorTheme().primary,
+                                  child: Icon(
+                                    state.currentRoute?.maneuverInstructionIcon(
+                                      nextManuever.maneuverIndex,
+                                    ),
                                   ),
                                 ),
+                                SizedBox(height: 10),
                                 Text(
-                                  state.currentRoute?.maneuverNextAddress(
-                                        nextManuever.maneuverIndex,
-                                      ) ??
-                                      '',
-                                  style: AppTextTheme().lightText.copyWith(
-                                    color: AppColorTheme().secondary,
+                                  state.currentRoute
+                                          ?.getAdjustedDistanceToManeuver(
+                                            nextManuever.maneuverIndex,
+                                            nextManuever.remainingDistanceInMeters
+                                                .toDouble(),
+                                            state.currentNavigationLocation,
+                                          )
+                                          .meterInMiles ??
+                                      nextManuever
+                                          .remainingDistanceInMeters
+                                          .meterInMiles,
+                                  style: AppTextTheme().bodyText.copyWith(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColorTheme().primary,
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: AppColorTheme().whiteShade,
-                            child: Icon(
-                              Icons.volume_off_outlined,
-                              color: Colors.black,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    state.currentRoute?.maneuverInstruction(
+                                          nextManuever.maneuverIndex,
+                                        ) ??
+                                        '',
+                                    // state.currentRoute
+                                    //         ?.formattedManeuverInstructionWithRemainingDistance(
+                                    //           nextManuever.maneuverIndex,
+                                    //           nextManuever.remainingDistanceInMeters
+                                    //               .toDouble(),
+                                    //         ) ??
+                                    //     '',
+                                    style: AppTextTheme().bodyText.copyWith(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  Text(
+                                    state.currentRoute?.maneuverNextAddress(
+                                          nextManuever.maneuverIndex,
+                                        ) ??
+                                        '',
+                                    style: AppTextTheme().lightText.copyWith(
+                                      color: AppColorTheme().secondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: AppColorTheme().whiteShade,
+                              child: Icon(
+                                Icons.volume_off_outlined,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -2275,54 +2284,56 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 return Positioned(
                   top: 120,
                   left: 20,
-                  child: Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white, // background
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(20),
-                        bottomRight: Radius.circular(20),
-                      ), // border-radius: 20px
-                      border: Border.all(
-                        color: const Color(0xFFEBEEF2), // #EBEEF2
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color.fromRGBO(
-                            136,
-                            139,
-                            161,
-                            0.18,
-                          ), // rgba(136,139,161,0.18)
-                          offset: const Offset(4, 4), // x:4px, y:4px
-                          blurRadius: 24, // blur
-                          spreadRadius: -4, // -4px spread
+                  child: SafeArea(
+                    child: Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white, // background
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        ), // border-radius: 20px
+                        border: Border.all(
+                          color: const Color(0xFFEBEEF2), // #EBEEF2
+                          width: 1,
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        CircleAvatar(
-                          radius: 15,
-                          backgroundColor: AppColorTheme().lightGrey,
-                          child: Icon(
-                            state.currentRoute?.maneuverInstructionIcon(
-                              afterNextManuever.maneuverIndex,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color.fromRGBO(
+                              136,
+                              139,
+                              161,
+                              0.18,
+                            ), // rgba(136,139,161,0.18)
+                            offset: const Offset(4, 4), // x:4px, y:4px
+                            blurRadius: 24, // blur
+                            spreadRadius: -4, // -4px spread
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 15,
+                            backgroundColor: AppColorTheme().lightGrey,
+                            child: Icon(
+                              state.currentRoute?.maneuverInstructionIcon(
+                                afterNextManuever.maneuverIndex,
+                              ),
                             ),
                           ),
-                        ),
-                        SizedBox(height: 5),
-                        Text(
-                          distanceBetweenFirstAndNextManuever
-                              .meterInMiles, // "${afterNextManuever.remainingDistanceInMeters.toDouble().toStringAsFixed(0)}m",
-                          style: AppTextTheme().bodyText.copyWith(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColorTheme().lightGrey,
+                          SizedBox(height: 5),
+                          Text(
+                            distanceBetweenFirstAndNextManuever
+                                .meterInMiles, // "${afterNextManuever.remainingDistanceInMeters.toDouble().toStringAsFixed(0)}m",
+                            style: AppTextTheme().bodyText.copyWith(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColorTheme().lightGrey,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );

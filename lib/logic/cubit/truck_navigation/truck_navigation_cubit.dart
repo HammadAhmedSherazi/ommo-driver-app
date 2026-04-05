@@ -1612,9 +1612,13 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     }
 
     try {
+       emit(
+          state.copyWith(
+            isNavigating: true,
+          ),
+        );
+        _updateCurrentLocationMarker() ;
       WakeLockUtils.enable();
-      _clearCurrentLocationMarker();
-      _clearStartMarker();
       _visualNavigator?.route = state.currentRoute!;
       _visualNavigator?.startRendering(state.mapController!);
       setupTruckRestrictionWarnings();
