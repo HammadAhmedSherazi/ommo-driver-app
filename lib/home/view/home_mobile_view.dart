@@ -1228,57 +1228,52 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                                     }
                                                     // If no brands selected, show all places
 
-                                                    return SafeArea(
-                                                      top: false,
-
+                                                    return SheetScrollBridge(
                                                       child: ListView.builder(
-                                                        padding:
-                                                            EdgeInsets.only(
-                                                              bottom: 100,
-                                                              top: 0,
+                                                      padding:
+                                                          EdgeInsets.zero,
+                                                      physics:
+                                                          BouncingScrollPhysics(),
+                                                      itemCount:
+                                                          filteredPlaces
+                                                              .length,
+                                                      itemBuilder: (context, index) {
+                                                        final place =
+                                                            filteredPlaces[index];
+                                                        return GestureDetector(
+                                                          onTap: () {
+                                                            context
+                                                                .read<
+                                                                  TruckStopCubit
+                                                                >()
+                                                                .showBusinessOverviewModal(
+                                                                  place,
+                                                                  fromMap:
+                                                                      false,
+                                                                );
+                                                          },
+                                                          child: Padding(
+                                                            padding:
+                                                                EdgeInsets.only(
+                                                                  bottom: 16,
+                                                                ),
+                                                            child: PlaceDisplayWidget(
+                                                              place: place
+                                                                  .toPlaceDataModel,
+                                                              image:
+                                                                  context
+                                                                      .read<
+                                                                        TruckStopCubit
+                                                                      >()
+                                                                      .placesLogoMap[place
+                                                                      .id] ??
+                                                                  '',
+                                                              isSaved: false,
                                                             ),
-                                                        // physics:
-                                                        //     BouncingScrollPhysics(),
-                                                        itemCount:
-                                                            filteredPlaces
-                                                                .length,
-                                                        itemBuilder: (context, index) {
-                                                          final place =
-                                                              filteredPlaces[index];
-                                                          return GestureDetector(
-                                                            onTap: () {
-                                                              context
-                                                                  .read<
-                                                                    TruckStopCubit
-                                                                  >()
-                                                                  .showBusinessOverviewModal(
-                                                                    place,
-                                                                    fromMap:
-                                                                        false,
-                                                                  );
-                                                            },
-                                                            child: Padding(
-                                                              padding:
-                                                                  EdgeInsets.only(
-                                                                    bottom: 16,
-                                                                  ),
-                                                              child: PlaceDisplayWidget(
-                                                                place: place
-                                                                    .toPlaceDataModel,
-                                                                image:
-                                                                    context
-                                                                        .read<
-                                                                          TruckStopCubit
-                                                                        >()
-                                                                        .placesLogoMap[place
-                                                                        .id] ??
-                                                                    '',
-                                                                isSaved: false,
-                                                              ),
-                                                            ),
-                                                          );
-                                                        },
-                                                      ),
+                                                          ),
+                                                        );
+                                                      },
+                                                    ),
                                                     );
                                                   },
                                                   loader: Column(
@@ -1311,14 +1306,11 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                                 );
                                               },
                                             ),
-                                            SafeArea(
-                                              top: false,
-
-                                              child: ListView.builder(
-                                                padding: EdgeInsets.only(
-                                                  bottom: 100,
-                                                  top: 0,
-                                                ),
+                                            SheetScrollBridge(
+                                                child: ListView.builder(
+                                                padding: EdgeInsets.zero,
+                                                physics:
+                                                    BouncingScrollPhysics(),
                                                 itemBuilder: (context, index) => GestureDetector(
                                                   // onTap: () {
                                                   //   setState(() {
@@ -1344,15 +1336,12 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                               ),
                                             ),
 
-                                            SafeArea
-                                            (
-                                                top: false,
-
-                                              child: ListView.builder(
-                                                padding: EdgeInsets.only(
-                                                  bottom: 100,
-                                                  top: 0,
-                                                ),  itemBuilder: (context, index) =>
+                                            SheetScrollBridge(
+                                                child: ListView.builder(
+                                                padding: EdgeInsets.zero,
+                                                physics:
+                                                    BouncingScrollPhysics(),
+                                                itemBuilder: (context, index) =>
                                                     PlaceDisplayWidget(
                                                       place:
                                                           TruckNavigationStaticDetails
@@ -1364,7 +1353,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                                         .terminals
                                                         .length,
                                               ),
-                                            ),
+                                              ),
                                           ],
                                         ),
                                       ),
