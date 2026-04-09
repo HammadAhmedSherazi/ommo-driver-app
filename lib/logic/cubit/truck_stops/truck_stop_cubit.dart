@@ -835,7 +835,16 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     final List<GeoCoordinates> markerCoordinates = [];
     final bool shouldZoom = _isFirstTimeMarkersLoaded;
 
-    // Update or create markers for all places
+    final imageFutures = <Future<({
+      Place place,
+      GeoCoordinates coordinates,
+      MapImage image,
+      String brand,
+      bool isPlaceSelected,
+      String? iconPath,
+    })>>[];
+
+    // Remove stale markers synchronously; build marker images in parallel
     for (final place in places) {
       final brand = getBrandFromPlace(place);
       if (brand == null) continue;
@@ -847,54 +856,62 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
       final isPlaceSelected = place.id == _selectedPlaceId;
       final scale = isPlaceSelected ? 1.3 : 1.0;
 
-      // Check if marker already exists
       if (_placeMarkersMap.containsKey(place.id)) {
-        // Update existing marker by removing and recreating with new opacity
         final existingMarker = _placeMarkersMap[place.id]!;
         mapController.mapScene.removeMapMarker(existingMarker);
         _placeMarkersMap.remove(place.id);
       }
 
-      if (isBrandSelected) {
-        MapImage markerImage;
+      if (!isBrandSelected) continue;
 
-        // Check if brand has an icon (default brands)
-        final iconPath = _getBrandIconPath(brand);
-        if (iconPath != null) {
-          // Use brand image for default brands
-          markerImage = await _createMarkerWithBrandImage(iconPath, scale);
-        } else {
-          // Use first letter for "Other" or brands without icons
-          final brandLetter = brand.isNotEmpty ? brand[0] : '?';
-          final brandColor = _getBrandColor(brand);
-          markerImage = await _createBrandMarkerImage(
-            brandLetter,
-            brandColor,
-            scale,
+      final iconPath = _getBrandIconPath(brand);
+      imageFutures.add(
+        () async {
+          final MapImage markerImage;
+          if (iconPath != null) {
+            markerImage = await _createMarkerWithBrandImage(iconPath, scale);
+          } else {
+            final brandLetter = brand.isNotEmpty ? brand[0] : '?';
+            final brandColor = _getBrandColor(brand);
+            markerImage = await _createBrandMarkerImage(
+              brandLetter,
+              brandColor,
+              scale,
+            );
+          }
+          return (
+            place: place,
+            coordinates: coordinates,
+            image: markerImage,
+            brand: brand,
+            isPlaceSelected: isPlaceSelected,
+            iconPath: iconPath,
           );
-        }
+        }(),
+      );
+    }
 
-        final marker = MapMarker(coordinates, markerImage);
+    final builtMarkers = await Future.wait(imageFutures);
 
-        if (isPlaceSelected) {
-          marker.drawOrder = 1000; // Higher = on top
-        }
-        // Set anchor point to bottom center of pin
-        marker.anchor = Anchor2D.withHorizontalAndVertical(0.5, 1.0);
+    for (final item in builtMarkers) {
+      final marker = MapMarker(item.coordinates, item.image);
 
-        // Add metadata for tap handling
-        final metadata = Metadata();
-        metadata.setString("place_id", place.id);
-        metadata.setString("place_title", place.title);
-        marker.metadata = metadata;
-
-        mapController.mapScene.addMapMarker(marker);
-        _placeMarkersMap[place.id] = marker;
-        _markerBrandMap[place.id] = brand;
-        placeDataMap[place.id] = place; // Store place data
-        placesLogoMap[place.id] = iconPath ?? '';
-        markerCoordinates.add(coordinates);
+      if (item.isPlaceSelected) {
+        marker.drawOrder = 1000;
       }
+      marker.anchor = Anchor2D.withHorizontalAndVertical(0.5, 1.0);
+
+      final metadata = Metadata();
+      metadata.setString("place_id", item.place.id);
+      metadata.setString("place_title", item.place.title);
+      marker.metadata = metadata;
+
+      mapController.mapScene.addMapMarker(marker);
+      _placeMarkersMap[item.place.id] = marker;
+      _markerBrandMap[item.place.id] = item.brand;
+      placeDataMap[item.place.id] = item.place;
+      placesLogoMap[item.place.id] = item.iconPath ?? '';
+      markerCoordinates.add(item.coordinates);
     }
 
     // Zoom out to show all markers only on first load
