@@ -1127,9 +1127,16 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       TextQuery.withArea(query, queryArea),
       searchOptions,
       (SearchError? searchError, List<Suggestion>? list) {
-        if (list != null) {
+        
+        for (Suggestion element in list ?? []) {
+          log("element: ${element.place?.id}");
+          log("element: ${element.place?.title}");
+          log("element: ${element.place?.address.addressText}");
+        }
+        final filteredList = list?.where((element) => element.place?.id != null).toList();
+        if (filteredList != null) {
           emit(
-            state.copyWith(destinationSuggestions: FutureData.completed(list)),
+            state.copyWith(destinationSuggestions: FutureData.completed(filteredList)),
           );
         } else {
           emit(

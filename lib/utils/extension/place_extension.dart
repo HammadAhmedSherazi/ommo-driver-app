@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/home/home.dart';

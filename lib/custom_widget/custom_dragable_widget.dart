@@ -41,11 +41,11 @@ class CustomDragableWidget extends StatelessWidget {
               ).viewInsets.bottom, // 👈 safe for keyboard
             ),
             child: Column(
-              spacing: 10,
+              spacing: 5,
               children: [
                 // Handle (fixed)
                 Container(
-                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  margin: const EdgeInsets.symmetric(vertical: 10),
                   height: 5,
                   width: 50,
                   decoration: BoxDecoration(

@@ -157,7 +157,6 @@ class _HomeMobileViewState extends State<HomeMobileView>
     // searchTextEditController.dispose();
     searchFieldFocusNode.dispose();
     for (var controller in textController) {
-     
       controller.dispose();
     }
     for (var focusNode in focusNode) {
@@ -370,15 +369,16 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       spreadRadius: 0, // spread
                     ),
                   ],
-          
+
                   color: Colors.white,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      onPressed: () =>
-                          context.read<TruckNavigationCubit>().mapZoomIn(context),
+                      onPressed: () => context
+                          .read<TruckNavigationCubit>()
+                          .mapZoomIn(context),
                       icon: SvgPicture.asset(AppIcons.zoomInIcon),
                     ),
                     IconButton(
@@ -391,8 +391,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 ),
               ),
               InkWell(
-                onTap: () =>
-                    context.read<TruckNavigationCubit>().focusOnCurrentLocation(),
+                onTap: () => context
+                    .read<TruckNavigationCubit>()
+                    .focusOnCurrentLocation(),
                 child: Container(
                   width: 48,
                   height: 48,
@@ -411,14 +412,17 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   ),
                   child: SvgPicture.asset(
                     AppIcons.navigationIconGreen,
-                    colorFilter: ColorFilter.mode(Colors.black, BlendMode.srcIn),
+                    colorFilter: ColorFilter.mode(
+                      Colors.black,
+                      BlendMode.srcIn,
+                    ),
                   ),
                 ),
               ),
               InkWell(
                 onTap: () =>
                     context.read<TruckNavigationCubit>().animateToRoute(),
-          
+
                 child: Container(
                   width: 48,
                   height: 48,
@@ -450,6 +454,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
           final bool isStationSelected = selectedStation != null;
           return CustomDragableWidget(
             scrollController: sheetScrollController,
+
             maxSize: isStationSelected ? 0.55 : 0.95,
             snapSizes: isStationSelected ? [0.26, 0.55] : [0.26, 0.55, 0.95],
             childrens: [
@@ -644,10 +649,11 @@ class _HomeMobileViewState extends State<HomeMobileView>
                         TruckSpecificationUtils.openSettingBottomSheet(
                           context,
                           onEditSuccess: () {
-                            minimizeBottomSheet();
+                            // minimizeBottomSheet();
                             context
                                 .read<TruckNavigationCubit>()
                                 .calculateRoute();
+                            makeHalfBottomSheet();
                           },
                         );
                       },
@@ -753,6 +759,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   GestureDetector(
                                     onTap: () {
@@ -762,7 +769,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                           .clearAllTruckStops();
                                     },
                                     child: CircleAvatar(
-                                      radius: 25,
+                                      radius: 18,
                                       backgroundColor:
                                           AppColorTheme().whiteShade,
                                       child: const Icon(
@@ -781,22 +788,22 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                         scrollDirection: Axis.horizontal,
 
                                         itemCount: TruckNavigationStaticDetails
-                                            .placeTypes
+                                            .quickPlaceTypes
                                             .length,
                                         separatorBuilder: (_, i) => 8.w,
                                         itemBuilder: (_, i) => InkWell(
                                           onTap: () {
                                             _selectedStation.value =
                                                 TruckNavigationStaticDetails
-                                                    .placeTypes[i];
+                                                    .quickPlaceTypes[i];
                                           },
                                           child: HomeUtils.placeTypeChip(
                                             TruckNavigationStaticDetails
-                                                .placeTypes[i],
+                                                .quickPlaceTypes[i],
                                             isSelected:
                                                 selectedStation['name'] ==
                                                 TruckNavigationStaticDetails
-                                                    .placeTypes[i]['name'],
+                                                    .quickPlaceTypes[i]['name'],
                                           ),
                                         ),
                                       ),
@@ -929,13 +936,13 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                                   height: 30,
                                                   decoration: BoxDecoration(
                                                     shape: BoxShape.circle,
-                                                    border: Border.all(
-                                                      color: isSelected
-                                                          ? AppColorTheme()
-                                                                .primary
-                                                          : Colors.grey,
-                                                      width: isSelected ? 2 : 1,
-                                                    ),
+                                                    // border: Border.all(
+                                                    //   color: isSelected
+                                                    //       ? AppColorTheme()
+                                                    //             .primary
+                                                    //       : Colors.grey,
+                                                    //   width: isSelected ? 2 : 1,
+                                                    // ),
                                                     color: brandIcon == null
                                                         ? brandColor
                                                               ?.withValues(
@@ -1032,41 +1039,41 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                                       .placeTypeTabOpt,
                                             ),
                                           ),
-                                          10.w,
-                                          Container(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 8,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(50),
-                                              color: const Color(0xffF5F7F9),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                Image.asset(
-                                                  AppImages.filterIcon,
-                                                  height: 24,
-                                                  width: 24,
-                                                ),
-                                                Text(
-                                                  "Filter",
-                                                  style: AppTextTheme().bodyText
-                                                      .copyWith(
-                                                        color: AppColorTheme()
-                                                            .secondary,
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
+                                          // 10.w,
+                                          // Container(
+                                          //   padding: EdgeInsets.symmetric(
+                                          //     horizontal: 12,
+                                          //     vertical: 8,
+                                          //   ),
+                                          //   decoration: BoxDecoration(
+                                          //     borderRadius:
+                                          //         BorderRadius.circular(50),
+                                          //     color: const Color(0xffF5F7F9),
+                                          //   ),
+                                          //   child: Row(
+                                          //     children: [
+                                          //       Image.asset(
+                                          //         AppImages.filterIcon,
+                                          //         height: 24,
+                                          //         width: 24,
+                                          //       ),
+                                          //       Text(
+                                          //         "Filter",
+                                          //         style: AppTextTheme().bodyText
+                                          //             .copyWith(
+                                          //               color: AppColorTheme()
+                                          //                   .secondary,
+                                          //               fontSize: 16,
+                                          //               fontWeight:
+                                          //                   FontWeight.w500,
+                                          //             ),
+                                          //       ),
+                                          //     ],
+                                          //   ),
+                                          // ),
                                         ],
                                       ),
-                                      41.h,
+                                      15.h,
                                       SizedBox(
                                         height: context.screenHeight * 0.6,
                                         child: TabBarView(
@@ -1221,47 +1228,57 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                                     }
                                                     // If no brands selected, show all places
 
-                                                    return ListView.builder(
-                                                      physics:
-                                                          BouncingScrollPhysics(),
-                                                      itemCount:
-                                                          filteredPlaces.length,
-                                                      itemBuilder: (context, index) {
-                                                        final place =
-                                                            filteredPlaces[index];
-                                                        return GestureDetector(
-                                                          onTap: () {
-                                                            context
-                                                                .read<
-                                                                  TruckStopCubit
-                                                                >()
-                                                                .showBusinessOverviewModal(
-                                                                  place,
-                                                                  fromMap:
-                                                                      false,
-                                                                );
-                                                          },
-                                                          child: Padding(
-                                                            padding:
-                                                                EdgeInsets.only(
-                                                                  bottom: 16,
-                                                                ),
-                                                            child: PlaceDisplayWidget(
-                                                              place: place
-                                                                  .toPlaceDataModel,
-                                                              image:
-                                                                  context
-                                                                      .read<
-                                                                        TruckStopCubit
-                                                                      >()
-                                                                      .placesLogoMap[place
-                                                                      .id] ??
-                                                                  '',
-                                                              isSaved: false,
+                                                    return SafeArea(
+                                                      top: false,
+
+                                                      child: ListView.builder(
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                              bottom: 100,
+                                                              top: 0,
                                                             ),
-                                                          ),
-                                                        );
-                                                      },
+                                                        // physics:
+                                                        //     BouncingScrollPhysics(),
+                                                        itemCount:
+                                                            filteredPlaces
+                                                                .length,
+                                                        itemBuilder: (context, index) {
+                                                          final place =
+                                                              filteredPlaces[index];
+                                                          return GestureDetector(
+                                                            onTap: () {
+                                                              context
+                                                                  .read<
+                                                                    TruckStopCubit
+                                                                  >()
+                                                                  .showBusinessOverviewModal(
+                                                                    place,
+                                                                    fromMap:
+                                                                        false,
+                                                                  );
+                                                            },
+                                                            child: Padding(
+                                                              padding:
+                                                                  EdgeInsets.only(
+                                                                    bottom: 16,
+                                                                  ),
+                                                              child: PlaceDisplayWidget(
+                                                                place: place
+                                                                    .toPlaceDataModel,
+                                                                image:
+                                                                    context
+                                                                        .read<
+                                                                          TruckStopCubit
+                                                                        >()
+                                                                        .placesLogoMap[place
+                                                                        .id] ??
+                                                                    '',
+                                                                isSaved: false,
+                                                              ),
+                                                            ),
+                                                          );
+                                                        },
+                                                      ),
                                                     );
                                                   },
                                                   loader: Column(
@@ -1294,47 +1311,59 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                                 );
                                               },
                                             ),
-                                            ListView.builder(
-                                              physics:
-                                                  NeverScrollableScrollPhysics(),
-                                              itemBuilder: (context, index) => GestureDetector(
-                                                // onTap: () {
-                                                //   setState(() {
-                                                //     searchTextEditController.text =
-                                                //         TruckNavigationStaticDetails
-                                                //             .placess[index]
-                                                //             .address;
-                                                //     place = TruckNavigationStaticDetails
-                                                //         .placess[index];
-                                                //   });
-                                                // },
-                                                child: PlaceDisplayWidget(
-                                                  place:
-                                                      TruckNavigationStaticDetails
-                                                          .placess[index],
-                                                  isSaved: true,
-                                                ),
-                                              ),
-                                              itemCount:
-                                                  TruckNavigationStaticDetails
-                                                      .placess
-                                                      .length,
-                                            ),
+                                            SafeArea(
+                                              top: false,
 
-                                            ListView.builder(
-                                              physics:
-                                                  NeverScrollableScrollPhysics(),
-                                              itemBuilder: (context, index) =>
-                                                  PlaceDisplayWidget(
+                                              child: ListView.builder(
+                                                padding: EdgeInsets.only(
+                                                  bottom: 100,
+                                                  top: 0,
+                                                ),
+                                                itemBuilder: (context, index) => GestureDetector(
+                                                  // onTap: () {
+                                                  //   setState(() {
+                                                  //     searchTextEditController.text =
+                                                  //         TruckNavigationStaticDetails
+                                                  //             .placess[index]
+                                                  //             .address;
+                                                  //     place = TruckNavigationStaticDetails
+                                                  //         .placess[index];
+                                                  //   });
+                                                  // },
+                                                  child: PlaceDisplayWidget(
                                                     place:
                                                         TruckNavigationStaticDetails
-                                                            .terminals[index],
+                                                            .placess[index],
                                                     isSaved: true,
                                                   ),
-                                              itemCount:
-                                                  TruckNavigationStaticDetails
-                                                      .terminals
-                                                      .length,
+                                                ),
+                                                itemCount:
+                                                    TruckNavigationStaticDetails
+                                                        .placess
+                                                        .length,
+                                              ),
+                                            ),
+
+                                            SafeArea
+                                            (
+                                                top: false,
+
+                                              child: ListView.builder(
+                                                padding: EdgeInsets.only(
+                                                  bottom: 100,
+                                                  top: 0,
+                                                ),  itemBuilder: (context, index) =>
+                                                    PlaceDisplayWidget(
+                                                      place:
+                                                          TruckNavigationStaticDetails
+                                                              .terminals[index],
+                                                      isSaved: true,
+                                                    ),
+                                                itemCount:
+                                                    TruckNavigationStaticDetails
+                                                        .terminals
+                                                        .length,
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -1432,12 +1461,13 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 if (!searchFieldFocusNode.hasFocus) ...[
                   15.h,
                   currentLocationTile(context),
-                  15.h,
+                  // 10.h,
                   DashedLine(color: Color(0xffEBEEF2)),
                   15.h,
                   GridView.builder(
                     physics: NeverScrollableScrollPhysics(),
                     shrinkWrap: true,
+                    padding: EdgeInsets.zero,
                     itemCount: TruckNavigationStaticDetails.stationList.length,
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
@@ -1568,7 +1598,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       return (state.destinationSuggestions?.data ?? [])
                               .isNotEmpty
                           ? ListView.separated(
-                            padding: EdgeInsets.symmetric(vertical: 10),
+                              padding: EdgeInsets.symmetric(vertical: 10),
                               itemBuilder: (context, index) {
                                 final Suggestion? item =
                                     state.destinationSuggestions?.data?[index];
@@ -1860,8 +1890,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
                         searchTextEditController.text = place?.title ?? '';
                       }
 
-                      minimizeBottomSheet();
+                      // minimizeBottomSheet();
                       context.read<TruckNavigationCubit>().calculateRoute();
+                      makeHalfBottomSheet();
                     },
                 title: "Trip",
                 icon: Icon(Icons.directions, color: Colors.white),
@@ -2023,7 +2054,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
     final stableScreenHeight = mq.size.height + mq.viewInsets.bottom;
     return [
       MapView(height: stableScreenHeight * 0.66),
-      if (state.isNavigating && (state.isOffRoute || state.isRecalculatingRoute))
+      if (state.isNavigating &&
+          (state.isOffRoute || state.isRecalculatingRoute))
         BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
           buildWhen: (p, c) =>
               p.isOffRoute != c.isOffRoute ||
@@ -2059,12 +2091,17 @@ class _HomeMobileViewState extends State<HomeMobileView>
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         else
-                          Icon(Icons.warning_amber_rounded,
-                              color: Colors.white, size: 22),
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
                         SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -2180,7 +2217,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                   state.currentRoute
                                           ?.getAdjustedDistanceToManeuver(
                                             nextManuever.maneuverIndex,
-                                            nextManuever.remainingDistanceInMeters
+                                            nextManuever
+                                                .remainingDistanceInMeters
                                                 .toDouble(),
                                             state.currentNavigationLocation,
                                           )
@@ -2526,12 +2564,10 @@ class _HomeMobileViewState extends State<HomeMobileView>
 
       CustomDragableWidget(
         scrollController: navigationSheetScrollController,
-        initialSize:  0.34,
-        miniSize:  0.34,
+        initialSize: 0.34,
+        miniSize: 0.34,
         maxSize: state.isNavigationCompleted ? 0.34 : 0.95,
-        snapSizes: state.isNavigationCompleted
-            ? [0.34]
-            : [ 0.34, 0.55, 0.95],
+        snapSizes: state.isNavigationCompleted ? [0.34] : [0.34, 0.55, 0.95],
 
         bottomWidget: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
@@ -2639,8 +2675,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   p.remainingDuration != c.remainingDuration ||
                   p.currentRoute != c.currentRoute ||
                   p.isNavigating != c.isNavigating,
-              builder: (context, state) =>
-                  _RemainingRouteStats(state: state),
+              builder: (context, state) => _RemainingRouteStats(state: state),
             ),
             20.h,
             DashedLine(),
@@ -2789,8 +2824,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
                         state.destinationFromRecent?.title ?? '';
                   }
 
-                  minimizeBottomSheet();
+                  // minimizeBottomSheet();
                   context.read<TruckNavigationCubit>().calculateRoute();
+                  makeHalfBottomSheet();
                 },
                 child: CircleAvatar(
                   radius: 24,
@@ -2817,8 +2853,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       searchTextEditController.text = place?.title ?? '';
                     }
 
-                    minimizeBottomSheet();
+                    // minimizeBottomSheet();
                     context.read<TruckNavigationCubit>().calculateRoute();
+                    makeHalfBottomSheet();
                   },
                   child: CircleAvatar(
                     radius: 24,
@@ -3198,7 +3235,8 @@ class _RemainingRouteStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final useRemaining = state.isNavigating &&
+    final useRemaining =
+        state.isNavigating &&
         state.remainingDuration != null &&
         state.remainingDistanceInMeters != null;
 

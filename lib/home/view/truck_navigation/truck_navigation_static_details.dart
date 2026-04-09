@@ -39,6 +39,17 @@ class TruckNavigationStaticDetails {
     {'name': "KwikTrip", 'icon': 'assets/images/kwik_trip_icon.png'},
   ];
 
+
+   static const List<Map<String, String>> quickPlaceTypes = [
+    {"name": "Truck stops", 'icon': 'assets/images/Icon (27).png'},
+    {'name': "Weight stations", 'icon': 'assets/images/Icon (22).png'},
+    {'name': "Parking", 'icon': 'assets/images/Icon (23).png'},
+    {'name': "Rest areas", 'icon': 'assets/images/Icon (26).png'},
+    {"name": "Truck Washes", 'icon': 'assets/images/Icon (4).png'},
+    {"name": "Scales", 'icon': 'assets/images/Icon (6).png'},
+  ];
+
+
   static const List<Map<String, String>> placeTypes = [
     {"name": "Truck stops", 'icon': 'assets/images/Icon (27).png'},
     {'name': "Weight stations", 'icon': 'assets/images/Icon (22).png'},

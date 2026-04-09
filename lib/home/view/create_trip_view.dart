@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
+import 'package:ommo/home/view/home_mobile_view.dart';
 import 'package:ommo/home/view/home_utils.dart';
+import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
 import 'package:ommo/logic/cubit/create_trip/create_trip_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
@@ -26,6 +28,7 @@ class _CreateTripViewState extends State<CreateTripView> {
   late final FocusNode startFocus;
   late final FocusNode destinationFocus;
   late CreateTripCubit _cubit;
+
 
   @override
   void initState() {
@@ -94,7 +97,9 @@ class _CreateTripViewState extends State<CreateTripView> {
             final createTripCubit = context.read<CreateTripCubit>();
             final recentSearchCubit = context.read<RecentSearchCubit>();
             return Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppTheme.horizontalPadding),
+              padding: EdgeInsets.symmetric(
+                horizontal: AppTheme.horizontalPadding,
+              ),
               child: Column(
                 children: [
                   buildHeader(context),
@@ -138,8 +143,8 @@ class _CreateTripViewState extends State<CreateTripView> {
                             createTripCubit.selectDestinationPlace(place);
                             destinationController.text =
                                 place is RecentSearchModel
-                                    ? place.formattedTitle
-                                    : (place as Place).formattedTitle;
+                                ? place.formattedTitle
+                                : (place as Place).formattedTitle;
                             // Navigator.pop(context);
                           },
                         );
@@ -160,7 +165,61 @@ class _CreateTripViewState extends State<CreateTripView> {
   }
 
   Widget buildContent(BuildContext context) {
-    return SizedBox.shrink();
+    // return SizedBox.shrink();
+    return DefaultTabController(
+      length: TruckNavigationStaticDetails.locationOpt.length,
+      child: Column(
+        children: [
+          10.h,
+      
+          CustomTabBarWidget(
+            options: TruckNavigationStaticDetails.locationOpt,
+            // tabController: _tabController,
+          ),
+      
+          15.h,
+          SizedBox(
+            height: context.screenHeight * 0.6,
+            child: TabBarView(
+              // controller: _tabController,
+              children: [
+                HomeUtils.showRecentSearches(
+                  context,
+                  onSelect: (searchHistory) {
+                    // searchTextEditController.text = searchHistory.title;
+                    context
+                        .read<TruckNavigationCubit>()
+                        .selectRecentAsDestination(searchHistory);
+                    Navigator.pop(context);
+                    // makeHalfBottomSheet();
+                  },
+                ),
+      
+                ListView.builder(
+                  physics: NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, index) => GestureDetector(
+                    child: PlaceDisplayWidget(
+                      place: TruckNavigationStaticDetails.placess[index],
+                      isSaved: true,
+                    ),
+                  ),
+                  itemCount: TruckNavigationStaticDetails.placess.length,
+                ),
+      
+                ListView.builder(
+                  physics: NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, index) => PlaceDisplayWidget(
+                    place: TruckNavigationStaticDetails.terminals[index],
+                    isSaved: true,
+                  ),
+                  itemCount: TruckNavigationStaticDetails.terminals.length,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget buildHeader(BuildContext context) {
