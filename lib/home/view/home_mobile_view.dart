@@ -2558,19 +2558,22 @@ class _HomeMobileViewState extends State<HomeMobileView>
         maxSize: state.isNavigationCompleted ? 0.34 : 0.95,
         snapSizes: state.isNavigationCompleted ? [0.34] : [0.34, 0.55, 0.95],
 
-        bottomWidget: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-          child: CustomButtonWidget(
-            bgColor: AppColorTheme().red2,
-            textColor: Colors.white,
-            icon: Icon(Icons.double_arrow, color: Colors.white, size: 18),
-            isRightSide: true,
-            title: "End Trip",
-            onPressed: () {
-              context.read<TruckNavigationCubit>().stopNavigation();
-              searchTextEditController.clear();
-              // TruckNavigationUtils.saveDialog(context);
-            },
+        bottomWidget: SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+            child: CustomButtonWidget(
+              bgColor: AppColorTheme().red2,
+              textColor: Colors.white,
+              icon: Icon(Icons.double_arrow, color: Colors.white, size: 18),
+              isRightSide: true,
+              title: "End Trip",
+              onPressed: () {
+                context.read<TruckNavigationCubit>().stopNavigation();
+                searchTextEditController.clear();
+                // TruckNavigationUtils.saveDialog(context);
+              },
+            ),
           ),
         ),
         childrens: [

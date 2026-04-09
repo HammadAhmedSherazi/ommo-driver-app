@@ -82,6 +82,13 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     {'name': "Other", 'icon': 'assets/images/Icon (27).png'},
   ];
 
+  /// Map pin / list row logo for Pilot-branded stops (title says Pilot, not Flying J).
+  static const String pilotTruckStopLogoAsset = 'assets/images/pilot_logo.jpeg';
+
+  /// Map pin / list row logo for Flying J–branded stops. Replace asset with official artwork if needed.
+  static const String flyingJTruckStopLogoAsset =
+      'assets/images/flying_j_logo.png';
+
   /// Get default brand names (excluding "Other")
   List<String> get _defaultBrandNames => defaultBrands
       .where((brand) => brand['name'] != 'Other')
@@ -573,7 +580,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
       return "Love's";
     }
 
-    // Pilot/Flying J (check both variations)
+    // Pilot / Flying J (one filter key; marker icon picks Pilot vs Flying J from title)
     if (titleLower.contains("pilot") ||
         titleLower.contains("flying j") ||
         titleLower.contains("flyingj") ||
@@ -613,6 +620,20 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
       }
     }
     return null;
+  }
+
+  /// Logo asset for map markers and [placesLogoMap] — Pilot vs Flying J from [place.title].
+  String? getBrandMarkerIconPath(Place place) {
+    final brand = getBrandFromPlace(place);
+    if (brand == null) return null;
+    if (brand != 'Pilot/Flying J') {
+      return _getBrandIconPath(brand);
+    }
+    final t = place.title.toLowerCase();
+    if (t.contains('flying j') || t.contains('flyingj')) {
+      return flyingJTruckStopLogoAsset;
+    }
+    return pilotTruckStopLogoAsset;
   }
 
   /// Get deterministic color for a brand from predefined brand colors
@@ -864,7 +885,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
 
       if (!isBrandSelected) continue;
 
-      final iconPath = _getBrandIconPath(brand);
+      final iconPath = getBrandMarkerIconPath(place);
       imageFutures.add(
         () async {
           final MapImage markerImage;
