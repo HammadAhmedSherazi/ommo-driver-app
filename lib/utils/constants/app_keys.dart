@@ -13,7 +13,7 @@ class AppKeys {
 
   final String accessKeyId = "nD9uaWDaZEmcHFyirUGFZw";
 
-  final bool isSimulation = true;
+  final bool isSimulation = false;
 
   final GeoCoordinates startCoordinates = GeoCoordinates(
     33.6711909,
