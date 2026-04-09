@@ -1127,16 +1127,19 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       TextQuery.withArea(query, queryArea),
       searchOptions,
       (SearchError? searchError, List<Suggestion>? list) {
-        
         for (Suggestion element in list ?? []) {
           log("element: ${element.place?.id}");
           log("element: ${element.place?.title}");
           log("element: ${element.place?.address.addressText}");
         }
-        final filteredList = list?.where((element) => element.place?.id != null).toList();
+        final filteredList = list
+            ?.where((element) => element.place?.id != null)
+            .toList();
         if (filteredList != null) {
           emit(
-            state.copyWith(destinationSuggestions: FutureData.completed(filteredList)),
+            state.copyWith(
+              destinationSuggestions: FutureData.completed(filteredList),
+            ),
           );
         } else {
           emit(
@@ -1619,12 +1622,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     }
 
     try {
-       emit(
-          state.copyWith(
-            isNavigating: true,
-          ),
-        );
-        _updateCurrentLocationMarker() ;
+      emit(state.copyWith(isNavigating: true));
+      _updateCurrentLocationMarker();
       WakeLockUtils.enable();
       _visualNavigator?.route = state.currentRoute!;
       _visualNavigator?.startRendering(state.mapController!);
@@ -2203,7 +2202,16 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     if (startPoint.isMyLocation) {
       _clearCurrentLocationMarker();
     }
-    final MapImage markerIcon = await _createStopMarkerImage(null, 60.0);
+    MapImage markerIcon;
+    if (startPoint.isMyLocation) {
+      markerIcon = MapImage.withFilePathAndWidthAndHeight(
+        AppIcons.myLocIcon,
+        60,
+        60,
+      );
+    } else {
+      markerIcon = await _createStopMarkerImage(null, 60.0);
+    }
     _startMarker = MapMarker(startCoordinates, markerIcon);
     final metadata = Metadata();
     metadata.setString("marker_type", "start");
