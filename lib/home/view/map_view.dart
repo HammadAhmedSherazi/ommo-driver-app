@@ -66,18 +66,18 @@ class MapViewState extends State<MapView> {
     // Platform views (HereMap) often flash black when their size changes. With
     // resizeToAvoidBottomInset, the keyboard shrinks MediaQuery.size — treat
     // layout height as full window using viewInsets so the map size stays stable.
-    final mq = MediaQuery.of(context);
-    final fullHeight = mq.size.height + mq.viewInsets.bottom;
-    final fullWidth = mq.size.width;
-    final h = widget.height ?? fullHeight * 0.75;
+    // final mq = MediaQuery.of(context);
+    // final fullHeight = mq.size.height + mq.viewInsets.bottom;
+    // final fullWidth = mq.size.width;
+    // final h = widget.height ?? fullHeight * 0.75;
 
     return BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
       buildWhen: (previous, current) =>
           previous.mapController != current.mapController,
       builder: (context, state) {
         return SizedBox(
-          height: h,
-          width: fullWidth,
+          height: widget.height ?? double.infinity,
+          width: double.infinity,
           child: HereMap(
             onMapCreated: context.read<TruckNavigationCubit>().onMapCreated,
           ),
