@@ -29,7 +29,6 @@ class _CreateTripViewState extends State<CreateTripView> {
   late final FocusNode destinationFocus;
   late CreateTripCubit _cubit;
 
-
   @override
   void initState() {
     super.initState();
@@ -166,17 +165,19 @@ class _CreateTripViewState extends State<CreateTripView> {
 
   Widget buildContent(BuildContext context) {
     // return SizedBox.shrink();
+    final createTripCubit = context.read<CreateTripCubit>();
+
     return DefaultTabController(
       length: TruckNavigationStaticDetails.locationOpt.length,
       child: Column(
         children: [
           10.h,
-      
+
           CustomTabBarWidget(
             options: TruckNavigationStaticDetails.locationOpt,
             // tabController: _tabController,
           ),
-      
+
           15.h,
           SizedBox(
             height: context.screenHeight * 0.6,
@@ -186,15 +187,19 @@ class _CreateTripViewState extends State<CreateTripView> {
                 HomeUtils.showRecentSearches(
                   context,
                   onSelect: (searchHistory) {
-                    // searchTextEditController.text = searchHistory.title;
-                    context
-                        .read<TruckNavigationCubit>()
-                        .selectRecentAsDestination(searchHistory);
-                    Navigator.pop(context);
-                    // makeHalfBottomSheet();
+                    createTripCubit.selectDestinationPlace(searchHistory);
+                    destinationController.text = searchHistory.formattedTitle;
+                    // Navigator.pop(context);
                   },
+                  // searchTextEditController.text = searchHistory.title;
+                  // context
+                  //     .read<TruckNavigationCubit>()
+                  //     .selectRecentAsDestination(searchHistory);
+                  // Navigator.pop(context);
+                  // makeHalfBottomSheet();
+                  // },
                 ),
-      
+
                 ListView.builder(
                   physics: NeverScrollableScrollPhysics(),
                   itemBuilder: (context, index) => GestureDetector(
@@ -205,7 +210,7 @@ class _CreateTripViewState extends State<CreateTripView> {
                   ),
                   itemCount: TruckNavigationStaticDetails.placess.length,
                 ),
-      
+
                 ListView.builder(
                   physics: NeverScrollableScrollPhysics(),
                   itemBuilder: (context, index) => PlaceDisplayWidget(

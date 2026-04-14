@@ -1227,53 +1227,57 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                                       }
                                                     }
                                                     // If no brands selected, show all places
+                                                    if (selectedBrands
+                                                        .isEmpty) {
+                                                      return SizedBox.shrink();
+                                                    }
 
                                                     return SheetScrollBridge(
                                                       child: ListView.builder(
-                                                      padding:
-                                                          EdgeInsets.zero,
-                                                      physics:
-                                                          BouncingScrollPhysics(),
-                                                      itemCount:
-                                                          filteredPlaces
-                                                              .length,
-                                                      itemBuilder: (context, index) {
-                                                        final place =
-                                                            filteredPlaces[index];
-                                                        return GestureDetector(
-                                                          onTap: () {
-                                                            context
-                                                                .read<
-                                                                  TruckStopCubit
-                                                                >()
-                                                                .showBusinessOverviewModal(
-                                                                  place,
-                                                                  fromMap:
-                                                                      false,
-                                                                );
-                                                          },
-                                                          child: Padding(
-                                                            padding:
-                                                                EdgeInsets.only(
-                                                                  bottom: 16,
-                                                                ),
-                                                            child: PlaceDisplayWidget(
-                                                              place: place
-                                                                  .toPlaceDataModel,
-                                                              image:
-                                                                  context
-                                                                      .read<
-                                                                        TruckStopCubit
-                                                                      >()
-                                                                      .placesLogoMap[place
-                                                                      .id] ??
-                                                                  '',
-                                                              isSaved: false,
+                                                        padding:
+                                                            EdgeInsets.zero,
+                                                        physics:
+                                                            BouncingScrollPhysics(),
+                                                        itemCount:
+                                                            filteredPlaces
+                                                                .length,
+                                                        itemBuilder: (context, index) {
+                                                          final place =
+                                                              filteredPlaces[index];
+                                                          return GestureDetector(
+                                                            onTap: () {
+                                                              context
+                                                                  .read<
+                                                                    TruckStopCubit
+                                                                  >()
+                                                                  .showBusinessOverviewModal(
+                                                                    place,
+                                                                    fromMap:
+                                                                        false,
+                                                                  );
+                                                            },
+                                                            child: Padding(
+                                                              padding:
+                                                                  EdgeInsets.only(
+                                                                    bottom: 16,
+                                                                  ),
+                                                              child: PlaceDisplayWidget(
+                                                                place: place
+                                                                    .toPlaceDataModel,
+                                                                image:
+                                                                    context
+                                                                        .read<
+                                                                          TruckStopCubit
+                                                                        >()
+                                                                        .placesLogoMap[place
+                                                                        .id] ??
+                                                                    '',
+                                                                isSaved: false,
+                                                              ),
                                                             ),
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
+                                                          );
+                                                        },
+                                                      ),
                                                     );
                                                   },
                                                   loader: Column(
@@ -1307,7 +1311,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                               },
                                             ),
                                             SheetScrollBridge(
-                                                child: ListView.builder(
+                                              child: ListView.builder(
                                                 padding: EdgeInsets.zero,
                                                 physics:
                                                     BouncingScrollPhysics(),
@@ -1337,7 +1341,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                             ),
 
                                             SheetScrollBridge(
-                                                child: ListView.builder(
+                                              child: ListView.builder(
                                                 padding: EdgeInsets.zero,
                                                 physics:
                                                     BouncingScrollPhysics(),
@@ -1353,7 +1357,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                                         .terminals
                                                         .length,
                                               ),
-                                              ),
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -1415,7 +1419,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                           Helpers.openBottomSheet(
                             context: context,
                             whenComplete: () {
-                              minimizeBottomSheet();
+                              makeHalfBottomSheet();
                             },
                             child: CreateTripView(),
                           );
@@ -2040,9 +2044,10 @@ class _HomeMobileViewState extends State<HomeMobileView>
 
   List<Widget> buildNavigationUi(TruckNavigationState state) {
     final mq = MediaQuery.of(context);
-    final stableScreenHeight = mq.size.height + mq.viewInsets.bottom;
+    // final stableScreenHeight = mq.size.height + mq.viewInsets.bottom;
     return [
-      MapView(height: stableScreenHeight * 0.66),
+      // MapView(height: 500),
+      MapView(height: mq.size.height * 0.66),
       if (state.isNavigating &&
           (state.isOffRoute || state.isRecalculatingRoute))
         BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
@@ -2376,7 +2381,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
           valueListenable: navigationSheetHeight,
           builder: (context, sheetHeight, child) {
             // Calculate bottom position: sheet height + padding (20px)
-            final bottomPosition = (sheetHeight > 0 ? sheetHeight + 20 : 285)
+            final bottomPosition = (sheetHeight > 0 ? sheetHeight + 20 : 330)
                 .toDouble();
             return Positioned(
               bottom: bottomPosition,
@@ -2478,7 +2483,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
           final bottomPosition =
               (sheetHeight > 0
                       ? sheetHeight + 20
-                      : (state.isNavigationCompleted ? 220.0 : 300.0))
+                      : (state.isNavigationCompleted ? 250.0 : 330.0))
                   .toDouble();
           return Positioned(
             bottom: bottomPosition,
