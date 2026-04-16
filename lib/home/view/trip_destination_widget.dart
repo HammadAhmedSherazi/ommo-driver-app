@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
@@ -16,6 +15,8 @@ class TripDestinationWidget extends StatefulWidget {
 }
 
 class _TripDestinationWidgetState extends State<TripDestinationWidget> {
+  
+  
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
@@ -23,6 +24,8 @@ class _TripDestinationWidgetState extends State<TripDestinationWidget> {
           previous.locationPoints != current.locationPoints,
       builder: (context, state) {
         final points = state.locationPoints ?? [];
+
+
         return Column(
           children: [
             Row(
@@ -142,14 +145,13 @@ class _TripDestinationWidgetState extends State<TripDestinationWidget> {
                                       (p) => !p.isMyLocation);
                                   HomeUtils.editLocationSheet(
                                     context,
-                                    showMyLocationOption: noStopHasMyLocation,
+                                    showMyLocationOption:
+                                        noStopHasMyLocation || points[i].isMyLocation,
                                     onMyLocationSelected: () {
-                                      final cubit = context.read<TruckNavigationCubit>();
-                                      final place = cubit.state.currentPlace?.data;
-                                      if (place != null) {
-                                        cubit.editStop(i, place, isMyLocation: true);
-                                      }
-                                      context.popPage();
+                                      context.read<TruckNavigationCubit>().refreshStopWithCurrentLocation(
+                                            i,
+                                            onComplete: () => context.popPage(),
+                                          );
                                     },
                                     onContinue: (updatedPlace) {
                                       context
@@ -216,12 +218,9 @@ class _TripDestinationWidgetState extends State<TripDestinationWidget> {
                   context,
                   showMyLocationOption: noStopHasMyLocation,
                   onMyLocationSelected: () {
-                    final cubit = context.read<TruckNavigationCubit>();
-                    final place = cubit.state.currentPlace?.data;
-                    if (place != null) {
-                      cubit.addStop(place, isMyLocation: true);
-                    }
-                    context.popPage();
+                    context.read<TruckNavigationCubit>().addStopWithCurrentLocation(
+                          onComplete: () => context.popPage(),
+                        );
                   },
                   onContinue: (place) {
                     context.read<TruckNavigationCubit>().addStop(place);

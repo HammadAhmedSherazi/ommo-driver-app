@@ -5,7 +5,6 @@ import 'package:here_sdk/search.dart';
 import 'package:ommo/app/views/app_view.dart';
 import 'package:ommo/logic/cubit/create_trip/create_trip_state.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
-import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/models/location_point_model.dart';
 import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
 
@@ -74,7 +73,8 @@ class CreateTripCubit extends Cubit<CreateTripState> {
       state.copyWith(
         hasStartFocus: hasFocus ? hasFocus : null,
         showRecentTab: value.isEmpty,
-        showYourLocationTab: hasFocus && !state.isMyLocationSelected,
+        // Allow choosing "Your location" again to refresh coords even when already selected.
+        showYourLocationTab: hasFocus,
       ),
     );
   }
@@ -94,13 +94,45 @@ class CreateTripCubit extends Cubit<CreateTripState> {
 
   // Suggestion selection
   void selectCurrentAsStartingPlace() {
-    emit(
-      state.copyWith(
-        startPoint: state.currentStartPoint,
-        showYourLocationTab: false,
-      ),
+    final navigationCubit = navigatorKey.currentContext
+        ?.read<TruckNavigationCubit>();
+    if (navigationCubit == null) {
+      emit(
+        state.copyWith(
+          startPoint: state.currentStartPoint,
+          showYourLocationTab: false,
+        ),
+      );
+      _checkIfBothEntered();
+      return;
+    }
+    navigationCubit.getCurrentLocationPlace(
+      onComplete: (Place? place) {
+        if (isClosed) return;
+        if (place != null) {
+          final startPoint = LocationPoint(
+            place: place,
+            isMyLocation: true,
+            pointType: LocationPointType.starting,
+          );
+          emit(
+            state.copyWith(
+              startPoint: startPoint,
+              currentStartPoint: startPoint,
+              showYourLocationTab: false,
+            ),
+          );
+        } else {
+          emit(
+            state.copyWith(
+              startPoint: state.currentStartPoint,
+              showYourLocationTab: false,
+            ),
+          );
+        }
+        _checkIfBothEntered();
+      },
     );
-    _checkIfBothEntered();
   }
 
   void selectSuggestion(dynamic place) {

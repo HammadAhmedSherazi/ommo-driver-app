@@ -56,11 +56,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   bool isFirstTimeLocationGet = true;
   MapCameraListener? _mapCameraListener;
   Timer? _mapInteractionDebounceTimer;
-  static const double _offRouteThresholdMeters =
-      3.084; // Distance threshold for off-route detection
-  static const double _myLocationOffThresholdMeters =
-      3.084; // Distance threshold for off-route detection
-  // 50.0; // Distance threshold for off-route detection
+  /// Lateral distance from route polyline before treating as off-route.
+  /// Must be well above typical GPS error (often 5–15 m) and lane offset from centerline.
+  static const double _offRouteThresholdMeters = 50.0;
+  /// Minimum movement before updating the map “my location” marker when not navigating.
+  static const double _myLocationOffThresholdMeters = 50.0;
   static const int _offRouteConfirmationCount =
       3; // Consecutive off-route samples before triggering recalculation
   static const int _recalculationCooldownSeconds =
@@ -509,24 +509,33 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   void _checkOffRouteAndRecalculateIfNeeded(GeoCoordinates coords) {
     if (!state.isNavigating ||
         state.currentRoute == null ||
-        state.isRecalculatingRoute ||
         state.isNavigationCompleted) {
       _offRouteConsecutiveCount = 0;
       return;
     }
-    if (_lastRecalculationTime != null) {
-      final elapsed = DateTime.now().difference(_lastRecalculationTime!);
-      if (elapsed.inSeconds < _recalculationCooldownSeconds) return;
+
+    if (state.isRecalculatingRoute) {
+      return;
     }
+
     final double distanceToRoute = _getDistanceFromPointToRoute(
       coords,
       state.currentRoute!,
     );
+
+    final bool inRecalculationCooldown = _lastRecalculationTime != null &&
+        DateTime.now().difference(_lastRecalculationTime!).inSeconds <
+            _recalculationCooldownSeconds;
+
     if (distanceToRoute > _offRouteThresholdMeters) {
-      _offRouteConsecutiveCount++;
       if (!state.isOffRoute) {
         emit(state.copyWith(isOffRoute: true));
       }
+      // During cooldown, do not accumulate toward another reroute (avoids a burst right after reroute).
+      if (inRecalculationCooldown) {
+        return;
+      }
+      _offRouteConsecutiveCount++;
       if (_offRouteConsecutiveCount >= _offRouteConfirmationCount) {
         _offRouteConsecutiveCount = 0;
         _recalculateRouteFromCurrentPosition(coords);
@@ -563,6 +572,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     ) {
       emit(state.copyWith(isRecalculatingRoute: false));
       if (error != null || routes == null || routes.isEmpty) {
+        // Apply cooldown on failure too, otherwise GPS ticks immediately re-trigger reroutes.
+        _lastRecalculationTime = DateTime.now();
         emit(state.copyWith(isOffRoute: true));
         if (navigatorKey.currentContext != null) {
           SnackbarUtils.showErrorSnackBar(
@@ -1070,7 +1081,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     }
   }
 
-  Future<void> getCurrentLocationPlace() async {
+  Future<void> getCurrentLocationPlace({
+    void Function(Place? place)? onComplete,
+  }) async {
     if (state.startCoordinates == null) {
       emit(
         state.copyWith(
@@ -1079,6 +1092,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
           ),
         ),
       );
+      onComplete?.call(null);
       return;
     }
 
@@ -1093,10 +1107,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     ) {
       if (error != null) {
         log("Reverse geocoding failed: $error");
+        onComplete?.call(null);
         return;
       }
       if (places != null && places.isNotEmpty) {
         emit(state.copyWith(currentPlace: FutureData.completed(places.first)));
+        onComplete?.call(places.first);
       } else {
         emit(
           state.copyWith(
@@ -1105,8 +1121,41 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
             ),
           ),
         );
+        onComplete?.call(null);
       }
     });
+  }
+
+  /// Re-resolve current GPS to a [Place] and apply it to a stop (e.g. user taps "My location" again).
+  void refreshStopWithCurrentLocation(int index, {void Function()? onComplete}) {
+    if ((state.locationPoints ?? []).isEmpty) {
+      onComplete?.call();
+      return;
+    }
+    if (index < 0 || index >= state.locationPoints!.length) {
+      onComplete?.call();
+      return;
+    }
+    getCurrentLocationPlace(
+      onComplete: (place) {
+        if (place != null) {
+          editStop(index, place, isMyLocation: true);
+        }
+        onComplete?.call();
+      },
+    );
+  }
+
+  /// Add a stop at the current GPS position using a fresh reverse-geocode.
+  void addStopWithCurrentLocation({void Function()? onComplete}) {
+    getCurrentLocationPlace(
+      onComplete: (place) {
+        if (place != null) {
+          addStop(place, isMyLocation: true);
+        }
+        onComplete?.call();
+      },
+    );
   }
 
   /// Routing and Navigation Functions
