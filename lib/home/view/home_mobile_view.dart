@@ -17,8 +17,10 @@ import 'package:ommo/home/view/trip_destination_widget.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_utils.dart';
 import 'package:ommo/home/view/truck_specification/truck_specification_utils.dart';
+import 'package:ommo/logic/cubit/route_truck_specs/route_truck_specification_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
+import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state.dart';
 import 'package:ommo/logic/cubit/truck_stops/truck_stop_cubit.dart';
 import 'package:ommo/logic/cubit/truck_stops/truck_stops_state.dart';
 import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
@@ -650,9 +652,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
                           context,
                           onEditSuccess: () {
                             // minimizeBottomSheet();
-                            context
-                                .read<TruckNavigationCubit>()
-                                .calculateRoute();
+                            // context
+                            //     .read<TruckNavigationCubit>()
+                            //     .calculateRoute(isRecalculating: true);
                             makeHalfBottomSheet();
                           },
                         );
@@ -668,35 +670,61 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     ),
                   ],
                 ),
-                Wrap(
-                  spacing: 5,
-                  children: List.generate(
-                    TruckNavigationStaticDetails.settingChipsList.length,
-                    (index) => Chip(
-                      deleteIconColor: AppColorTheme().secondary,
-                      onDeleted: () {
-                        setState(() {
-                          TruckNavigationStaticDetails.settingChipsList
-                              .removeAt(index);
-                        });
-                      },
-                      deleteIconBoxConstraints: BoxConstraints(
-                        maxHeight: 24,
-                        maxWidth: 24,
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: 0, horizontal: 3),
-                      backgroundColor: Color(0xffF4F6F8),
-                      deleteIcon: Icon(Icons.cancel),
+                BlocBuilder<
+                  RouteTruckSpecificationsCubit,
+                  TruckSpecificationState
+                >(
+                  buildWhen: (p, c) => p.avoidance != c.avoidance,
+                  builder: (context, state) {
+                    final avoidance = {...state.avoidance};
+                    avoidance.removeWhere((key, value) => value == false);
+                    return Wrap(
+                      spacing: 5,
+                      children: List.generate(
+                        avoidance.length,
+                        (index) => Chip(
+                          deleteIconColor: AppColorTheme().secondary,
+                          onDeleted: () {
+                            context
+                                .read<RouteTruckSpecificationsCubit>()
+                                .toggleAvoidance(
+                                  state.avoidance.entries.elementAt(index).key,
+                                );
+                            context.read<TruckNavigationCubit>().calculateRoute(
+                              isRecalculating: true,
+                            );
+                            // setState(() {
+                            //   TruckNavigationStaticDetails.settingChipsList
+                            //       .removeAt(index);
+                            // });
+                          },
+                          deleteIconBoxConstraints: BoxConstraints(
+                            maxHeight: 24,
+                            maxWidth: 24,
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            vertical: 0,
+                            horizontal: 3,
+                          ),
+                          backgroundColor: Color(0xffF4F6F8),
+                          deleteIcon: Icon(Icons.cancel),
 
-                      label: Text(
-                        TruckNavigationStaticDetails.settingChipsList[index],
+                          label: Text(
+
+                            TruckSpecificationUtils.setRestrictiontitle(
+                                state.avoidance.entries.elementAt(index).key,
+                              ),
+                            // TruckNavigationStaticDetails
+                            //     .settingChipsList[index],
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(50),
+                            side: BorderSide(color: Colors.transparent),
+                          ),
+                        ),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(50),
-                        side: BorderSide(color: Colors.transparent),
-                      ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ] else if (hasTapDirection) ...[
                 BlocBuilder<TruckNavigationCubit, TruckNavigationState>(
@@ -1884,7 +1912,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
                       }
 
                       // minimizeBottomSheet();
-                      context.read<TruckNavigationCubit>().calculateRoute();
+                      context.read<TruckNavigationCubit>().calculateRoute(
+                        isRecalculating: false,
+                      );
                       makeHalfBottomSheet();
                     },
                 title: "Trip",
@@ -2851,7 +2881,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     }
 
                     // minimizeBottomSheet();
-                    context.read<TruckNavigationCubit>().calculateRoute();
+                    context.read<TruckNavigationCubit>().calculateRoute(
+                      isRecalculating: false,
+                    );
                     makeHalfBottomSheet();
                   },
                   child: CircleAvatar(

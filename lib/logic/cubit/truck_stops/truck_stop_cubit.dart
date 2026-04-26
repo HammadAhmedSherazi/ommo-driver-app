@@ -83,7 +83,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
   ];
 
   /// Map pin / list row logo for Pilot-branded stops (title says Pilot, not Flying J).
-  static const String pilotTruckStopLogoAsset = 'assets/images/pilot_logo.jpeg';
+  static const String pilotTruckStopLogoAsset = 'assets/images/pilot_logo1.png';
 
   /// Map pin / list row logo for Flying J–branded stops. Replace asset with official artwork if needed.
   static const String flyingJTruckStopLogoAsset =
@@ -1344,7 +1344,9 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
 
     // Weight stations / Scales
     if (name.contains('weight station') || name.contains('scales')) {
-      return ['700-7900-0134', '400-4200-0048']; // Weigh station
+      return [
+        // '700-7900-0134',
+         '400-4200-0048']; // Weigh station
     }
 
     // Fuel

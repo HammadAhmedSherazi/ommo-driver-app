@@ -4,6 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:ommo/app/views/app_view.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/home/view/home_mobile_view.dart';
+import 'package:ommo/logic/cubit/route_truck_specs/route_truck_specification_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specification_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state.dart';
@@ -11,8 +12,8 @@ import 'package:ommo/utils/helpers/validation.dart';
 import 'package:ommo/utils/utils.dart';
 
 class EditTruckSpecificationsView extends StatefulWidget {
-  final VoidCallback? onEditSuccess;
-  const EditTruckSpecificationsView({super.key, this.onEditSuccess});
+  final bool hasRoute;
+  const EditTruckSpecificationsView({super.key, this.hasRoute = false});
 
   @override
   State<EditTruckSpecificationsView> createState() =>
@@ -52,9 +53,24 @@ class _EditTruckSpecificationsViewState
   @override
   void initState() {
     super.initState();
-    context.read<TruckSpecificationsCubit>().initEditState();
-    final initialState = context.read<TruckSpecificationsCubit>().initialState;
+    // late var truckSpecsCubit;
+    if (widget.hasRoute) {
+      final truckSpecsCubit = context.read<RouteTruckSpecificationsCubit>();
+      truckSpecsCubit.initEditState();
+      final initialState = truckSpecsCubit.initialState;
+      setControllers(initialState);
+    } else {
+      final truckSpecsCubit = context.read<TruckSpecificationsCubit>();
+      truckSpecsCubit.initEditState();
+      final initialState = truckSpecsCubit.initialState;
+      setControllers(initialState);
+    }
 
+    // truckSpecsCubit.initEditState();
+    // final initialState = truckSpecsCubit.initialState;
+  }
+
+  setControllers(initialState) {
     lengthFeetController = TextEditingController(
       text: initialState['lengthInFeet'] ?? '',
     );
@@ -98,15 +114,38 @@ class _EditTruckSpecificationsViewState
     widthInchController.dispose();
     weightController.dispose();
     weightPerAxleController.dispose();
-    navigatorKey.currentContext
-        ?.read<TruckSpecificationsCubit>()
-        .clearEditState();
+    // navigatorKey.currentContext
+    //     ?.read<TruckSpecificationsCubit>()
+    //     .clearEditState();
+    if (widget.hasRoute) {
+      navigatorKey.currentContext
+          ?.read<RouteTruckSpecificationsCubit>()
+          .clearEditState();
+    } else {
+      navigatorKey.currentContext
+          ?.read<TruckSpecificationsCubit>()
+          .clearEditState();
+    }
     super.dispose();
+  }
+
+  madeChanges(dynamic key, dynamic value) {
+    if (widget.hasRoute) {
+      context.read<RouteTruckSpecificationsCubit>().setEditState(key, value);
+    } else {
+      context.read<TruckSpecificationsCubit>().setEditState(key, value);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final truckSpecsCubit = context.read<TruckSpecificationsCubit>();
+    // late var truckSpecsCubit;
+    // if (widget.hasRoute) {
+    //   truckSpecsCubit = context.read<RouteTruckSpecificationsCubit>();
+    // } else {
+    //   truckSpecsCubit = context.read<TruckSpecificationsCubit>();
+    // }
+    // final truckSpecsCubit = context.read<TruckSpecificationsCubit>();
     return SizedBox(
       height: context.screenHeight * 0.80,
 
@@ -125,7 +164,16 @@ class _EditTruckSpecificationsViewState
                     GestureDetector(
                       onTap: () {
                         context.popPage();
-                        truckSpecsCubit.editTruckSpecs();
+
+                        if (widget.hasRoute) {
+                          context
+                              .read<RouteTruckSpecificationsCubit>()
+                              .editTruckSpecs();
+                        } else {
+                          context
+                              .read<TruckSpecificationsCubit>()
+                              .editTruckSpecs();
+                        }
                       },
                       child: CircleAvatar(
                         radius: 25,
@@ -170,10 +218,8 @@ class _EditTruckSpecificationsViewState
                         controller: heightFeetController,
 
                         validator: Validation.validateFeet,
-                        onChanged: (newLength) => truckSpecsCubit.setEditState(
-                          'heightInFeet',
-                          newLength,
-                        ),
+                        onChanged: (newLength) =>
+                            madeChanges('heightInFeet', newLength),
                       ),
                     ),
                     Expanded(
@@ -183,10 +229,8 @@ class _EditTruckSpecificationsViewState
                         controller: heightInchController,
 
                         validator: Validation.validateInches,
-                        onChanged: (newLength) => truckSpecsCubit.setEditState(
-                          'heightInInches',
-                          newLength,
-                        ),
+                        onChanged: (newLength) =>
+                            madeChanges('heightInInches', newLength),
                       ),
                     ),
                   ],
@@ -213,10 +257,8 @@ class _EditTruckSpecificationsViewState
                         keyboardType: TextInputType.number,
                         controller: widthFeetController,
                         validator: Validation.validateFeet,
-                        onChanged: (newLength) => truckSpecsCubit.setEditState(
-                          'widthInFeet',
-                          newLength,
-                        ),
+                        onChanged: (newLength) =>
+                            madeChanges('widthInFeet', newLength),
                       ),
                     ),
                     Expanded(
@@ -226,10 +268,8 @@ class _EditTruckSpecificationsViewState
                         controller: widthInchController,
 
                         validator: Validation.validateInches,
-                        onChanged: (newLength) => truckSpecsCubit.setEditState(
-                          'widthInInches',
-                          newLength,
-                        ),
+                        onChanged: (newLength) =>
+                            madeChanges('widthInInches', newLength),
                       ),
                     ),
                   ],
@@ -254,10 +294,8 @@ class _EditTruckSpecificationsViewState
                         keyboardType: TextInputType.number,
                         controller: lengthFeetController,
                         validator: Validation.validateFeet,
-                        onChanged: (newLength) => truckSpecsCubit.setEditState(
-                          'lengthInFeet',
-                          newLength,
-                        ),
+                        onChanged: (newLength) =>
+                            madeChanges('lengthInFeet', newLength),
                       ),
                     ),
                     Expanded(
@@ -267,10 +305,8 @@ class _EditTruckSpecificationsViewState
                         controller: lengthInchController,
 
                         validator: Validation.validateInches,
-                        onChanged: (newLength) => truckSpecsCubit.setEditState(
-                          'lengthInInches',
-                          newLength,
-                        ),
+                        onChanged: (newLength) =>
+                            madeChanges('lengthInInches', newLength),
                       ),
                     ),
                   ],
@@ -300,10 +336,8 @@ class _EditTruckSpecificationsViewState
                           }
                           return null;
                         },
-                        onChanged: (newLength) => truckSpecsCubit.setEditState(
-                          'weightInLbs',
-                          newLength,
-                        ),
+                        onChanged: (newLength) =>
+                            madeChanges('weightInLbs', newLength),
                       ),
                     ),
                   ],
@@ -339,10 +373,7 @@ class _EditTruckSpecificationsViewState
                             value: count,
                             onChanged: (selected) {
                               axleCount.value = selected;
-                              truckSpecsCubit.setEditState(
-                                'axleCount',
-                                selected,
-                              );
+                              madeChanges('axleCount', selected);
                             },
                           );
                         },
@@ -406,10 +437,7 @@ class _EditTruckSpecificationsViewState
                             value: value,
                             onChanged: (selected) {
                               selectHazardousMaterial.value = selected;
-                              truckSpecsCubit.setEditState(
-                                'hazardousMaterial',
-                                selected,
-                              );
+                              madeChanges('hazardousMaterial', selected);
                             },
                           );
                         },
@@ -423,27 +451,54 @@ class _EditTruckSpecificationsViewState
           ),
           Padding(
             padding: EdgeInsets.all(AppTheme.horizontalPadding),
-            child:
-                BlocBuilder<TruckSpecificationsCubit, TruckSpecificationState>(
-                  builder: (context, state) => CustomButtonWidget(
-                    title: "Save",
-                    enabled: state.hasChanges,
+            child: widget.hasRoute
+                ? BlocBuilder<
+                    RouteTruckSpecificationsCubit,
+                    TruckSpecificationState
+                  >(
+                    builder: (context, state) => CustomButtonWidget(
+                      title: "Save",
+                      enabled: state.hasChanges,
+                      onPressed: () {
+                        context
+                            .read<RouteTruckSpecificationsCubit>()
+                            .editTruckSpecs();
+                        // truckSpecsCubit.editTruckSpecs();
+                        context.popPage(true);
+                        context.read<TruckNavigationCubit>().calculateRoute(
+                          isRecalculating: true,
+                        );
+                      },
+                    ),
+                  )
+                : BlocBuilder<
+                    TruckSpecificationsCubit,
+                    TruckSpecificationState
+                  >(
+                    builder: (context, state) => CustomButtonWidget(
+                      title: "Save",
+                      enabled: state.hasChanges,
 
-                    onPressed: () {
-                      truckSpecsCubit.editTruckSpecs();
-                      context.popPage(true);
-                      final navigationState = context
-                          .read<TruckNavigationCubit>()
-                          .state;
-                      if (navigationState.hasDirection &&
-                          navigationState.currentRoute != null &&
-                          navigationState.selectedSuggestion != null &&
-                          !navigationState.isNavigating) {
-                        context.read<TruckNavigationCubit>().calculateRoute();
-                      }
-                    },
+                      onPressed: () {
+                        context
+                            .read<TruckSpecificationsCubit>()
+                            .editTruckSpecs();
+                        // truckSpecsCubit.editTruckSpecs();
+                        context.popPage(true);
+                        // final navigationState = context
+                        //     .read<TruckNavigationCubit>()
+                        //     .state;
+                        // if (navigationState.hasDirection &&
+                        //     navigationState.currentRoute != null &&
+                        //     navigationState.selectedSuggestion != null &&
+                        //     !navigationState.isNavigating) {
+                        //   context.read<TruckNavigationCubit>().calculateRoute(
+                        //     isRecalculating: true,
+                        //   );
+                        // }
+                      },
+                    ),
                   ),
-                ),
           ),
           30.h,
         ],

@@ -19,6 +19,7 @@ import 'package:here_sdk/transport.dart';
 import 'package:location/location.dart' as loc;
 import 'package:ommo/app/app.dart';
 import 'package:ommo/data/response/get_data.dart';
+import 'package:ommo/logic/cubit/route_truck_specs/route_truck_specification_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specification_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state.dart';
@@ -56,9 +57,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   bool isFirstTimeLocationGet = true;
   MapCameraListener? _mapCameraListener;
   Timer? _mapInteractionDebounceTimer;
+
   /// Lateral distance from route polyline before treating as off-route.
   /// Must be well above typical GPS error (often 5–15 m) and lane offset from centerline.
   static const double _offRouteThresholdMeters = 50.0;
+
   /// Minimum movement before updating the map “my location” marker when not navigating.
   static const double _myLocationOffThresholdMeters = 50.0;
   static const int _offRouteConfirmationCount =
@@ -523,7 +526,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       state.currentRoute!,
     );
 
-    final bool inRecalculationCooldown = _lastRecalculationTime != null &&
+    final bool inRecalculationCooldown =
+        _lastRecalculationTime != null &&
         DateTime.now().difference(_lastRecalculationTime!).inSeconds <
             _recalculationCooldownSeconds;
 
@@ -1127,7 +1131,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   /// Re-resolve current GPS to a [Place] and apply it to a stop (e.g. user taps "My location" again).
-  void refreshStopWithCurrentLocation(int index, {void Function()? onComplete}) {
+  void refreshStopWithCurrentLocation(
+    int index, {
+    void Function()? onComplete,
+  }) {
     if ((state.locationPoints ?? []).isEmpty) {
       onComplete?.call();
       return;
@@ -1312,7 +1319,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       ),
     );
     setDestinationMarker();
-    calculateRoute();
+    calculateRoute(isRecalculating: false);
   }
 
   void focusDestinationWithOffset(
@@ -1388,7 +1395,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     createTrip(points);
   }
 
-  void calculateRoute({int attempt = 0}) {
+  void calculateRoute({int attempt = 0, bool isRecalculating = false}) {
     if ((state.locationPoints ?? []).isEmpty) return;
     GeoCoordinates? start = state.locationPoints?.firstOrNull?.geoCoordinates;
     GeoCoordinates? end = state.locationPoints?.lastOrNull?.geoCoordinates;
@@ -1400,7 +1407,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     void restoreAndMaybeRetry() {
       if (attempt < _maxRouteOrNavigationRetries) {
         emit(previousState);
-        Future.microtask(() => calculateRoute(attempt: attempt + 1));
+        Future.microtask(() => calculateRoute(attempt: attempt + 1,isRecalculating: isRecalculating));
       } else {
         emit(previousState);
       }
@@ -1414,6 +1421,15 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         state.locationPoints!.length,
         (i) => Waypoint(state.locationPoints![i].geoCoordinates!),
       );
+      if (!isRecalculating) {
+        TruckSpecificationState mySpecs = navigatorKey.currentContext!
+            .read<TruckSpecificationsCubit>()
+            .state;
+
+        navigatorKey.currentContext!
+            .read<RouteTruckSpecificationsCubit>()
+            .initSpecs(mainSpecs: mySpecs);
+      }
 
       final truckOptions = _createTruckOptions();
 
@@ -1445,7 +1461,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
   TruckOptions _createTruckOptions() {
     TruckSpecificationState mySpecs = navigatorKey.currentContext!
-        .read<TruckSpecificationsCubit>()
+        .read<RouteTruckSpecificationsCubit>()
         .state;
     TruckOptions truckOptions = TruckOptions();
     truckOptions.routeOptions.enableTolls = true;
@@ -1499,7 +1515,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
   AvoidanceOptions _createTruckAvoidanceOptions() {
     final myState = navigatorKey.currentContext!
-        .read<TruckSpecificationsCubit>()
+        .read<RouteTruckSpecificationsCubit>()
         .state;
 
     final avoidance = myState.avoidance;
@@ -2596,7 +2612,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     final removed = _list.removeAt(oldIndex);
     _list.insert(newIndex, removed);
     emit(state.copyWith(locationPoints: _list));
-    calculateRoute();
+    calculateRoute( isRecalculating: true);
     // await refreshStopAndDestinationMarker();
   }
 
@@ -2642,7 +2658,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
     // addStopMakerAt(addIndex);
     // refreshStopAndDestinationMarker();
-    calculateRoute();
+    calculateRoute( isRecalculating: true);
   }
 
   void editStop(int i, dynamic place, {bool isMyLocation = false}) {
@@ -2659,7 +2675,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         destinationCoordinates: isDestination ? _list[i].geoCoordinates : null,
       ),
     );
-    calculateRoute();
+    calculateRoute( isRecalculating: true);
     if (i == 0) return;
     if (isDestination) {
       setDestinationMarker();
@@ -2682,7 +2698,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       ),
     );
     clearStopMarkerAt(index);
-    calculateRoute();
+    calculateRoute( isRecalculating: true);
   }
 
   void searchBusinessDetailsByPlaceId(

@@ -183,7 +183,7 @@ class CreateTripCubit extends Cubit<CreateTripState> {
     final navigationCubit = navigatorKey.currentContext
         ?.read<TruckNavigationCubit>();
     navigationCubit?.createTrip([state.startPoint!, state.destinationPoint!]);
-    navigationCubit?.calculateRoute();
+    // navigationCubit?.calculateRoute(isRecalculating: false);
     emit(state.copyWith(isLoading: true));
   }
 
