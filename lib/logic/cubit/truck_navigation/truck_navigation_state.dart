@@ -10,7 +10,7 @@ import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart'
 
 class TruckNavigationState extends Equatable {
   final HereMapController? mapController;
-  final FutureData<List<Suggestion>>? destinationSuggestions;
+  final FutureData<List<Place>>? destinationSuggestions;
   final GeoCoordinates? startCoordinates;
   final FutureData<Place>? currentPlace;
   final Suggestion? selectedSuggestion;
@@ -83,7 +83,7 @@ class TruckNavigationState extends Equatable {
     FutureData<Place>? currentPlace,
     GeoCoordinates? startCoordinates,
     dynamic selectedSuggestion,
-    FutureData<List<Suggestion>>? destinationSuggestions,
+    FutureData<List<Place>>? destinationSuggestions,
     FutureData<List<Place>>? nearbyTruckStops,
     dynamic destinationCoordinates,
     dynamic tappedPlace,

@@ -26,6 +26,7 @@ import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state
 import 'package:ommo/logic/cubit/truck_stops/truck_stop_cubit.dart';
 import 'package:ommo/map_sdk/HEREPositioningSimulator.dart';
 import 'package:ommo/models/location_point_model.dart';
+import 'package:ommo/services/hive/places_cache/places_cache_service.dart';
 import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 import 'package:ommo/utils/constants/constants.dart';
 import 'package:ommo/utils/extension/place_extension.dart';
@@ -1101,6 +1102,15 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     }
 
     final GeoCoordinates currentCoords = state.startCoordinates!;
+    final cached = PlacesHiveCacheService.instance.getReverseGeocodedPlace(
+      currentCoords,
+    );
+    if (cached != null) {
+      emit(state.copyWith(currentPlace: FutureData.completed(cached)));
+      onComplete?.call(cached);
+      return;
+    }
+
     final SearchOptions options = SearchOptions()
       ..languageCode = LanguageCode.enUs
       ..maxItems = 1;
@@ -1115,6 +1125,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         return;
       }
       if (places != null && places.isNotEmpty) {
+        unawaited(
+          PlacesHiveCacheService.instance.putReverseGeocodedPlace(
+            currentCoords,
+            places.first,
+          ),
+        );
         emit(state.copyWith(currentPlace: FutureData.completed(places.first)));
         onComplete?.call(places.first);
       } else {
@@ -1173,11 +1189,25 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     }
 
     if (state.startCoordinates == null) return;
+    final coords = state.startCoordinates!;
+    final cached = PlacesHiveCacheService.instance.getTextSearchPlaces(
+      query,
+      coords,
+    );
+    if (cached != null && cached.isNotEmpty) {
+      emit(
+        state.copyWith(
+          destinationSuggestions: FutureData.completed(cached),
+        ),
+      );
+      return;
+    }
+
     SearchOptions searchOptions = SearchOptions();
     searchOptions.languageCode = LanguageCode.enUs;
     searchOptions.maxItems = 5;
 
-    TextQueryArea queryArea = TextQueryArea.withCenter(state.startCoordinates!);
+    TextQueryArea queryArea = TextQueryArea.withCenter(coords);
 
     _searchEngine.suggestByText(
       TextQuery.withArea(query, queryArea),
@@ -1190,7 +1220,17 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         }
         final filteredList = list
             ?.where((element) => element.place?.id != null)
+            .map((e) => e.place!)
             .toList();
+        if (filteredList != null && filteredList.isNotEmpty) {
+          unawaited(
+            PlacesHiveCacheService.instance.putTextSearchPlaces(
+              query,
+              coords,
+              filteredList,
+            ),
+          );
+        }
         if (filteredList != null) {
           emit(
             state.copyWith(
@@ -1209,15 +1249,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   void selectSuggestionAsDestination(Suggestion suggestion) {
-    if (suggestion.place?.isBusiness == true) {
-      searchBusinessDetailsByPlaceId(
-        suggestion.place?.id,
-        (place) => setDestination(place),
-        (e) => setDestination(suggestion.place),
-      );
-    } else {
-      setDestination(suggestion.place);
-    }
+    final place = suggestion.place;
+    if (place == null) return;
+    selectBusinessSuggestionAsDestination(place);
   }
 
   void selectBusinessSuggestionAsDestination(Place place) {
@@ -1832,7 +1866,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     emit(
       state.copyWith(
-        destinationSuggestions: FutureData<List<Suggestion>>.initial(),
+        destinationSuggestions: FutureData<List<Place>>.initial(),
         selectedSuggestion: removeDestination ? 'null' : null,
         destinationCoordinates: removeDestination ? 'null' : null,
         currentRoute: 'null',
@@ -2523,12 +2557,48 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
   }
 
+  void _applyTappedDestinationFromReverseGeocode(Place firstPlace) {
+    final List<LocationPoint> _list = [];
+
+    if (!firstPlace.isBusiness && firstPlace.geoCoordinates != null) {
+      _searchBusinessesAtAddress(firstPlace.geoCoordinates!);
+    }
+    if (state.currentPlace?.data != null) {
+      _list.add(
+        LocationPoint(
+          place: state.currentPlace!.data!,
+          isMyLocation: true,
+          pointType: LocationPointType.starting,
+        ),
+      );
+    }
+    _list.add(
+      LocationPoint(
+        place: firstPlace,
+        pointType: LocationPointType.destination,
+      ),
+    );
+    emit(
+      state.copyWith(
+        locationPoints: _list,
+        tappedPlace: FutureData<Place>.completed(firstPlace),
+      ),
+    );
+  }
+
   void _reverseGeocodeDestination(GeoCoordinates coords) {
+    final cached = PlacesHiveCacheService.instance.getReverseGeocodedPlace(
+      coords,
+    );
+    if (cached != null) {
+      _applyTappedDestinationFromReverseGeocode(cached);
+      return;
+    }
+
     final SearchOptions options = SearchOptions()
       ..languageCode = LanguageCode.enUs
       ..maxItems = 1;
 
-    // First reverse geocode for place details
     _searchEngine.searchByCoordinates(coords, options, (
       SearchError? error,
       List<Place>? places,
@@ -2545,33 +2615,13 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         return;
       }
       if (places != null && places.isNotEmpty) {
-        final List<LocationPoint> _list = [];
-
-        if (places.firstOrNull?.isBusiness == false &&
-            places.firstOrNull?.geoCoordinates != null) {
-          _searchBusinessesAtAddress(places.first.geoCoordinates!);
-        }
-        if (state.currentPlace?.data != null) {
-          _list.add(
-            LocationPoint(
-              place: state.currentPlace!.data!,
-              isMyLocation: true,
-              pointType: LocationPointType.starting,
-            ),
-          );
-        }
-        _list.add(
-          LocationPoint(
-            place: places.first,
-            pointType: LocationPointType.destination,
+        unawaited(
+          PlacesHiveCacheService.instance.putReverseGeocodedPlace(
+            coords,
+            places.first,
           ),
         );
-        emit(
-          state.copyWith(
-            locationPoints: _list,
-            tappedPlace: FutureData<Place>.completed(places.first),
-          ),
-        );
+        _applyTappedDestinationFromReverseGeocode(places.first);
       } else {
         emit(
           state.copyWith(
@@ -2706,11 +2756,26 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     Function(Place? place) onSuccess,
     Function(String? error) onError,
   ) {
+    final id = placeId?.toString() ?? '';
+    if (id.isEmpty) {
+      onError(null);
+      onSuccess(null);
+      return;
+    }
+    final cached = PlacesHiveCacheService.instance.getPlaceDetails(id);
+    if (cached != null) {
+      onSuccess(cached);
+      return;
+    }
+
     _searchEngine.searchByPlaceId(PlaceIdQuery(placeId), LanguageCode.enUs, (
       error,
       place,
     ) {
       if (error != null) onError(error.name);
+      if (place != null) {
+        unawaited(PlacesHiveCacheService.instance.putPlaceDetails(id, place));
+      }
       onSuccess(place);
     });
   }

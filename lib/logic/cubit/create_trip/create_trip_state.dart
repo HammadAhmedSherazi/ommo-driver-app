@@ -12,8 +12,8 @@ class CreateTripState extends Equatable {
   final bool isLoading;
   final bool hasStartFocus;
 
-  final List<Suggestion> startSuggestions;
-  final List<Suggestion> destinationSuggestions;
+  final List<Place> startSuggestions;
+  final List<Place> destinationSuggestions;
 
   bool get isMyLocationSelected => startPoint == currentStartPoint;
 
@@ -37,8 +37,8 @@ class CreateTripState extends Equatable {
     bool? showYourLocationTab,
     bool? isLoading,
     bool? hasStartFocus,
-    List<Suggestion>? startSuggestions,
-    List<Suggestion>? destinationSuggestions,
+    List<Place>? startSuggestions,
+    List<Place>? destinationSuggestions,
   }) {
     return CreateTripState(
       startPoint: startPoint ?? this.startPoint,

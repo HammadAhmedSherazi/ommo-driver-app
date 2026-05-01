@@ -528,18 +528,19 @@ class HomeUtils {
                           return ListView.separated(
                             shrinkWrap: true,
                             itemBuilder: (context, index) {
-                              final Suggestion? item =
+                              final Place? place =
                                   state.destinationSuggestions?.data?[index];
-                              return item == null
+                              return place == null
                                   ? SizedBox()
                                   : ListTile(
                                       onTap: () {
-                                        locationController.text = item.title;
+                                        locationController.text =
+                                            place.formattedTitle;
                                         if (locationController
                                             .text
                                             .isNotEmpty) {
                                           if (onContinue != null) {
-                                            onContinue(item.place);
+                                            onContinue(place);
                                           }
 
                                           Navigator.pop(context);
@@ -558,7 +559,7 @@ class HomeUtils {
                                             ),
                                           ),
                                           Text(
-                                            item.place?.distanceInMiles ?? '',
+                                            place.distanceInMiles,
                                             maxLines: 2,
                                             style: AppTextTheme().lightText
                                                 .copyWith(
@@ -569,10 +570,9 @@ class HomeUtils {
                                           ),
                                         ],
                                       ),
-                                      title: item.place
-                                          ?.buildSuggestionTitleWidget(),
-                                      subtitle: item.place
-                                          ?.buildSuggestionSubtitleWidget(),
+                                      title: place.buildSuggestionTitleWidget(),
+                                      subtitle:
+                                          place.buildSuggestionSubtitleWidget(),
                                     );
                             },
                             separatorBuilder: (context, index) => Divider(),

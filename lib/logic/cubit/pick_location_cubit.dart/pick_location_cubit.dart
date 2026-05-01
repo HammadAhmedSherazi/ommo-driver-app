@@ -6,6 +6,7 @@ import 'package:here_sdk/mapview.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/data/response/get_data.dart';
 import 'package:ommo/logic/cubit/pick_location_cubit.dart/pick_location_state.dart';
+import 'package:ommo/services/hive/places_cache/places_cache_service.dart';
 import 'package:ommo/utils/helpers/helpers.dart';
 
 class PickLocationCubit extends Cubit<PickLocationState> {
@@ -40,6 +41,16 @@ class PickLocationCubit extends Cubit<PickLocationState> {
   }
 
   void _reverseGeocode(GeoCoordinates coords) {
+    final cached =
+        PlacesHiveCacheService.instance.getReverseGeocodedPlace(coords);
+    if (cached != null) {
+      emit(
+        state.copyWith(selectedPlace: FutureData<Place>.completed(cached)),
+      );
+      Helpers.print(state.selectedPlace);
+      return;
+    }
+
     final search = SearchEngine();
 
     search.searchByCoordinates(coords, SearchOptions(), (
@@ -58,6 +69,12 @@ class PickLocationCubit extends Cubit<PickLocationState> {
         return;
       }
       print("📍 Address: ${places.first.address.addressText}");
+      unawaited(
+        PlacesHiveCacheService.instance.putReverseGeocodedPlace(
+          coords,
+          places.first,
+        ),
+      );
       emit(
         state.copyWith(
           selectedPlace: FutureData<Place>.completed(places.first),

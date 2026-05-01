@@ -6,6 +6,7 @@ import 'package:ommo/app/views/app_view.dart';
 import 'package:ommo/logic/cubit/create_trip/create_trip_state.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/models/location_point_model.dart';
+import 'package:ommo/services/hive/places_cache/places_cache_service.dart';
 import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
 
 class CreateTripCubit extends Cubit<CreateTripState> {
@@ -190,7 +191,7 @@ class CreateTripCubit extends Cubit<CreateTripState> {
   /// Routing and Navigation Functions
   void searchPlaces(
     String query,
-    Function(List<Suggestion>? suggestions) onChanged,
+    void Function(List<Place> suggestions) onChanged,
   ) {
     if (query == '') {
       onChanged([]);
@@ -198,18 +199,41 @@ class CreateTripCubit extends Cubit<CreateTripState> {
     }
 
     if (state.currentStartPoint?.geoCoordinates == null) return;
+    final coords = state.currentStartPoint!.geoCoordinates!;
+    final cached = PlacesHiveCacheService.instance.getTextSearchPlaces(
+      query,
+      coords,
+    );
+    if (cached != null && cached.isNotEmpty) {
+      onChanged(cached);
+      return;
+    }
+
     SearchOptions searchOptions = SearchOptions();
     searchOptions.languageCode = LanguageCode.enUs;
     searchOptions.maxItems = 5;
 
-    TextQueryArea queryArea = TextQueryArea.withCenter(
-      state.currentStartPoint!.geoCoordinates!,
-    );
+    TextQueryArea queryArea = TextQueryArea.withCenter(coords);
     _searchEngine.suggestByText(
       TextQuery.withArea(query, queryArea),
       searchOptions,
-      (SearchError? searchError, List<Suggestion>? list) =>
-          onChanged(list ?? []),
+      (SearchError? searchError, List<Suggestion>? list) {
+        final places = list
+                ?.where((e) => e.place?.id != null)
+                .map((e) => e.place!)
+                .toList() ??
+            [];
+        if (places.isNotEmpty) {
+          unawaited(
+            PlacesHiveCacheService.instance.putTextSearchPlaces(
+              query,
+              coords,
+              places,
+            ),
+          );
+        }
+        onChanged(places);
+      },
     );
   }
 

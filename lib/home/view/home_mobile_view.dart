@@ -1621,31 +1621,31 @@ class _HomeMobileViewState extends State<HomeMobileView>
                           ? ListView.separated(
                               padding: EdgeInsets.symmetric(vertical: 10),
                               itemBuilder: (context, index) {
-                                final Suggestion? item =
+                                final Place? place =
                                     state.destinationSuggestions?.data?[index];
-                                log(item.toString());
-                                return item == null
+                                log(place.toString());
+                                return place == null
                                     ? SizedBox()
                                     : ListTile(
                                         onTap: () {
                                           searchTextEditController.text =
-                                              item.title;
+                                              place.formattedTitle;
 
                                           context
                                               .read<TruckNavigationCubit>()
-                                              .selectSuggestionAsDestination(
-                                                item,
+                                              .selectBusinessSuggestionAsDestination(
+                                                place,
                                               );
                                           context
                                               .read<RecentSearchCubit>()
-                                              .addSearchFromPlace(item.place!);
+                                              .addSearchFromPlace(place);
 
                                           // context
                                           //     .read<TruckNavigationCubit>()
                                           //     .confirmDestination();
 
                                           makeHalfBottomSheet();
-                                          // context.read<MapCubit>().setDestinationCoordinate(item.place!.geoCoordinates!);
+                                          // context.read<MapCubit>().setDestinationCoordinate(place.geoCoordinates!);
                                         },
                                         contentPadding: EdgeInsets.zero,
                                         leading: Column(
@@ -1662,7 +1662,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                               ),
                                             ),
                                             Text(
-                                              item.place?.distanceInMiles ?? '',
+                                              place.distanceInMiles,
                                               maxLines: 2,
                                               style: AppTextTheme().lightText
                                                   .copyWith(
@@ -1675,13 +1675,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                         ),
 
                                         title:
-                                            item.place
-                                                ?.buildSuggestionTitleWidget() ??
-                                            SizedBox.shrink(),
+                                            place.buildSuggestionTitleWidget(),
                                         subtitle:
-                                            item.place
-                                                ?.buildSuggestionSubtitleWidget() ??
-                                            SizedBox.shrink(),
+                                            place.buildSuggestionSubtitleWidget(),
                                       );
                               },
                               separatorBuilder: (context, index) => Divider(),
