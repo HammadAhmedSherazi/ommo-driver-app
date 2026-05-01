@@ -26,6 +26,7 @@ import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state
 import 'package:ommo/logic/cubit/truck_stops/truck_stop_cubit.dart';
 import 'package:ommo/map_sdk/HEREPositioningSimulator.dart';
 import 'package:ommo/models/location_point_model.dart';
+import 'package:ommo/services/hive/places_cache/places_cache_service.dart';
 import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 import 'package:ommo/utils/constants/constants.dart';
 import 'package:ommo/utils/extension/place_extension.dart';
@@ -1100,7 +1101,17 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       return;
     }
 
+
     final GeoCoordinates currentCoords = state.startCoordinates!;
+    String key =
+        "geo_${currentCoords.latitude.toStringAsFixed(3)}_${currentCoords.longitude.toStringAsFixed(3)}";
+    final cachedPlace = PlacesCacheService().getGeocodeCache(key);
+    if (cachedPlace != null) {
+      emit(state.copyWith(currentPlace: FutureData.completed(cachedPlace)));
+      onComplete?.call(cachedPlace);
+      return;
+    }
+
     final SearchOptions options = SearchOptions()
       ..languageCode = LanguageCode.enUs
       ..maxItems = 1;
@@ -1117,6 +1128,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       if (places != null && places.isNotEmpty) {
         emit(state.copyWith(currentPlace: FutureData.completed(places.first)));
         onComplete?.call(places.first);
+        PlacesCacheService().setGeocodeCache(key, places.first);
       } else {
         emit(
           state.copyWith(
@@ -1171,6 +1183,17 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       emit(state.copyWith(destinationSuggestions: FutureData.completed([])));
       return;
     }
+    final key = "search_$query";
+
+    final cachedPlaces = PlacesCacheService().getSearchCache( key);
+    if (cachedPlaces != null) {
+      emit(
+        state.copyWith(
+          destinationSuggestions: FutureData.completed(cachedPlaces),
+        ),
+      );
+      return;
+    }
 
     if (state.startCoordinates == null) return;
     SearchOptions searchOptions = SearchOptions();
@@ -1197,10 +1220,13 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
               destinationSuggestions: FutureData.completed(filteredList),
             ),
           );
+          PlacesCacheService().setSearchCache(key, filteredList);
         } else {
           emit(
             state.copyWith(
-              destinationSuggestions: FutureData.error(searchError.toString()),
+              destinationSuggestions: FutureData.error(
+                (searchError ?? "No results found").toString(),
+              ),
             ),
           );
         }
@@ -1407,7 +1433,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     void restoreAndMaybeRetry() {
       if (attempt < _maxRouteOrNavigationRetries) {
         emit(previousState);
-        Future.microtask(() => calculateRoute(attempt: attempt + 1,isRecalculating: isRecalculating));
+        Future.microtask(
+          () => calculateRoute(
+            attempt: attempt + 1,
+            isRecalculating: isRecalculating,
+          ),
+        );
       } else {
         emit(previousState);
       }
@@ -2612,7 +2643,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     final removed = _list.removeAt(oldIndex);
     _list.insert(newIndex, removed);
     emit(state.copyWith(locationPoints: _list));
-    calculateRoute( isRecalculating: true);
+    calculateRoute(isRecalculating: true);
     // await refreshStopAndDestinationMarker();
   }
 
@@ -2658,7 +2689,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
     // addStopMakerAt(addIndex);
     // refreshStopAndDestinationMarker();
-    calculateRoute( isRecalculating: true);
+    calculateRoute(isRecalculating: true);
   }
 
   void editStop(int i, dynamic place, {bool isMyLocation = false}) {
@@ -2675,7 +2706,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         destinationCoordinates: isDestination ? _list[i].geoCoordinates : null,
       ),
     );
-    calculateRoute( isRecalculating: true);
+    calculateRoute(isRecalculating: true);
     if (i == 0) return;
     if (isDestination) {
       setDestinationMarker();
@@ -2698,7 +2729,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       ),
     );
     clearStopMarkerAt(index);
-    calculateRoute( isRecalculating: true);
+    calculateRoute(isRecalculating: true);
   }
 
   void searchBusinessDetailsByPlaceId(
@@ -2706,12 +2737,20 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     Function(Place? place) onSuccess,
     Function(String? error) onError,
   ) {
+
+    final key = "place_details_$placeId";
+    final cachedPlace = PlacesCacheService().getPlaceDetailsCache(key);
+    if (cachedPlace != null) {
+      onSuccess(cachedPlace);
+      return;
+    }
     _searchEngine.searchByPlaceId(PlaceIdQuery(placeId), LanguageCode.enUs, (
       error,
       place,
     ) {
       if (error != null) onError(error.name);
-      onSuccess(place);
+      onSuccess(place);     
+      PlacesCacheService().setPlaceDetailsCache(key, place);
     });
   }
 
