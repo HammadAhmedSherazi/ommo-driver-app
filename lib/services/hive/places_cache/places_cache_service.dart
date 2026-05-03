@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import 'package:here_sdk/core.dart';
 import 'package:here_sdk/search.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:ommo/models/models.dart';
 
 /// Persisted TTL cache for HERE [Place] results using SDK [Place.serializeCompact] /
 /// [Place.deserialize].
@@ -42,7 +44,7 @@ class PlacesHiveCacheService {
       expiresAtMs != null &&
       DateTime.now().millisecondsSinceEpoch < expiresAtMs;
 
-  Place? getReverseGeocodedPlace(GeoCoordinates coords) {
+  PlaceDataModel? getReverseGeocodedPlace(GeoCoordinates coords) {
     final box = _reverseBox;
     if (box == null) return null;
     final key = reverseGeocodeKey(coords);
@@ -55,13 +57,15 @@ class PlacesHiveCacheService {
         box.delete(key);
         return null;
       }
-      return Place.deserialize(j['p'] as String);
+
+      return PlaceDataModel.fromJson(j['p'] as Map<String, dynamic>);
+      // return Place.deserialize(j['p'] as String);
     } catch (_) {
       return null;
     }
   }
 
-  Future<void> putReverseGeocodedPlace(GeoCoordinates coords, Place place) async {
+  Future<void> putReverseGeocodedPlace(GeoCoordinates coords, PlaceDataModel place) async {
     final box = _reverseBox;
     if (box == null) return;
     final expiresAt =
@@ -70,12 +74,12 @@ class PlacesHiveCacheService {
     try {
       await box.put(
         key,
-        jsonEncode({'exp': expiresAt, 'p': place.serializeCompact()}),
+        jsonEncode({'exp': expiresAt, 'p': place.toJson()}),
       );
     } catch (_) {}
   }
 
-  List<Place>? getTextSearchPlaces(String query, GeoCoordinates center) {
+  List<PlaceDataModel>? getTextSearchPlaces(String query, GeoCoordinates center) {
     final box = _searchBox;
     if (box == null) return null;
     final key = textSearchKey(query, center);
@@ -89,9 +93,9 @@ class PlacesHiveCacheService {
         return null;
       }
       final items = j['items'] as List<dynamic>;
-      final out = <Place>[];
+      final out = <PlaceDataModel>[];
       for (final e in items) {
-        out.add(Place.deserialize(e as String));
+        out.add(PlaceDataModel.fromJson(e as Map<String, dynamic>));
       }
       return out.isEmpty ? null : out;
     } catch (_) {
@@ -102,19 +106,19 @@ class PlacesHiveCacheService {
   Future<void> putTextSearchPlaces(
     String query,
     GeoCoordinates center,
-    List<Place> places,
+    List<PlaceDataModel> places,
   ) async {
     final box = _searchBox;
     if (box == null || places.isEmpty) return;
     final expiresAt = DateTime.now().add(textSearchTtl).millisecondsSinceEpoch;
     final key = textSearchKey(query, center);
     try {
-      final items = places.map((p) => p.serializeCompact()).toList();
+      final items = places.map((p) => p.toJson()).toList();
       await box.put(key, jsonEncode({'exp': expiresAt, 'items': items}));
     } catch (_) {}
   }
 
-  Place? getPlaceDetails(String placeId) {
+  PlaceDataModel? getPlaceDetails(String placeId) {
     if (placeId.isEmpty) return null;
     final box = _detailsBox;
     if (box == null) return null;
@@ -128,13 +132,14 @@ class PlacesHiveCacheService {
         box.delete(key);
         return null;
       }
-      return Place.deserialize(j['p'] as String);
-    } catch (_) {
+      return PlaceDataModel.fromJson(j['p'] as Map<String, dynamic>);
+    } catch (e) {
+      log('Error getting place details: ${e.toString()}');
       return null;
     }
   }
 
-  Future<void> putPlaceDetails(String placeId, Place place) async {
+  Future<void> putPlaceDetails(String placeId, PlaceDataModel place) async {
     if (placeId.isEmpty) return;
     final box = _detailsBox;
     if (box == null) return;
@@ -143,7 +148,7 @@ class PlacesHiveCacheService {
     try {
       await box.put(
         placeDetailsKey(placeId),
-        jsonEncode({'exp': expiresAt, 'p': place.serializeCompact()}),
+        jsonEncode({'exp': expiresAt, 'p': place.toJson()}),
       );
     } catch (_) {}
   }

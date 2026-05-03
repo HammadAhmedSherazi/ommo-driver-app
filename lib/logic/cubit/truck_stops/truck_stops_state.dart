@@ -7,8 +7,7 @@ class TruckStopsState extends Equatable {
   final List<PlaceCategoryTruckStopsState> categoriesSearchState;
   final bool showBusinessOverviewModal;
   final bool isCameraListenerActive;
-  final Set<String>
-  searchedCoordinates; // Track searched areas to avoid duplicates
+  final Set<String> searchedCoordinates; // Track searched areas to avoid duplicates
   final String? currentPlaceType; // Track current search category
 
   const TruckStopsState({

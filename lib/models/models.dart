@@ -1,3 +1,4 @@
+import 'package:here_sdk/core.dart';
 import 'package:here_sdk/mapview.dart';
 
 part 'place_data_model.dart';

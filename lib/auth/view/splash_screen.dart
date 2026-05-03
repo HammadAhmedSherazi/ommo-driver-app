@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ommo/auth/auth.dart';
+import 'package:ommo/home/view/home_view.dart';
 import 'package:ommo/utils/utils.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -64,11 +65,17 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _navigateToHome() {
     if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed('/home');
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => HomeView()));
+    // Navigator.of(context).pushReplacementNamed('/home');
   }
 
   void _navigateToLogin() {
     if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed('/login');
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => LoginScreen()));
+    // Navigator.of(context).pushReplacementNamed('/login');
   }
 }

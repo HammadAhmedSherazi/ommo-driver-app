@@ -1,8 +1,10 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:here_sdk/mapview.dart';
+import 'package:here_sdk/routing.dart' as r;
 import 'package:image_picker/image_picker.dart';
 import 'package:ommo/custom_widget/custom_accordion_widget.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
@@ -13,7 +15,6 @@ import 'package:ommo/utils/extension/manuever_extension.dart';
 import 'package:ommo/utils/extension/route_extension.dart';
 import 'package:ommo/utils/extension/section_extension.dart';
 import 'package:ommo/utils/utils.dart';
-import 'package:here_sdk/routing.dart' as r;
 
 class TruckNavigationUtils {
   static void openDialog(BuildContext context) {
@@ -685,9 +686,8 @@ class TruckNavigationUtils {
                                 Text(
                                   state
                                           .selectedSuggestion
-                                          ?.place
                                           ?.address
-                                          .addressText ??
+                                           ??
                                       '',
                                   style: AppTextTheme().bodyText.copyWith(
                                     fontSize: 16,

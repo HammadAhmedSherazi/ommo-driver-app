@@ -6,13 +6,15 @@ import 'package:ommo/custom_widget/future_data_builder.dart';
 import 'package:ommo/logic/cubit/pick_location_cubit.dart/pick_location_cubit.dart';
 import 'package:ommo/logic/cubit/pick_location_cubit.dart/pick_location_state.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
+import 'package:ommo/models/models.dart';
+import 'package:ommo/utils/extension/place_data_model.dart';
 import 'package:ommo/utils/extension/place_extension.dart';
 import 'package:ommo/utils/generics/generics.dart';
 import 'package:ommo/utils/helpers/helpers.dart';
 import 'package:ommo/utils/theme/theme.dart';
 
 class PickLocationFromMap extends StatefulWidget {
-  final Function(Place place)? onPlacePicked;
+  final Function(PlaceDataModel place)? onPlacePicked;
   const PickLocationFromMap({super.key, this.onPlacePicked});
 
   @override

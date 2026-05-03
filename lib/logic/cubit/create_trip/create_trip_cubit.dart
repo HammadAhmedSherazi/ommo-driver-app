@@ -3,11 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:here_sdk/core.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/app/views/app_view.dart';
+import 'package:ommo/home/home.dart';
 import 'package:ommo/logic/cubit/create_trip/create_trip_state.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/models/location_point_model.dart';
 import 'package:ommo/services/hive/places_cache/places_cache_service.dart';
 import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
+import 'package:ommo/utils/extension/place_extension.dart';
 
 class CreateTripCubit extends Cubit<CreateTripState> {
   final RecentSearchCubit recentSearchCubit;
@@ -108,7 +110,7 @@ class CreateTripCubit extends Cubit<CreateTripState> {
       return;
     }
     navigationCubit.getCurrentLocationPlace(
-      onComplete: (Place? place) {
+      onComplete: (PlaceDataModel? place) {
         if (isClosed) return;
         if (place != null) {
           final startPoint = LocationPoint(
@@ -191,7 +193,7 @@ class CreateTripCubit extends Cubit<CreateTripState> {
   /// Routing and Navigation Functions
   void searchPlaces(
     String query,
-    void Function(List<Place> suggestions) onChanged,
+    void Function(List<PlaceDataModel> suggestions) onChanged,
   ) {
     if (query == '') {
       onChanged([]);
@@ -220,7 +222,7 @@ class CreateTripCubit extends Cubit<CreateTripState> {
       (SearchError? searchError, List<Suggestion>? list) {
         final places = list
                 ?.where((e) => e.place?.id != null)
-                .map((e) => e.place!)
+                .map((e) => e.place!.toPlaceDataModel)
                 .toList() ??
             [];
         if (places.isNotEmpty) {

@@ -69,8 +69,13 @@ extension PlaceExtension on Place {
   }
 
   PlaceDataModel get toPlaceDataModel => PlaceDataModel.fromJson({
+    'id': id,
     'networkImage': getImage,
-    'title': title,
+    'title': formattedTitle,
+    'subtitle': formattedSubtitle,
+    'isBusiness': isBusiness,
+    'latitude': geoCoordinates?.latitude,
+    'longitude': geoCoordinates?.longitude,
     'address': address.addressText,
     'storeType': getReadablePlaceTypeFriendly,
     'distance': distanceInMiles,
@@ -78,6 +83,13 @@ extension PlaceExtension on Place {
     'time': details.openingHours.firstOrNull?.text.firstOrNull,
     'rating': details.ratings.firstOrNull?.average,
     'reviewCount': details.ratings.firstOrNull?.count,
+    'distanceInMeters': distanceInMeters,
+    'website': details.contacts.firstOrNull?.websites.firstOrNull?.address,
+    'phoneNumber': details.contacts.firstOrNull?.landlinePhones.firstOrNull?.phoneNumber ?? details.contacts.firstOrNull?.mobilePhones.firstOrNull?.phoneNumber,
+    'category': details.categories.firstOrNull?.name,
+    'amenities': amenitiesAsList,
+
+
   });
 
   List<String> get amenitiesAsList {

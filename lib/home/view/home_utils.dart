@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:here_sdk/search.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/home/view/home_mobile_view.dart';
 import 'package:ommo/home/view/pick_location_from_map.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
+import 'package:ommo/models/models.dart';
 import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
 import 'package:ommo/services/hive/recent_search/cubit/recent_search_state.dart';
 import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
-import 'package:ommo/utils/extension/place_extension.dart';
+import 'package:ommo/utils/constants/constants.dart';
+import 'package:ommo/utils/extension/place_data_model.dart';
 import 'package:ommo/utils/extension/recent_search_model_extension.dart';
 import 'package:ommo/utils/generics/generics.dart';
 import 'package:ommo/utils/helpers/helpers.dart';
-import 'package:ommo/utils/constants/constants.dart';
 import 'package:ommo/utils/theme/theme.dart';
 
 class HomeUtils {
@@ -482,7 +482,6 @@ class HomeUtils {
                     onPlacePicked: (picked) {
                       if (onContinue != null) {
                         onContinue(picked);
-
                         Navigator.pop(context);
                       }
                     },
@@ -528,14 +527,14 @@ class HomeUtils {
                           return ListView.separated(
                             shrinkWrap: true,
                             itemBuilder: (context, index) {
-                              final Place? place =
+                              final PlaceDataModel? place =
                                   state.destinationSuggestions?.data?[index];
                               return place == null
                                   ? SizedBox()
                                   : ListTile(
                                       onTap: () {
                                         locationController.text =
-                                            place.formattedTitle;
+                                            place.title;
                                         if (locationController
                                             .text
                                             .isNotEmpty) {
@@ -673,6 +672,7 @@ class HomeUtils {
 
         return ListView.builder(
           itemCount: state.searches.length,
+          padding: EdgeInsets.zero,
           itemBuilder: (context, index) {
             final item = state.searches[index];
             return ListTile(

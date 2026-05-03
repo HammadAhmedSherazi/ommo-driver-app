@@ -28,6 +28,7 @@ import 'package:ommo/data/response/get_data.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_stops/truck_stops_state.dart';
+import 'package:ommo/utils/extension/place_extension.dart';
 
 /// Tabs that use HERE category search; used to drop POIs whose title clearly
 /// belongs on another tab (e.g. "…Wash" miscategorized as truck stop plaza).
@@ -1021,6 +1022,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
   /// Show business overview in modal bottom sheet
   void showBusinessOverviewModal(Place place, {bool fromMap = true}) {
     _selectedPlaceId = place.id;
+    
     emit(
       state.copyWith(selectedTruckStop: place, showBusinessOverviewModal: true),
     );
@@ -1129,7 +1131,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     if (place == null) return;
     navigatorKey.currentContext
         ?.read<TruckNavigationCubit>()
-        .calculateRouteWithBusinessOverview(place);
+        .calculateRouteWithBusinessOverview(place.toPlaceDataModel);
     clearSelectedTruckStop();
   }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:here_sdk/search.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
+import 'package:ommo/home/home.dart';
 import 'package:ommo/home/view/home_mobile_view.dart';
 import 'package:ommo/home/view/home_utils.dart';
 import 'package:ommo/home/view/truck_navigation/truck_navigation_static_details.dart';
@@ -10,7 +10,6 @@ import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_state.dart';
 import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
 import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
-import 'package:ommo/utils/extension/place_extension.dart';
 import 'package:ommo/utils/extension/recent_search_model_extension.dart';
 import 'package:ommo/utils/generics/generics.dart';
 import 'package:ommo/utils/theme/theme.dart';
@@ -120,13 +119,13 @@ class _CreateTripViewState extends State<CreateTripView> {
                           },
                           onContinue: (place) {
                             if (place == null) return;
-                            if (place is Place) {
+                            if (place is PlaceDataModel) {
                               recentSearchCubit.addSearchFromPlace(place);
                             }
                             createTripCubit.selectStartingPlace(place);
                             startController.text = place is RecentSearchModel
                                 ? place.formattedTitle
-                                : (place as Place).formattedTitle;
+                                : (place as PlaceDataModel).title;
                             // Navigator.pop(context);
                           },
                         );
@@ -136,14 +135,14 @@ class _CreateTripViewState extends State<CreateTripView> {
                           showMyLocationOption: false,
                           onContinue: (place) {
                             if (place == null) return;
-                            if (place is Place) {
+                            if (place is PlaceDataModel) {
                               recentSearchCubit.addSearchFromPlace(place);
                             }
                             createTripCubit.selectDestinationPlace(place);
                             destinationController.text =
                                 place is RecentSearchModel
                                 ? place.formattedTitle
-                                : (place as Place).formattedTitle;
+                                : (place as PlaceDataModel).title;
                             // Navigator.pop(context);
                           },
                         );

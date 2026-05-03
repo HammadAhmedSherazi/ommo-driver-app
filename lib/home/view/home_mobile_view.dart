@@ -25,6 +25,7 @@ import 'package:ommo/logic/cubit/truck_stops/truck_stop_cubit.dart';
 import 'package:ommo/logic/cubit/truck_stops/truck_stops_state.dart';
 import 'package:ommo/services/hive/recent_search/cubit/recent_search_cubit.dart';
 import 'package:ommo/utils/extension/num_extension.dart';
+import 'package:ommo/utils/extension/place_data_model.dart';
 import 'package:ommo/utils/extension/place_extension.dart';
 import 'package:ommo/utils/extension/recent_search_model_extension.dart';
 import 'package:ommo/utils/extension/route_extension.dart';
@@ -710,10 +711,9 @@ class _HomeMobileViewState extends State<HomeMobileView>
                           deleteIcon: Icon(Icons.cancel),
 
                           label: Text(
-
                             TruckSpecificationUtils.setRestrictiontitle(
-                                state.avoidance.entries.elementAt(index).key,
-                              ),
+                              state.avoidance.entries.elementAt(index).key,
+                            ),
                             // TruckNavigationStaticDetails
                             //     .settingChipsList[index],
                           ),
@@ -743,7 +743,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                           ),
                         ),
                         onSuccess: (place) {
-                          if (place?.placeType == PlaceType.poi) {
+                          if (place?.isBusiness ?? false) {
                             return showTappedBusinessDetails(place);
                           } else {
                             return showTappedAddressDetails();
@@ -763,7 +763,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                   builder: (context, state) {
                     return state.showBusinessOverviewModal
                         ? showTappedBusinessDetails(
-                            state.selectedTruckStop,
+                            state.selectedTruckStop?.toPlaceDataModel,
                             assetImage:
                                 context
                                     .read<TruckStopCubit>()
@@ -1558,12 +1558,10 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 if (searchFieldFocusNode.hasFocus &&
                     searchTextEditController.text.isEmpty) ...[
                   10.h,
-
                   CustomTabBarWidget(
                     options: TruckNavigationStaticDetails.locationOpt,
                     tabController: _tabController,
                   ),
-
                   15.h,
                   SizedBox(
                     height: context.screenHeight * 0.6,
@@ -1580,7 +1578,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                             makeHalfBottomSheet();
                           },
                         ),
-
+                  
                         ListView.builder(
                           physics: NeverScrollableScrollPhysics(),
                           itemBuilder: (context, index) => GestureDetector(
@@ -1593,7 +1591,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                           itemCount:
                               TruckNavigationStaticDetails.placess.length,
                         ),
-
+                  
                         ListView.builder(
                           physics: NeverScrollableScrollPhysics(),
                           itemBuilder: (context, index) => PlaceDisplayWidget(
@@ -1621,7 +1619,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                           ? ListView.separated(
                               padding: EdgeInsets.symmetric(vertical: 10),
                               itemBuilder: (context, index) {
-                                final Place? place =
+                                final PlaceDataModel? place =
                                     state.destinationSuggestions?.data?[index];
                                 log(place.toString());
                                 return place == null
@@ -1629,7 +1627,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                     : ListTile(
                                         onTap: () {
                                           searchTextEditController.text =
-                                              place.formattedTitle;
+                                              place.title;
 
                                           context
                                               .read<TruckNavigationCubit>()
@@ -1674,10 +1672,10 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                           ],
                                         ),
 
-                                        title:
-                                            place.buildSuggestionTitleWidget(),
-                                        subtitle:
-                                            place.buildSuggestionSubtitleWidget(),
+                                        title: place
+                                            .buildSuggestionTitleWidget(),
+                                        subtitle: place
+                                            .buildSuggestionSubtitleWidget(),
                                       );
                               },
                               separatorBuilder: (context, index) => Divider(),
@@ -1796,17 +1794,17 @@ class _HomeMobileViewState extends State<HomeMobileView>
   }
 
   Widget showTappedBusinessDetails(
-    Place? place, {
+    PlaceDataModel? place, {
     VoidCallback? onBackPressed,
     VoidCallback? onTripPressed,
     String? assetImage,
   }) {
-    final String image = place?.getImage ?? '';
-    final bool? isOpened = place?.details.openingHours.firstOrNull?.isOpen;
-    final String? time =
-        place?.details.openingHours.firstOrNull?.text.firstOrNull;
-    final double? rating = place?.details.ratings.firstOrNull?.average;
-    final int? ratingCount = place?.details.ratings.firstOrNull?.count;
+    // final String image = place?.getImage ?? '';
+    // final bool? isOpened = place?.details.openingHours.firstOrNull?.isOpen;
+    // final String? time =
+    //     place?.details.openingHours.firstOrNull?.text.firstOrNull;
+    // final double? rating = place?.details.ratings.firstOrNull?.average;
+    // final int? ratingCount = place?.details.ratings.firstOrNull?.count;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1830,68 +1828,72 @@ class _HomeMobileViewState extends State<HomeMobileView>
             decoration: BoxDecoration(
               color: Colors.grey,
               shape: BoxShape.circle,
-              image: image.isNotEmpty
-                  ? DecorationImage(image: NetworkImage(image))
+              image: (place?.networkImage ?? '').isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(place?.networkImage ?? ''),
+                    )
                   : assetImage != null
                   ? DecorationImage(image: AssetImage(assetImage))
                   : null,
             ),
           ),
           title: Text(
-            place?.formattedTitle ?? '',
+            place?.title ?? '',
             style: AppTextTheme().headingText.copyWith(fontSize: 20),
           ),
-          subtitle: Row(
-            spacing: 3,
-            children: [
-              // ...List.generate(
-              //   5,
-              //   (index) =>
-              //       SvgPicture.asset(AppIcons.ratingIcon),
-              // ),
-              if (rating != null) ...[
-                CustomRatingIndicator(rating: rating),
-                Text(
-                  rating.toString(),
-                  style: AppTextTheme().lightText.copyWith(
-                    color: Color(0xffFF8800),
-                  ),
-                ),
-              ],
-
-              Text.rich(
-                TextSpan(
-                  children: [
-                    if (ratingCount != null) ...[
-                      TextSpan(text: "($ratingCount)"),
-                      TextSpan(
-                        text: "  •  ", // example extra text
-                        style: AppTextTheme().lightText.copyWith(
-                          fontSize: 16,
-                          color: AppColorTheme().secondary,
-                        ),
-                      ),
-                    ],
-
-                    TextSpan(
-                      text: place?.details.categories.firstOrNull?.name ?? '',
+          subtitle: SizedBox(
+            child: Row(
+              spacing: 3,
+              children: [
+                // ...List.generate(
+                //   5,
+                //   (index) =>
+                //       SvgPicture.asset(AppIcons.ratingIcon),
+                // ),
+                if (place?.rating != null) ...[
+                  CustomRatingIndicator(rating: place?.rating ?? 0),
+                  Text(
+                    place?.rating?.toString() ?? '',
+                    style: AppTextTheme().lightText.copyWith(
+                      color: Color(0xffFF8800),
                     ),
+                  ),
+                ],
+
+                Expanded(
+                  child: Text.rich(
                     TextSpan(
-                      text: "  •  ", // example extra text
+                      children: [
+                        if (place?.reviewCount != null) ...[
+                          TextSpan(text: "(${place?.reviewCount})"),
+                          TextSpan(
+                            text: "  •  ", // example extra text
+                            style: AppTextTheme().lightText.copyWith(
+                              fontSize: 16,
+                              color: AppColorTheme().secondary,
+                            ),
+                          ),
+                        ],
+
+                        TextSpan(text: place?.category ?? ''),
+                        TextSpan(
+                          text: "  •  ", // example extra text
+                          style: AppTextTheme().lightText.copyWith(
+                            fontSize: 16,
+                            color: AppColorTheme().secondary,
+                          ),
+                        ),
+
+                        TextSpan(text: place?.distanceInMiles ?? ''),
+                      ],
                       style: AppTextTheme().lightText.copyWith(
-                        fontSize: 16,
                         color: AppColorTheme().secondary,
                       ),
                     ),
-
-                    TextSpan(text: place?.distanceInMiles ?? ''),
-                  ],
-                  style: AppTextTheme().lightText.copyWith(
-                    color: AppColorTheme().secondary,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         10.h,
@@ -1951,7 +1953,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
           leading: Icon(Icons.location_on_outlined, color: Colors.black),
           horizontalTitleGap: 5,
           title: Text(
-            place?.formattedSubtitle ?? '',
+            place?.subtitle ?? '',
             style: AppTextTheme().lightText.copyWith(fontSize: 16),
           ),
         ),
@@ -1962,21 +1964,21 @@ class _HomeMobileViewState extends State<HomeMobileView>
             TextSpan(
               children: [
                 TextSpan(
-                  text: isOpened == null
+                  text: place?.shopStatus == null
                       ? 'N/A'
-                      : isOpened
+                      : place?.shopStatus == true
                       ? "Opened"
                       : "Closed",
                   style: AppTextTheme().lightText.copyWith(
                     fontSize: 16,
-                    color: isOpened == null
+                    color: place?.shopStatus == null
                         ? AppColorTheme().lightGrey
-                        : isOpened
+                        : place?.shopStatus == true
                         ? AppColorTheme().primary
                         : Colors.red,
                   ),
                 ),
-                if (time != null) ...[
+                if (place?.time != null) ...[
                   TextSpan(
                     text: "  •  ", // example extra text
                     style: AppTextTheme().lightText.copyWith(
@@ -1985,16 +1987,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
                     ),
                   ),
 
-                  TextSpan(
-                    text:
-                        place
-                            ?.details
-                            .openingHours
-                            .firstOrNull
-                            ?.text
-                            .firstOrNull ??
-                        '',
-                  ),
+                  TextSpan(text: place?.time ?? ''),
                 ],
               ],
             ),
@@ -2004,21 +1997,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
           leading: Icon(Icons.phone_outlined, color: Colors.black),
           horizontalTitleGap: 5,
           title: Text(
-            place
-                    ?.details
-                    .contacts
-                    .firstOrNull
-                    ?.landlinePhones
-                    .firstOrNull
-                    ?.phoneNumber ??
-                place
-                    ?.details
-                    .contacts
-                    .firstOrNull
-                    ?.mobilePhones
-                    .firstOrNull
-                    ?.phoneNumber ??
-                'N/A',
+            place?.phoneNumber ?? 'N/A',
 
             // "(406) 555-0120 ",
             style: AppTextTheme().lightText.copyWith(fontSize: 16),
@@ -2028,14 +2007,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
           leading: Icon(Icons.language, color: Colors.black),
           horizontalTitleGap: 5,
           title: Text(
-            place
-                    ?.details
-                    .contacts
-                    .firstOrNull
-                    ?.websites
-                    .firstOrNull
-                    ?.address ??
-                'N/A',
+            place?.website ?? 'N/A',
             style: AppTextTheme().lightText.copyWith(fontSize: 16),
           ),
         ),
@@ -2045,7 +2017,7 @@ class _HomeMobileViewState extends State<HomeMobileView>
         Wrap(
           spacing: 8, // space between chips
           runSpacing: 8, // space between lines
-          children: (place?.amenitiesAsList ?? []).map((e) {
+          children: (place?.amenities ?? []).map((e) {
             return Chip(
               padding: EdgeInsets.zero,
               labelPadding: const EdgeInsets.only(right: 8),
@@ -2729,12 +2701,8 @@ class _HomeMobileViewState extends State<HomeMobileView>
                 Expanded(
                   child: Text(
                     state.hasTapDestination
-                        ? state.tappedPlace?.data?.address.addressText ?? ''
-                        : state
-                                  .selectedSuggestion
-                                  ?.place
-                                  ?.address
-                                  .addressText ??
+                        ? state.tappedPlace?.data?.address ?? ''
+                        : state.selectedSuggestion?.address ??
                               searchTextEditController.text,
                     // searchTextEditController.text,
                     // "Times Square, New York, NY, USA",
@@ -3148,25 +3116,29 @@ class PlaceDisplayWidget extends StatelessWidget {
                 spacing: 3,
                 children: [
                   // Icon(Icons.star, color: Color(0xffFF8800), size: 15,),
-                  SvgPicture.asset(AppIcons.ratingIcon),
-                  Text(
-                    place?.rating.toString() ?? '',
-                    style: AppTextTheme().bodyText.copyWith(
-                      color: Color(0xffFF8800),
+                  if (place?.rating != null) ...[
+                    SvgPicture.asset(AppIcons.ratingIcon),
+                    Text(
+                      place?.rating?.toString() ?? '',
+                      style: AppTextTheme().bodyText.copyWith(
+                        color: Color(0xffFF8800),
+                      ),
                     ),
-                  ),
-                  Text(
-                    "(${place?.reviewCount ?? ''})",
-                    style: AppTextTheme().bodyText.copyWith(
-                      color: AppColorTheme().secondary,
+                  ],
+                  if (place?.reviewCount != null) 
+                    Text(
+                      "(${place?.reviewCount ?? ''})  • ",
+                      style: AppTextTheme().bodyText.copyWith(
+                        color: AppColorTheme().secondary,
+                      ),
                     ),
-                  ),
-                  Text(
-                    "  • ${place?.storeType ?? ''} • ${place?.distance ?? '0'} mi",
-                    style: AppTextTheme().bodyText.copyWith(
-                      color: AppColorTheme().secondary,
+                    Text(
+                      "${place?.storeType ?? ''} • ${place?.distanceInMiles}",
+                      style: AppTextTheme().bodyText.copyWith(
+                        color: AppColorTheme().secondary,
+                      ),
                     ),
-                  ),
+                  
                 ],
               ),
               Text(place?.address ?? '', style: AppTextTheme().bodyText),

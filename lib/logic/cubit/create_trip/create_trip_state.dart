@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/models/location_point_model.dart';
+import 'package:ommo/models/models.dart';
 
 class CreateTripState extends Equatable {
   final LocationPoint? startPoint;
@@ -12,8 +13,8 @@ class CreateTripState extends Equatable {
   final bool isLoading;
   final bool hasStartFocus;
 
-  final List<Place> startSuggestions;
-  final List<Place> destinationSuggestions;
+  final List<PlaceDataModel> startSuggestions;
+  final List<PlaceDataModel> destinationSuggestions;
 
   bool get isMyLocationSelected => startPoint == currentStartPoint;
 
@@ -37,8 +38,8 @@ class CreateTripState extends Equatable {
     bool? showYourLocationTab,
     bool? isLoading,
     bool? hasStartFocus,
-    List<Place>? startSuggestions,
-    List<Place>? destinationSuggestions,
+    List<PlaceDataModel>? startSuggestions,
+    List<PlaceDataModel>? destinationSuggestions,
   }) {
     return CreateTripState(
       startPoint: startPoint ?? this.startPoint,

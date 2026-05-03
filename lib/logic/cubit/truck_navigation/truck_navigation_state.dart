@@ -6,16 +6,17 @@ import 'package:here_sdk/routing.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/data/response/get_data.dart';
 import 'package:ommo/models/location_point_model.dart';
+import 'package:ommo/models/models.dart';
 import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 
 class TruckNavigationState extends Equatable {
   final HereMapController? mapController;
-  final FutureData<List<Place>>? destinationSuggestions;
+  final FutureData<List<PlaceDataModel>>? destinationSuggestions;
   final GeoCoordinates? startCoordinates;
-  final FutureData<Place>? currentPlace;
-  final Suggestion? selectedSuggestion;
+  final FutureData<PlaceDataModel>? currentPlace;
+  final PlaceDataModel? selectedSuggestion;
   final GeoCoordinates? destinationCoordinates;
-  final FutureData<Place>? tappedPlace;
+  final FutureData<PlaceDataModel>? tappedPlace;
   final bool hasdestinationFromRecent;
   final RecentSearchModel? destinationFromRecent;
   final Route? currentRoute;
@@ -29,7 +30,7 @@ class TruckNavigationState extends Equatable {
   final List<ManeuverProgress> maneuverProgresses;
   final List<LocationPoint>? locationPoints;
   final int nextTargetIndex;
-  final Place? businessAtAddress;
+  final PlaceDataModel? businessAtAddress;
   final String? currentSpeed;
   final String? speedLimit;
   final GeoCoordinates? currentNavigationLocation;
@@ -80,11 +81,11 @@ class TruckNavigationState extends Equatable {
 
   TruckNavigationState copyWith({
     HereMapController? mapController,
-    FutureData<Place>? currentPlace,
+    FutureData<PlaceDataModel>? currentPlace,
     GeoCoordinates? startCoordinates,
     dynamic selectedSuggestion,
-    FutureData<List<Place>>? destinationSuggestions,
-    FutureData<List<Place>>? nearbyTruckStops,
+    FutureData<List<PlaceDataModel>>? destinationSuggestions,
+    // FutureData<List<PlaceDataModel>>? nearbyTruckStops,
     dynamic destinationCoordinates,
     dynamic tappedPlace,
     bool? hasdestinationFromRecent,

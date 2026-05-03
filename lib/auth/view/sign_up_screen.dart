@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ommo/auth/auth.dart';
+import 'package:ommo/auth/view/privacy_policy_view.dart';
 import 'package:ommo/custom_widget/custom_widget.dart';
 import 'package:ommo/utils/utils.dart';
 
@@ -31,12 +32,58 @@ class _SignUpScreenState extends State<SignUpScreen> {
   ];
 
   static const List<String> licenseStates = [
-    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
+    'AL',
+    'AK',
+    'AZ',
+    'AR',
+    'CA',
+    'CO',
+    'CT',
+    'DE',
+    'FL',
+    'GA',
+    'HI',
+    'ID',
+    'IL',
+    'IN',
+    'IA',
+    'KS',
+    'KY',
+    'LA',
+    'ME',
+    'MD',
+    'MA',
+    'MI',
+    'MN',
+    'MS',
+    'MO',
+    'MT',
+    'NE',
+    'NV',
+    'NH',
+    'NJ',
+    'NM',
+    'NY',
+    'NC',
+    'ND',
+    'OH',
+    'OK',
+    'OR',
+    'PA',
+    'RI',
+    'SC',
+    'SD',
+    'TN',
+    'TX',
+    'UT',
+    'VT',
+    'VA',
+    'WA',
+    'WV',
+    'WI',
+    'WY',
   ];
+  final ValueNotifier<bool?> _isChecked = ValueNotifier(false);
 
   @override
   void dispose() {
@@ -53,15 +100,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
     context.read<AuthCubit>().clearError();
     if (!_formKey.currentState!.validate()) return;
     context.read<AuthCubit>().register(
-          firstName: _firstNameController.text.trim(),
-          lastName: _lastNameController.text.trim(),
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-          phone: _phoneController.text.trim(),
-          employmentType: _employmentType!,
-          cdlLicenseNumber: _cdlLicenseController.text.trim(),
-          licenseState: _licenseState!,
-        );
+      firstName: _firstNameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      phone: _phoneController.text.trim(),
+      employmentType: _employmentType!,
+      cdlLicenseNumber: _cdlLicenseController.text.trim(),
+      licenseState: _licenseState!,
+    );
   }
 
   @override
@@ -86,9 +133,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
               children: [
                 Center(
                   child: Image.asset(
-                  AppIcons.logo,
-                   width: 120,
-                    height: 120,
+                    AppIcons.logo,
+                    width: 120,
+                    height: 100,
                     fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) => Icon(
                       Icons.local_shipping,
@@ -101,26 +148,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 Text(
                   'Create account',
                   style: AppTextTheme().headingText.copyWith(
-                        color: AppColorTheme().black,
-                      ),
+                    color: AppColorTheme().black,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 8),
                 Text(
                   'Sign up to get started',
                   style: AppTextTheme().bodyText.copyWith(
-                        color: AppColorTheme().grey,
-                      ),
+                    color: AppColorTheme().grey,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 32),
                 BlocListener<AuthCubit, AuthState>(
                   listener: (context, state) {
                     if (state.status == AuthStatus.authenticated) {
-                      Navigator.of(context).pushNamedAndRemoveUntil(
-                        '/home',
-                        (route) => false,
-                      );
+                      Navigator.of(
+                        context,
+                      ).pushNamedAndRemoveUntil('/home', (route) => false);
                     }
                   },
                   child: BlocBuilder<AuthCubit, AuthState>(
@@ -135,7 +181,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           if (state.errorMessage != null) ...[
                             Container(
                               padding: EdgeInsets.symmetric(
-                                  vertical: 12, horizontal: 16),
+                                vertical: 12,
+                                horizontal: 16,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColorTheme().whiteRed,
                                 borderRadius: BorderRadius.circular(12),
@@ -143,8 +191,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               child: Text(
                                 state.errorMessage!,
                                 style: AppTextTheme().bodyText.copyWith(
-                                      color: AppColorTheme().red,
-                                    ),
+                                  color: AppColorTheme().red,
+                                ),
                               ),
                             ),
                             SizedBox(height: 16),
@@ -223,12 +271,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             ),
                             items: employmentTypes
-                                .map((e) => DropdownMenuItem(
-                                      value: e,
-                                      child: Text(e),
-                                    ))
+                                .map(
+                                  (e) => DropdownMenuItem(
+                                    value: e,
+                                    child: Text(e),
+                                  ),
+                                )
                                 .toList(),
-                            onChanged: (v) => setState(() => _employmentType = v),
+                            onChanged: (v) =>
+                                setState(() => _employmentType = v),
                             validator: (v) {
                               if (v == null || v.isEmpty) {
                                 return 'Select employment type';
@@ -260,10 +311,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             ),
                             items: licenseStates
-                                .map((e) => DropdownMenuItem(
-                                      value: e,
-                                      child: Text(e),
-                                    ))
+                                .map(
+                                  (e) => DropdownMenuItem(
+                                    value: e,
+                                    child: Text(e),
+                                  ),
+                                )
                                 .toList(),
                             onChanged: (v) => setState(() => _licenseState = v),
                             validator: (v) {
@@ -273,19 +326,65 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               return null;
                             },
                           ),
-                          SizedBox(height: 32),
+                          SizedBox(height: 12),
+
+                          ValueListenableBuilder(
+                            valueListenable: _isChecked,
+                            builder: (context, isChecked, child) {
+                              return Row(
+                                children: [
+                                  Checkbox(
+                                    value: isChecked,
+                                    onChanged: (value) {
+                                      _isChecked.value = value;
+                                    },
+                                  ),
+                                  Expanded(
+                                    child: Text.rich(
+                                      TextSpan(
+                                        text: "I agree to the ",
+                                        children: [
+                                          TextSpan(
+                                            text: "Privacy Policy",
+                                            style: TextStyle(
+                                              color: AppColorTheme().primary,
+                                              decorationColor:
+                                                  AppColorTheme().primary,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                            ),
+                                            recognizer: TapGestureRecognizer()
+                                              ..onTap = () {
+                                                Navigator.of(context).push(
+                                                  MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        PrivacyPolicyView(),
+                                                  ),
+                                                );
+                                              },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                          SizedBox(height: 12),
                           CustomButtonWidget(
                             title: 'Sign up',
                             isLoad: isLoading,
                             onPressed: _submit,
                           ),
                           SizedBox(height: 24),
+
                           Center(
                             child: RichText(
                               text: TextSpan(
                                 style: AppTextTheme().bodyText.copyWith(
-                                      color: AppColorTheme().grey,
-                                    ),
+                                  color: AppColorTheme().grey,
+                                ),
                                 children: [
                                   TextSpan(text: 'Already have an account? '),
                                   TextSpan(

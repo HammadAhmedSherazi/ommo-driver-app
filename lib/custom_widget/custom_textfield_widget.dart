@@ -125,6 +125,7 @@ class _CustomTextfieldWidgetState extends State<CustomTextfieldWidget> {
                           return IconButton(
                             onPressed: () {
                               widget.controller?.clear();
+                              widget.onChanged?.call('');
                             },
                             icon: Icon(
                               Icons.cancel,

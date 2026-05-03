@@ -5,8 +5,10 @@ import 'package:here_sdk/core.dart' show GeoCoordinates;
 import 'package:here_sdk/mapview.dart';
 import 'package:here_sdk/search.dart';
 import 'package:ommo/data/response/get_data.dart';
+import 'package:ommo/home/home.dart';
 import 'package:ommo/logic/cubit/pick_location_cubit.dart/pick_location_state.dart';
 import 'package:ommo/services/hive/places_cache/places_cache_service.dart';
+import 'package:ommo/utils/extension/place_extension.dart';
 import 'package:ommo/utils/helpers/helpers.dart';
 
 class PickLocationCubit extends Cubit<PickLocationState> {
@@ -32,7 +34,7 @@ class PickLocationCubit extends Cubit<PickLocationState> {
       emit(
         state.copyWith(
           selectedCoordinates: mapState.targetCoordinates,
-          selectedPlace: FutureData<Place>.loading(),
+          selectedPlace: FutureData<PlaceDataModel>.loading(),
         ),
       );
       Helpers.print(state.selectedPlace);
@@ -45,7 +47,7 @@ class PickLocationCubit extends Cubit<PickLocationState> {
         PlacesHiveCacheService.instance.getReverseGeocodedPlace(coords);
     if (cached != null) {
       emit(
-        state.copyWith(selectedPlace: FutureData<Place>.completed(cached)),
+        state.copyWith(selectedPlace: FutureData<PlaceDataModel>.completed(cached)),
       );
       Helpers.print(state.selectedPlace);
       return;
@@ -60,7 +62,7 @@ class PickLocationCubit extends Cubit<PickLocationState> {
       if (e != null || places == null || places.isEmpty) {
         emit(
           state.copyWith(
-            selectedPlace: FutureData<Place>.error(
+            selectedPlace: FutureData<PlaceDataModel>.error(
               e?.name ?? "Address not found of that coordinates",
             ),
           ),
@@ -72,12 +74,12 @@ class PickLocationCubit extends Cubit<PickLocationState> {
       unawaited(
         PlacesHiveCacheService.instance.putReverseGeocodedPlace(
           coords,
-          places.first,
+          places.first.toPlaceDataModel,
         ),
       );
       emit(
         state.copyWith(
-          selectedPlace: FutureData<Place>.completed(places.first),
+          selectedPlace: FutureData<PlaceDataModel>.completed(places.first.toPlaceDataModel),
         ),
       );
       Helpers.print(state.selectedPlace);

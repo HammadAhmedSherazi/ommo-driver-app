@@ -26,6 +26,7 @@ import 'package:ommo/logic/cubit/truck_specifications/truck_specifications_state
 import 'package:ommo/logic/cubit/truck_stops/truck_stop_cubit.dart';
 import 'package:ommo/map_sdk/HEREPositioningSimulator.dart';
 import 'package:ommo/models/location_point_model.dart';
+import 'package:ommo/models/models.dart';
 import 'package:ommo/services/hive/places_cache/places_cache_service.dart';
 import 'package:ommo/services/hive/recent_search/model/recent_search_model.dart';
 import 'package:ommo/utils/constants/constants.dart';
@@ -1087,12 +1088,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   Future<void> getCurrentLocationPlace({
-    void Function(Place? place)? onComplete,
+    void Function(PlaceDataModel? place)? onComplete,
   }) async {
     if (state.startCoordinates == null) {
       emit(
         state.copyWith(
-          nearbyTruckStops: FutureData.error(
+          currentPlace: FutureData.error(
             "Unable to retrieve details because the current location could not be determined.",
           ),
         ),
@@ -1125,14 +1126,29 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         return;
       }
       if (places != null && places.isNotEmpty) {
-        unawaited(
-          PlacesHiveCacheService.instance.putReverseGeocodedPlace(
-            currentCoords,
-            places.first,
-          ),
-        );
-        emit(state.copyWith(currentPlace: FutureData.completed(places.first)));
-        onComplete?.call(places.first);
+        final placeDataModel = places.firstOrNull?.toPlaceDataModel;
+
+        if (placeDataModel != null) {
+          unawaited(
+            PlacesHiveCacheService.instance.putReverseGeocodedPlace(
+              currentCoords,
+              placeDataModel,
+            ),
+          );
+          emit(
+            state.copyWith(currentPlace: FutureData.completed(placeDataModel)),
+          );
+          onComplete?.call(placeDataModel);
+        } else {
+          emit(
+            state.copyWith(
+              currentPlace: FutureData.error(
+                "No details available of current location",
+              ),
+            ),
+          );
+          onComplete?.call(null);
+        }
       } else {
         emit(
           state.copyWith(
@@ -1196,9 +1212,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
     if (cached != null && cached.isNotEmpty) {
       emit(
-        state.copyWith(
-          destinationSuggestions: FutureData.completed(cached),
-        ),
+        state.copyWith(destinationSuggestions: FutureData.completed(cached)),
       );
       return;
     }
@@ -1220,8 +1234,9 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         }
         final filteredList = list
             ?.where((element) => element.place?.id != null)
-            .map((e) => e.place!)
+            .map((e) => e.place!.toPlaceDataModel)
             .toList();
+
         if (filteredList != null && filteredList.isNotEmpty) {
           unawaited(
             PlacesHiveCacheService.instance.putTextSearchPlaces(
@@ -1248,13 +1263,13 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
   }
 
-  void selectSuggestionAsDestination(Suggestion suggestion) {
-    final place = suggestion.place;
+  void selectSuggestionAsDestination(PlaceDataModel? place) {
+    // final place = suggestion.place;
     if (place == null) return;
     selectBusinessSuggestionAsDestination(place);
   }
 
-  void selectBusinessSuggestionAsDestination(Place place) {
+  void selectBusinessSuggestionAsDestination(PlaceDataModel place) {
     try {
       if (place.isBusiness == true) {
         searchBusinessDetailsByPlaceId(
@@ -1270,7 +1285,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     }
   }
 
-  void setDestination(Place? place) {
+  void setDestination(PlaceDataModel? place) {
     if (place == null) return;
     final destinationPoint = LocationPoint(
       place: place,
@@ -1294,14 +1309,14 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         locationPoints: _list,
         hasTapDestination: true,
         hasdestinationFromRecent: false,
-        tappedPlace: FutureData<Place>.completed(place),
+        tappedPlace: FutureData<PlaceDataModel>.completed(place),
         businessAtAddress: 'null',
       ),
     );
     setDestinationMarker();
 
     // If it's an address (not a POI), search for businesses at that address
-    if (place.placeType != PlaceType.poi && place.geoCoordinates != null) {
+    if (!place.isBusiness) {
       _searchBusinessesAtAddress(place.geoCoordinates!);
     } else {
       // Clear businesses if it's already a POI
@@ -1310,7 +1325,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
   }
 
   /// Set destination from a Place object (used for category search results)
-  void setDestinationFromPlace(Place place) {
+  void setDestinationFromPlace(PlaceDataModel place) {
     if (state.currentPlace?.data == null) return;
 
     final destinationPoint = LocationPoint(
@@ -1333,8 +1348,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         locationPoints: _list,
         hasTapDestination: true,
         businessAtAddress: 'null',
-
-        tappedPlace: FutureData<Place>.completed(place),
+        tappedPlace: FutureData<PlaceDataModel>.completed(place),
       ),
     );
     setDestinationMarker();
@@ -1412,8 +1426,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     });
   }
 
-  void calculateRouteWithBusinessOverview(Place? place) {
-    if (place == null || place.geoCoordinates == null) return;
+  void calculateRouteWithBusinessOverview(PlaceDataModel? place) {
+    if (place == null) return;
     final List<LocationPoint> points = [
       LocationPoint(
         place: state.currentPlace?.data,
@@ -1441,7 +1455,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     void restoreAndMaybeRetry() {
       if (attempt < _maxRouteOrNavigationRetries) {
         emit(previousState);
-        Future.microtask(() => calculateRoute(attempt: attempt + 1,isRecalculating: isRecalculating));
+        Future.microtask(
+          () => calculateRoute(
+            attempt: attempt + 1,
+            isRecalculating: isRecalculating,
+          ),
+        );
       } else {
         emit(previousState);
       }
@@ -1866,7 +1885,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     emit(
       state.copyWith(
-        destinationSuggestions: FutureData<List<Place>>.initial(),
+        destinationSuggestions: FutureData<List<PlaceDataModel>>.initial(),
         selectedSuggestion: removeDestination ? 'null' : null,
         destinationCoordinates: removeDestination ? 'null' : null,
         currentRoute: 'null',
@@ -2381,7 +2400,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         state.copyWith(
           hasTapDestination: true,
           destinationCoordinates: pickedPlace.coordinates,
-          tappedPlace: FutureData<Place>.loading(),
+          tappedPlace: FutureData<PlaceDataModel>.loading(),
         ),
       );
 
@@ -2439,10 +2458,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
               searchBusinessDetailsByPlaceId(
                 foundPlace.id,
                 (p) => onPickedPlaceFound(p),
-                (error) => onPickedPlaceFound(foundPlace),
+                (error) => onPickedPlaceFound(foundPlace?.toPlaceDataModel),
               );
             } else {
-              onPickedPlaceFound(foundPlace);
+              onPickedPlaceFound(foundPlace.toPlaceDataModel);
             }
           } else {
             // Fallback to reverse geocoding if no matching POI found
@@ -2455,7 +2474,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     }
   }
 
-  void onPickedPlaceFound(Place? foundPlace) {
+  void onPickedPlaceFound(PlaceDataModel? foundPlace) {
     if (foundPlace == null) return;
     final List<LocationPoint> _list = [];
     if (state.currentPlace?.data != null) {
@@ -2476,7 +2495,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     emit(
       state.copyWith(
         locationPoints: _list,
-        tappedPlace: FutureData<Place>.completed(foundPlace),
+        tappedPlace: FutureData<PlaceDataModel>.completed(foundPlace),
       ),
     );
     setDestinationMarker(hasDestinationConfirmed: true);
@@ -2488,7 +2507,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       state.copyWith(
         hasTapDestination: true,
         destinationCoordinates: recent.geoCoordinates,
-        tappedPlace: FutureData<Place>.loading(),
+        tappedPlace: FutureData<PlaceDataModel>.loading(),
       ),
     );
 
@@ -2544,10 +2563,10 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
             searchBusinessDetailsByPlaceId(
               foundPlace.id,
               (p) => onPickedPlaceFound(p),
-              (error) => onPickedPlaceFound(foundPlace),
+              (error) => onPickedPlaceFound(foundPlace?.toPlaceDataModel),
             );
           } else {
-            onPickedPlaceFound(foundPlace);
+            onPickedPlaceFound(foundPlace.toPlaceDataModel);
           }
         } else {
           // Fallback to reverse geocoding if no matching POI found
@@ -2557,11 +2576,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
   }
 
-  void _applyTappedDestinationFromReverseGeocode(Place firstPlace) {
+  void _applyTappedDestinationFromReverseGeocode(PlaceDataModel firstPlace) {
     final List<LocationPoint> _list = [];
 
-    if (!firstPlace.isBusiness && firstPlace.geoCoordinates != null) {
-      _searchBusinessesAtAddress(firstPlace.geoCoordinates!);
+    if (!firstPlace.isBusiness) {
+      _searchBusinessesAtAddress(firstPlace.geoCoordinates);
     }
     if (state.currentPlace?.data != null) {
       _list.add(
@@ -2581,7 +2600,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     emit(
       state.copyWith(
         locationPoints: _list,
-        tappedPlace: FutureData<Place>.completed(firstPlace),
+        tappedPlace: FutureData<PlaceDataModel>.completed(firstPlace),
       ),
     );
   }
@@ -2607,7 +2626,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         log("Reverse geocoding failed: $error");
         emit(
           state.copyWith(
-            tappedPlace: FutureData<Place>.error(
+            tappedPlace: FutureData<PlaceDataModel>.error(
               "Unable to get location details",
             ),
           ),
@@ -2618,14 +2637,16 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         unawaited(
           PlacesHiveCacheService.instance.putReverseGeocodedPlace(
             coords,
-            places.first,
+            places.first.toPlaceDataModel,
           ),
         );
-        _applyTappedDestinationFromReverseGeocode(places.first);
+        _applyTappedDestinationFromReverseGeocode(
+          places.first.toPlaceDataModel,
+        );
       } else {
         emit(
           state.copyWith(
-            tappedPlace: FutureData<Place>.error(
+            tappedPlace: FutureData<PlaceDataModel>.error(
               "No details available for this location",
             ),
           ),
@@ -2649,7 +2670,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         destinationCoordinates: 'null',
         destinationFromRecent: 'null',
         selectedSuggestion: 'null',
-        tappedPlace: FutureData<Place>.initial(),
+        tappedPlace: FutureData<PlaceDataModel>.initial(),
         businessAtAddress: 'null',
       ),
     );
@@ -2662,7 +2683,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     final removed = _list.removeAt(oldIndex);
     _list.insert(newIndex, removed);
     emit(state.copyWith(locationPoints: _list));
-    calculateRoute( isRecalculating: true);
+    calculateRoute(isRecalculating: true);
     // await refreshStopAndDestinationMarker();
   }
 
@@ -2684,8 +2705,8 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
           state.locationPoints?.any(
             (e) =>
                 e.geoCoordinates?.latitude ==
-                    (place as Place).geoCoordinates?.latitude &&
-                e.geoCoordinates?.longitude == place.geoCoordinates?.longitude,
+                    (place as PlaceDataModel).geoCoordinates.latitude &&
+                e.geoCoordinates?.longitude == place.geoCoordinates.longitude,
           ) ??
           true;
     }
@@ -2708,7 +2729,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     );
     // addStopMakerAt(addIndex);
     // refreshStopAndDestinationMarker();
-    calculateRoute( isRecalculating: true);
+    calculateRoute(isRecalculating: true);
   }
 
   void editStop(int i, dynamic place, {bool isMyLocation = false}) {
@@ -2725,7 +2746,7 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
         destinationCoordinates: isDestination ? _list[i].geoCoordinates : null,
       ),
     );
-    calculateRoute( isRecalculating: true);
+    calculateRoute(isRecalculating: true);
     if (i == 0) return;
     if (isDestination) {
       setDestinationMarker();
@@ -2748,12 +2769,12 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
       ),
     );
     clearStopMarkerAt(index);
-    calculateRoute( isRecalculating: true);
+    calculateRoute(isRecalculating: true);
   }
 
   void searchBusinessDetailsByPlaceId(
     placeId,
-    Function(Place? place) onSuccess,
+    Function(PlaceDataModel? place) onSuccess,
     Function(String? error) onError,
   ) {
     final id = placeId?.toString() ?? '';
@@ -2770,13 +2791,18 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
 
     _searchEngine.searchByPlaceId(PlaceIdQuery(placeId), LanguageCode.enUs, (
       error,
-      place,
+      Place? place,
     ) {
       if (error != null) onError(error.name);
       if (place != null) {
-        unawaited(PlacesHiveCacheService.instance.putPlaceDetails(id, place));
+        unawaited(
+          PlacesHiveCacheService.instance.putPlaceDetails(
+            id,
+            place.toPlaceDataModel,
+          ),
+        );
       }
-      onSuccess(place);
+      onSuccess(place?.toPlaceDataModel);
     });
   }
 
@@ -2792,7 +2818,11 @@ class TruckNavigationCubit extends Cubit<TruckNavigationState> {
     ) {
       final int bussinessIndex = places?.indexWhere((p) => p.isBusiness) ?? -1;
       if (bussinessIndex != -1) {
-        emit(state.copyWith(businessAtAddress: places?[bussinessIndex]));
+        emit(
+          state.copyWith(
+            businessAtAddress: (places?[bussinessIndex])?.toPlaceDataModel,
+          ),
+        );
       }
     });
   }
