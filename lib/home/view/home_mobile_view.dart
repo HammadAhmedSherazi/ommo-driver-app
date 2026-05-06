@@ -3157,7 +3157,7 @@ class PlaceDisplayWidget extends StatelessWidget {
                           : Colors.redAccent,
                     ),
                   ),
-                  Text(
+                  if(place?.time != null) Text(
                     // "  • ${place?.shopStatus == true ? "Closes" : "Opens"} at ${place?.time} ",
                     "  • ${place?.time}",
                     style: AppTextTheme().bodyText.copyWith(

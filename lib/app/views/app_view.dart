@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ommo/auth/auth.dart';
+import 'package:ommo/home/view/home_view.dart';
 import 'package:ommo/logic/cubit/route_truck_specs/route_truck_specification_cubit.dart';
 import 'package:ommo/logic/cubit/truck_navigation/truck_navigation_cubit.dart';
 import 'package:ommo/logic/cubit/truck_specifications/truck_specification_cubit.dart';
@@ -79,8 +80,7 @@ class _AppView extends StatelessWidget {
         ).copyWith(textScaler: const TextScaler.linear(1.0), boldText: false),
         child: child!,
       ),
-      home: LoginScreen(),
-      // home:HomeView(),
+      home:HomeView(),
       // initialRoute: '/home',
       // routes: {
       //   '/': (context) => Container(

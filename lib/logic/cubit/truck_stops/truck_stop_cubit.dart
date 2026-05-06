@@ -55,8 +55,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
               categorySearchResults: FutureData.loading(),
               availableBrands: [],
               selectedBrands: [],
-              placeCategory:
-                  TruckNavigationStaticDetails.placeTypes[i]['name'],
+              placeCategory: TruckNavigationStaticDetails.placeTypes[i]['name'],
             ),
           ),
         ),
@@ -373,7 +372,11 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
           _updateCategoryState(
             placeTypeName,
             (category) => category.copyWith(
-              categorySearchResults: FutureData.error(searchError.toString()),
+              categorySearchResults: FutureData.error(
+                searchError == SearchError.noResultsFound
+                    ? "No results found"
+                    : searchError.toString(),
+              ),
             ),
           );
         }
@@ -393,10 +396,16 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
               .where((p) => !_isWeighStationOnly(p))
               .toList();
         }
-        filteredPlaces =
-            _filterPlacesByPrimaryCategoryCode(placeTypeName, filteredPlaces);
-        filteredPlaces =
-            _filterPlacesByCrossCategoryTitle(placeTypeName, filteredPlaces);
+
+        // filteredPlaces = _filterPlacesByPrimaryCategoryCode(
+        //   placeTypeName,
+        //   filteredPlaces,
+        // );
+
+        filteredPlaces = _filterPlacesByCrossCategoryTitle(
+          placeTypeName,
+          filteredPlaces,
+        );
 
         // Get existing places if appending
         final existingPlaces =
@@ -857,14 +866,19 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
     final List<GeoCoordinates> markerCoordinates = [];
     final bool shouldZoom = _isFirstTimeMarkersLoaded;
 
-    final imageFutures = <Future<({
-      Place place,
-      GeoCoordinates coordinates,
-      MapImage image,
-      String brand,
-      bool isPlaceSelected,
-      String? iconPath,
-    })>>[];
+    final imageFutures =
+        <
+          Future<
+            ({
+              Place place,
+              GeoCoordinates coordinates,
+              MapImage image,
+              String brand,
+              bool isPlaceSelected,
+              String? iconPath,
+            })
+          >
+        >[];
 
     // Remove stale markers synchronously; build marker images in parallel
     for (final place in places) {
@@ -887,30 +901,28 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
       if (!isBrandSelected) continue;
 
       final iconPath = getBrandMarkerIconPath(place);
-      imageFutures.add(
-        () async {
-          final MapImage markerImage;
-          if (iconPath != null) {
-            markerImage = await _createMarkerWithBrandImage(iconPath, scale);
-          } else {
-            final brandLetter = brand.isNotEmpty ? brand[0] : '?';
-            final brandColor = _getBrandColor(brand);
-            markerImage = await _createBrandMarkerImage(
-              brandLetter,
-              brandColor,
-              scale,
-            );
-          }
-          return (
-            place: place,
-            coordinates: coordinates,
-            image: markerImage,
-            brand: brand,
-            isPlaceSelected: isPlaceSelected,
-            iconPath: iconPath,
+      imageFutures.add(() async {
+        final MapImage markerImage;
+        if (iconPath != null) {
+          markerImage = await _createMarkerWithBrandImage(iconPath, scale);
+        } else {
+          final brandLetter = brand.isNotEmpty ? brand[0] : '?';
+          final brandColor = _getBrandColor(brand);
+          markerImage = await _createBrandMarkerImage(
+            brandLetter,
+            brandColor,
+            scale,
           );
-        }(),
-      );
+        }
+        return (
+          place: place,
+          coordinates: coordinates,
+          image: markerImage,
+          brand: brand,
+          isPlaceSelected: isPlaceSelected,
+          iconPath: iconPath,
+        );
+      }());
     }
 
     final builtMarkers = await Future.wait(imageFutures);
@@ -1022,7 +1034,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
   /// Show business overview in modal bottom sheet
   void showBusinessOverviewModal(Place place, {bool fromMap = true}) {
     _selectedPlaceId = place.id;
-    
+
     emit(
       state.copyWith(selectedTruckStop: place, showBusinessOverviewModal: true),
     );
@@ -1346,9 +1358,7 @@ class TruckStopCubit extends Cubit<TruckStopsState> {
 
     // Weight stations / Scales
     if (name.contains('weight station') || name.contains('scales')) {
-      return [
-        // '700-7900-0134',
-         '400-4200-0048']; // Weigh station
+      return ['700-7900-0134', '400-4200-0048']; // Weigh station
     }
 
     // Fuel
