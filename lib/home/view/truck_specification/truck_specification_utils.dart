@@ -52,331 +52,335 @@ class TruckSpecificationUtils {
         builder: (context, __) {
           final hasRoute = __.hasDirection && __.currentRoute != null;
 
-          return SizedBox(
-            height: context.screenHeight * 0.80,
-            child: ListView(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppTheme.horizontalPadding,
-              ),
-              children: [
-                Row(
-                  spacing: 10,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        context.popPage();
-                        // if (onEditSuccess != null) onEditSuccess();
-                      },
-                      child: CircleAvatar(
-                        radius: 25,
-                        backgroundColor: AppColorTheme().whiteShade,
-                        child: const Icon(
-                          Icons.arrow_back_ios,
-                          color: Colors.black,
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      "Settings",
-                      style: AppTextTheme().subHeadingText.copyWith(
-                        fontWeight: AppFontWeight.semiBold,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ],
+          return SafeArea(
+            child: SizedBox(
+              height: context.screenHeight * 0.80,
+              child: ListView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppTheme.horizontalPadding,
                 ),
-                20.h,
-                DashedLine(),
-                20.h,
-
-                // Account
-                Text(
-                  "Account",
-                  style: AppTextTheme().lightText.copyWith(
-                    color: AppColorTheme().secondary,
-                  ),
-                ),
-                20.h,
-                ListTile(
-                  onTap: () {
-                    return;
-                    context.popPage();
-                    context.pushPage(const MyProfileScreen());
-                  },
-                  leading: Icon(
-                    Icons.person_outline,
-                    color: AppColorTheme().primary,
-                  ),
-                  title: Text(
-                    "My Profile",
-                    style: AppTextTheme().lightText.copyWith(fontSize: 16),
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios_outlined,
-                    color: Colors.black,
-                    size: 22,
-                  ),
-                  contentPadding: EdgeInsets.zero,
-                ),
-                12.h,
-                ListTile(
-                  onTap: () async {
-                    return;
-                    final nav = Navigator.of(context);
-                    final auth = context.read<AuthCubit>();
-                    context.popPage();
-                    await auth.logout();
-                    nav.pushNamedAndRemoveUntil('/login', (route) => false);
-                  },
-                  leading: Icon(Icons.logout, color: AppColorTheme().red),
-                  title: Text(
-                    "Logout",
-                    style: AppTextTheme().lightText.copyWith(
-                      fontSize: 16,
-                      color: AppColorTheme().red,
-                    ),
-                  ),
-                  contentPadding: EdgeInsets.zero,
-                ),
-                20.h,
-                DashedLine(),
-                20.h,
-
-                // Vehicle
-                Text(
-                  "Vehicle",
-                  style: AppTextTheme().lightText.copyWith(
-                    color: AppColorTheme().secondary,
-                  ),
-                ),
-                20.h,
-                ListTile(
-                  onTap: () => Helpers.openBottomSheet(
-                    context: context,
-                    child: EditTruckSpecificationsView(hasRoute: hasRoute),
-                  ),
-                  leading: SvgPicture.asset(AppIcons.localShippingIcon),
-                  title: Text(
-                    "My truck",
-                    style: AppTextTheme().lightText.copyWith(fontSize: 16),
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios_outlined,
-                    color: Colors.black,
-                    size: 22,
-                  ),
-                  contentPadding: EdgeInsets.zero,
-                ),
-
-                if (hasRoute) ...[
-                  BlocBuilder<
-                    RouteTruckSpecificationsCubit,
-                    TruckSpecificationState
-                  >(
-                    builder: (context, state) => Column(
-                      children: List.generate(
-                        state.truckInfo.length,
-                        (index) => ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: 20.w,
-                          title: Text(
-                            state.truckInfo.entries.elementAt(index).key,
-                            style: AppTextTheme().lightText,
-                          ),
-                          visualDensity: const VisualDensity(vertical: -4.0),
-                          trailing: InkWell(
-                            onTap: () => Helpers.openBottomSheet(
-                              context: context,
-                              child: EditTruckSpecificationsView(
-                                hasRoute: true,
-                              ),
-                            ),
-                            child: Text(
-                              state.truckInfo.entries.elementAt(index).value,
-                              style: AppTextTheme().lightText.copyWith(
-                                color: AppColorTheme().secondary,
-                              ),
-                              textAlign: TextAlign.end,
-                            ),
+                children: [
+                  Row(
+                    spacing: 10,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          context.popPage();
+                          // if (onEditSuccess != null) onEditSuccess();
+                        },
+                        child: CircleAvatar(
+                          radius: 25,
+                          backgroundColor: AppColorTheme().whiteShade,
+                          child: const Icon(
+                            Icons.arrow_back_ios,
+                            color: Colors.black,
+                            size: 18,
                           ),
                         ),
                       ),
-                    ),
+                      Text(
+                        "Settings",
+                        style: AppTextTheme().subHeadingText.copyWith(
+                          fontWeight: AppFontWeight.semiBold,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ],
                   ),
                   20.h,
-                  // Restrictions
+                  DashedLine(),
+                  20.h,
+            
+                  // Account
                   Text(
-                    "Restrictions",
+                    "Account",
                     style: AppTextTheme().lightText.copyWith(
                       color: AppColorTheme().secondary,
                     ),
                   ),
                   20.h,
-                  BlocBuilder<
-                    RouteTruckSpecificationsCubit,
-                    TruckSpecificationState
-                  >(
-                    buildWhen: (p, c) => p.avoidance != c.avoidance,
-                    builder: (context, state) {
-                      return Column(
+                  ListTile(
+                    onTap: () {
+                      return;
+                      context.popPage();
+                      context.pushPage(const MyProfileScreen());
+                    },
+                    leading: Icon(
+                      Icons.person_outline,
+                      color: AppColorTheme().primary,
+                    ),
+                    title: Text(
+                      "My Profile",
+                      style: AppTextTheme().lightText.copyWith(fontSize: 16),
+                    ),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios_outlined,
+                      color: Colors.black,
+                      size: 22,
+                    ),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  12.h,
+                  ListTile(
+                    onTap: () async {
+                      return;
+                      final nav = Navigator.of(context);
+                      final auth = context.read<AuthCubit>();
+                      context.popPage();
+                      await auth.logout();
+                      nav.pushNamedAndRemoveUntil('/login', (route) => false);
+                    },
+                    leading: Icon(Icons.logout, color: AppColorTheme().red),
+                    title: Text(
+                      "Logout",
+                      style: AppTextTheme().lightText.copyWith(
+                        fontSize: 16,
+                        color: AppColorTheme().red,
+                      ),
+                    ),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  20.h,
+                  DashedLine(),
+                  20.h,
+            
+                  // Vehicle
+                  Text(
+                    "Vehicle",
+                    style: AppTextTheme().lightText.copyWith(
+                      color: AppColorTheme().secondary,
+                    ),
+                  ),
+                  20.h,
+                  ListTile(
+                    onTap: () => Helpers.openBottomSheet(
+                      context: context,
+                      child: EditTruckSpecificationsView(hasRoute: hasRoute),
+                    ),
+                    leading: SvgPicture.asset(AppIcons.localShippingIcon),
+                    title: Text(
+                      "My truck",
+                      style: AppTextTheme().lightText.copyWith(fontSize: 16),
+                    ),
+                    trailing: const Icon(
+                      Icons.arrow_forward_ios_outlined,
+                      color: Colors.black,
+                      size: 22,
+                    ),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+            
+                  if (hasRoute) ...[
+                    BlocBuilder<
+                      RouteTruckSpecificationsCubit,
+                      TruckSpecificationState
+                    >(
+                      builder: (context, state) => Column(
                         children: List.generate(
-                          state.avoidance.length,
+                          state.truckInfo.length,
                           (index) => ListTile(
                             contentPadding: EdgeInsets.zero,
-                            leading: SvgPicture.asset(
-                              _setRestrictionIcon(
-                                state.avoidance.entries.elementAt(index).key,
-                              ),
-                            ),
+                            leading: 20.w,
                             title: Text(
-                              setRestrictiontitle(
-                                state.avoidance.entries.elementAt(index).key,
-                              ),
+                              state.truckInfo.entries.elementAt(index).key,
                               style: AppTextTheme().lightText,
                             ),
                             visualDensity: const VisualDensity(vertical: -4.0),
-                            trailing: Transform.scale(
-                              scale: 0.6,
-                              child: Switch.adaptive(
-                                value: state.avoidance.entries
-                                    .elementAt(index)
-                                    .value,
-                                onChanged: (v) {
-                                  context
-                                      .read<RouteTruckSpecificationsCubit>()
-                                      .toggleAvoidance(
-                                        state.avoidance.entries
-                                            .elementAt(index)
-                                            .key,
-                                      );
-                                  // final navigationState = context
-                                  //     .read<TruckNavigationCubit>()
-                                  //     .state;
-                                  // if (navigationState.hasDirection &&
-                                  //     navigationState.currentRoute != null &&
-                                  //     navigationState.selectedSuggestion !=
-                                  //         null &&
-                                  //     !navigationState.isNavigating) {
+                            trailing: InkWell(
+                              onTap: () => Helpers.openBottomSheet(
+                                context: context,
+                                child: EditTruckSpecificationsView(
+                                  hasRoute: true,
+                                ),
+                              ),
+                              child: Text(
+                                state.truckInfo.entries.elementAt(index).value,
+                                style: AppTextTheme().lightText.copyWith(
+                                  color: AppColorTheme().secondary,
+                                ),
+                                textAlign: TextAlign.end,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    20.h,
+                    // Restrictions
+                    Text(
+                      "Restrictions",
+                      style: AppTextTheme().lightText.copyWith(
+                        color: AppColorTheme().secondary,
+                      ),
+                    ),
+                    20.h,
+                    BlocBuilder<
+                      RouteTruckSpecificationsCubit,
+                      TruckSpecificationState
+                    >(
+                      buildWhen: (p, c) => p.avoidance != c.avoidance,
+                      builder: (context, state) {
+                        return Column(
+                          children: List.generate(
+                            state.avoidance.length,
+                            (index) => ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: SvgPicture.asset(
+                                _setRestrictionIcon(
+                                  state.avoidance.entries.elementAt(index).key,
+                                ),
+                              ),
+                              title: Text(
+                                setRestrictiontitle(
+                                  state.avoidance.entries.elementAt(index).key,
+                                ),
+                                style: AppTextTheme().lightText,
+                              ),
+                              visualDensity: const VisualDensity(vertical: -4.0),
+                              trailing: Transform.scale(
+                                scale: 0.6,
+                                child: Switch.adaptive(
+                                  value: state.avoidance.entries
+                                      .elementAt(index)
+                                      .value,
+                                  onChanged: (v) {
+                                    context
+                                        .read<RouteTruckSpecificationsCubit>()
+                                        .toggleAvoidance(
+                                          state.avoidance.entries
+                                              .elementAt(index)
+                                              .key,
+                                        );
+                                    // final navigationState = context
+                                    //     .read<TruckNavigationCubit>()
+                                    //     .state;
+                                    // if (navigationState.hasDirection &&
+                                    //     navigationState.currentRoute != null &&
+                                    //     navigationState.selectedSuggestion !=
+                                    //         null &&
+                                    //     !navigationState.isNavigating) {
                                     context
                                         .read<TruckNavigationCubit>()
                                         .calculateRoute(isRecalculating: true);
-                                  // }
-
-                                  // if (onEditSuccess != null) onEditSuccess();
-                                },
+                                    // }
+            
+                                    // if (onEditSuccess != null) onEditSuccess();
+                                  },
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                ] else ...[
-                  BlocBuilder<
-                    TruckSpecificationsCubit,
-                    TruckSpecificationState
-                  >(
-                    builder: (context, state) => Column(
-                      children: List.generate(
-                        state.truckInfo.length,
-                        (index) => ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: 20.w,
-                          title: Text(
-                            state.truckInfo.entries.elementAt(index).key,
-                            style: AppTextTheme().lightText,
-                          ),
-                          visualDensity: const VisualDensity(vertical: -4.0),
-                          trailing: InkWell(
-                            onTap: () => Helpers.openBottomSheet(
-                              context: context,
-                              child: EditTruckSpecificationsView(
-                                hasRoute: false,
-                              ),
+                        );
+                      },
+                    ),
+                  ] else ...[
+                    BlocBuilder<
+                      TruckSpecificationsCubit,
+                      TruckSpecificationState
+                    >(
+                      builder: (context, state) => Column(
+                        children: List.generate(
+                          state.truckInfo.length,
+                          (index) => ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: 20.w,
+                            title: Text(
+                              state.truckInfo.entries.elementAt(index).key,
+                              style: AppTextTheme().lightText,
                             ),
-                            child: Text(
-                              state.truckInfo.entries.elementAt(index).value,
-                              style: AppTextTheme().lightText.copyWith(
-                                color: AppColorTheme().secondary,
+                            visualDensity: const VisualDensity(vertical: -4.0),
+                            trailing: InkWell(
+                              onTap: () => Helpers.openBottomSheet(
+                                context: context,
+                                child: EditTruckSpecificationsView(
+                                  hasRoute: false,
+                                ),
                               ),
-                              textAlign: TextAlign.end,
+                              child: Text(
+                                state.truckInfo.entries.elementAt(index).value,
+                                style: AppTextTheme().lightText.copyWith(
+                                  color: AppColorTheme().secondary,
+                                ),
+                                textAlign: TextAlign.end,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  20.h,
-                  // Restrictions
-                  Text(
-                    "Restrictions",
-                    style: AppTextTheme().lightText.copyWith(
-                      color: AppColorTheme().secondary,
+                    20.h,
+                    // Restrictions
+                    Text(
+                      "Restrictions",
+                      style: AppTextTheme().lightText.copyWith(
+                        color: AppColorTheme().secondary,
+                      ),
                     ),
-                  ),
-                  20.h,
-                  BlocBuilder<
-                    TruckSpecificationsCubit,
-                    TruckSpecificationState
-                  >(
-                    buildWhen: (p, c) => p.avoidance != c.avoidance,
-                    builder: (context, state) {
-                      return Column(
-                        children: List.generate(
-                          state.avoidance.length,
-                          (index) => ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: SvgPicture.asset(
-                              _setRestrictionIcon(
-                                state.avoidance.entries.elementAt(index).key,
+                    20.h,
+                    BlocBuilder<
+                      TruckSpecificationsCubit,
+                      TruckSpecificationState
+                    >(
+                      buildWhen: (p, c) => p.avoidance != c.avoidance,
+                      builder: (context, state) {
+                        return Column(
+                          children: List.generate(
+                            state.avoidance.length,
+                            (index) => ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: SvgPicture.asset(
+                                _setRestrictionIcon(
+                                  state.avoidance.entries.elementAt(index).key,
+                                ),
                               ),
-                            ),
-                            title: Text(
-                              setRestrictiontitle(
-                                state.avoidance.entries.elementAt(index).key,
+                              title: Text(
+                                setRestrictiontitle(
+                                  state.avoidance.entries.elementAt(index).key,
+                                ),
+                                style: AppTextTheme().lightText,
                               ),
-                              style: AppTextTheme().lightText,
-                            ),
-                            visualDensity: const VisualDensity(vertical: -4.0),
-                            trailing: Transform.scale(
-                              scale: 0.6,
-                              child: Switch.adaptive(
-                                value: state.avoidance.entries
-                                    .elementAt(index)
-                                    .value,
-                                onChanged: (v) {
-                                  context
-                                      .read<TruckSpecificationsCubit>()
-                                      .toggleAvoidance(
-                                        state.avoidance.entries
-                                            .elementAt(index)
-                                            .key,
-                                      );
-                                  // final navigationState = context
-                                  //     .read<TruckNavigationCubit>()
-                                  //     .state;
-                                  // if (navigationState.hasDirection &&
-                                  //     navigationState.currentRoute != null &&
-                                  //     navigationState.selectedSuggestion !=
-                                  //         null &&
-                                  //     !navigationState.isNavigating) {
-                                  //   context
-                                  //       .read<TruckNavigationCubit>()
-                                  //       .calculateRoute(isRecalculating: true);
-                                  // }
-
-                                  // if (onEditSuccess != null) onEditSuccess();
-                                },
+                              visualDensity: const VisualDensity(vertical: -4.0),
+                              trailing: Transform.scale(
+                                scale: 0.6,
+                                child: Switch.adaptive(
+                                  value: state.avoidance.entries
+                                      .elementAt(index)
+                                      .value,
+                                  onChanged: (v) {
+                                    context
+                                        .read<TruckSpecificationsCubit>()
+                                        .toggleAvoidance(
+                                          state.avoidance.entries
+                                              .elementAt(index)
+                                              .key,
+                                        );
+                                    // final navigationState = context
+                                    //     .read<TruckNavigationCubit>()
+                                    //     .state;
+                                    // if (navigationState.hasDirection &&
+                                    //     navigationState.currentRoute != null &&
+                                    //     navigationState.selectedSuggestion !=
+                                    //         null &&
+                                    //     !navigationState.isNavigating) {
+                                    //   context
+                                    //       .read<TruckNavigationCubit>()
+                                    //       .calculateRoute(isRecalculating: true);
+                                    // }
+            
+                                    // if (onEditSuccess != null) onEditSuccess();
+                                  },
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
+                        );
+                      },
+                    ),
+            
+                    20.h,
+                  ],
                 ],
-              ],
+              ),
             ),
           );
         },

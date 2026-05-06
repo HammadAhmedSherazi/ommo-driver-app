@@ -1369,22 +1369,30 @@ class _HomeMobileViewState extends State<HomeMobileView>
                                             ),
 
                                             SheetScrollBridge(
-                                              child: ListView.builder(
-                                                padding: EdgeInsets.zero,
-                                                physics:
-                                                    BouncingScrollPhysics(),
-                                                itemBuilder: (context, index) =>
-                                                    PlaceDisplayWidget(
-                                                      place:
-                                                          TruckNavigationStaticDetails
-                                                              .terminals[index],
-                                                      isSaved: true,
-                                                    ),
-                                                itemCount:
-                                                    TruckNavigationStaticDetails
-                                                        .terminals
-                                                        .length,
+                                              child: Padding(
+                                                padding: const EdgeInsets.only(top: 100),
+                                                child: Text(
+                                                  "Best fuel deals coming soon",
+                                                  textAlign: TextAlign.center,
+                                                  ),
                                               ),
+                                              
+                                              // ListView.builder(
+                                              //   padding: EdgeInsets.zero,
+                                              //   physics:
+                                              //       BouncingScrollPhysics(),
+                                              //   itemBuilder: (context, index) =>
+                                              //       PlaceDisplayWidget(
+                                              //         place:
+                                              //             TruckNavigationStaticDetails
+                                              //                 .terminals[index],
+                                              //         isSaved: true,
+                                              //       ),
+                                              //   itemCount:
+                                              //       TruckNavigationStaticDetails
+                                              //           .terminals
+                                              //           .length,
+                                              // ),
                                             ),
                                           ],
                                         ),
