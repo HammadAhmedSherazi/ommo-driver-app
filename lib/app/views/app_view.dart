@@ -80,8 +80,10 @@ class _AppView extends StatelessWidget {
         ).copyWith(textScaler: const TextScaler.linear(1.0), boldText: false),
         child: child!,
       ),
-      home:HomeView(),
-      // initialRoute: '/home',
+      home: SplashScreen(),
+      // home:HomeView(),
+
+      // initialRoute: '/',
       // routes: {
       //   '/': (context) => Container(
       //     color: Colors.white,

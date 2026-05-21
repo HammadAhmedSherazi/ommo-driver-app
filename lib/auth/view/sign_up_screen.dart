@@ -84,6 +84,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     'WY',
   ];
   final ValueNotifier<bool?> _isChecked = ValueNotifier(false);
+  final ValueNotifier<bool?> _isChecked2 = ValueNotifier(false);
 
   @override
   void dispose() {
@@ -328,6 +329,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                           SizedBox(height: 12),
 
+                          ValueListenableBuilder(
+                            valueListenable: _isChecked2,
+                            builder: (context, isChecked, child) {
+                              return Row(
+                                children: [
+                                  Checkbox(
+                                    value: isChecked,
+                                    onChanged: (value) {
+                                      _isChecked2.value = value;
+                                    },
+                                  ),
+                                  Expanded(
+                                    child: Text.rich(
+                                      TextSpan(
+                                        text:
+                                            "Agree to receive SMS verification codes from Ommo Driver App. Msg & data rates may apply.",
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                          SizedBox(height: 12),
                           ValueListenableBuilder(
                             valueListenable: _isChecked,
                             builder: (context, isChecked, child) {
